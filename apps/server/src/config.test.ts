@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readConfig } from "./config.ts";
+import { devActorHeaderEnabled, readConfig } from "./config.ts";
 
 describe("readConfig", () => {
   it("defaults the port to 3000 and PGlite to .pglite under apps/server", () => {
@@ -31,5 +31,20 @@ describe("readConfig", () => {
   it("refuses a PORT that is not a whole number up to 65535", () => {
     expect(() => readConfig({ PORT: "abc" })).toThrow(/PORT/);
     expect(() => readConfig({ PORT: "70000" })).toThrow(/PORT/);
+  });
+});
+
+describe("devActorHeaderEnabled", () => {
+  it("is on only when NODE_ENV is exactly development", () => {
+    expect(devActorHeaderEnabled({ NODE_ENV: "development" })).toBe(true);
+  });
+
+  it("is off in production, in test, when unset and for anything else", () => {
+    expect(devActorHeaderEnabled({ NODE_ENV: "production" })).toBe(false);
+    expect(devActorHeaderEnabled({ NODE_ENV: "test" })).toBe(false);
+    expect(devActorHeaderEnabled({})).toBe(false);
+    expect(devActorHeaderEnabled({ NODE_ENV: "" })).toBe(false);
+    expect(devActorHeaderEnabled({ NODE_ENV: "Development" })).toBe(false);
+    expect(devActorHeaderEnabled({ NODE_ENV: "development " })).toBe(false);
   });
 });
