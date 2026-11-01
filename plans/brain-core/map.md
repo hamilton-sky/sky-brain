@@ -171,6 +171,7 @@ The acceptance ticket (11, the last in the graph) runs both.
   entry objects.
 - user — One ref over 2,048 characters is 413 `too_large` with `field: "refs.<index>"` (0-based,
   for example `refs.3`).
+- 01 — pnpm monorepo scaffolded (all lint/type/test/CI config fixed here); `createApp({ webDist? })` serves `/healthz`, an `/api` 404 JSON and the web shell with SPA fallback on `/{*splat}`; tsx runs the server (D13).
 
 ## Open questions
 

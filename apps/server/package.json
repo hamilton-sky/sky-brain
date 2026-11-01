@@ -1,0 +1,21 @@
+{
+  "name": "@sky-brain/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "dev": "tsx watch src/dev.ts",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@sky-brain/shared": "workspace:*",
+    "express": "5.3.0",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
+  }
+}

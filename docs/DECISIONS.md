@@ -130,3 +130,20 @@ GPL-3.0 or commercial.
 **Known clash:** Skypoint sells "skyBrain", an AI memory product for healthcare that works with
 Claude over MCP ([skypoint.ai](https://skypoint.ai/products/skybrain)). That is fine for our
 own and open-source use. Pick a distinct product name before any commercial launch.
+
+### D13. TypeScript 6.0, and tsx runs the server in production
+**Chosen:**
+- TypeScript `~6.0.3`, not 7.
+- The server runs from source with `tsx src/main.ts`, in production too. `pnpm build` only
+  builds the web shell.
+**Why:**
+- typescript-eslint 8.72.1 supports `typescript >=4.8.4 <6.1.0`, and TypeScript 7 ships the
+  native compiler without the classic compiler API that type-aware lint needs.
+- With tsx, `packages/shared` stays TypeScript source: no build order and no export conditions
+  to keep in step.
+**Rejected:**
+- TypeScript 7, until typescript-eslint supports it.
+- Bundling the server with esbuild: workspace packages must be bundled while the others stay
+  external.
+- `tsc` emit with project references and a built `packages/shared`: two outputs to keep in step.
+  The deploy feature can switch if cold start matters.

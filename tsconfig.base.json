@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  }
+}
