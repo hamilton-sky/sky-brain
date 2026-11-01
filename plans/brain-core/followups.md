@@ -21,3 +21,7 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - 1. minor apps/server/src/actor/middleware.ts: the check compares `req.hostname` to the loopback names case-sensitively, so `Host: LOCALHOST:port` is refused with `dev_actor_disabled`. It fails closed, but hostnames are case-insensitive. Lower-case `req.hostname` before the `LOOPBACK_HOSTS` lookup. (pair review)
 - 2. minor apps/server/src/http/error-handler.ts: every exposed 4xx body error becomes 400 `invalid_json`, including 415 `charset.unsupported` and `encoding.unsupported`. The spec defines no 415, so this is acceptable. Its message, "The body could not be read.", is the only hint of the cause. Keep it as it is, or record it in the spec's edge cases. (pair review)
+
+## 04-write-guards (left for later)
+
+- 1. minor apps/server/src/guards/quarantine.ts: `ZERO_WIDTH` is a hand-picked list, so other invisible characters still slip through. `ig͏nore previous instructions` (combining grapheme joiner) and `ig⁣nore previous instructions` (invisible separator) both pass. To fix, strip `/\p{Default_Ignorable_Code_Point}/gu` instead of the list. This is minor because the spec calls the pattern list one illustrative layer, not a boundary. (pair review)
