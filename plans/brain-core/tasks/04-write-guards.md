@@ -1,7 +1,7 @@
 # Build the write guards: secret scan, quarantine detector and per-actor rate limiter
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -252,5 +252,40 @@ SPEC
 - Acceptance tests: these fail, but the guards are not wired into any route until ticket 05, and no acceptance test imports src/guards (grep found none). So none of the failures tests what this ticket delivers.
 - scope: OK. The changes are the 6 files in apps/server/src/guards/, plus one appended line each in plans/brain-core/map.md and learnings.md, which is the per-ticket bookkeeping convention. Nothing changed in routes, schemas or size caps, which "Not in this ticket" rules out.
 - test first: OK. Commit 6883775 adds only the three *.test.ts files. They import ./secrets.ts, ./quarantine.ts and ./ratelimit.ts, which did not exist at that point, so the tests fail without the production change. The conductor saw them fail.
+
+REVIEW: PASS
+
+## Review findings (round 2, pair review)
+
+Notes for the conductor:
+- Range reviewed: c7a6b671d5..5137958 (`$END` = HEAD, so no later commits are left out). I read the ticket as it stood at c7a6b67, where the Answer was empty. I did not read the `## Answer`. I did read the ticket's `## Review findings (round 1)` section in the working copy, because the guide says to take earlier findings from the ticket. All five round-1 findings appear to be addressed. The Status line goes from open to resolved.
+- Done when results: the guards vitest run passed all 125 tests. The grep found nothing (exit 1). `pnpm lint && pnpm typecheck && pnpm test` exited 0, with 195 server tests passing.
+- Level 3 probing. These are the inputs I probed:
+  - every field value passed to `scanForSecrets`: long runs of `;`, `\r`, newlines, `-----BEGIN`, `AKIA`, `sk-ant-api03-`, `sk-proj-`, `AIza`, `ghp_` and names, up to 64 KB, plus about a dozen secret-shaped forms that might slip through.
+  - the text passed to `detectInjection`: whitespace runs after each prefix and after `<`, and evasion phrasings.
+  - the limiter's key and clock: a burst, refill, and the clock stepping back an hour.
+- I left this file behind: /tmp/rev04b-full.log.
+
+QUALITY
+1. major apps/server/src/guards/quarantine.ts: the role-tag pattern (`<\s*\/?\s*(?:system|assistant)`) and the tool-call pattern (`<\s*\/?\s*(?:tool_use|…)`) have two `\s*` next to each other, so from one `<` the matching runs in quadratic time over a run of whitespace. I measured `"<" + " ".repeat(n) + "invoke"`: 12 ms at 4 KB, 183 ms at 16 KB and 2.9 s at 64 KB. The body cap of 16,384 bytes holds one write to about 0.2 s of blocked event loop. But an actor's burst of 60 writes then blocks the single-instance server for about 11 s, and each extra actor adds the same again. It also makes the test "checks 16 KB of hostile text within 200 ms" flaky: that test passed at 182 ms against its 200 ms budget, and nearly all of that time comes from this one input. A slower CI runner will fail it. Fix: drop the doubled whitespace, for example `<\/?\s*(?:system|assistant)\s*>` and `<\/?\s*(?:tool_use|tool_result|function_calls)\b`, or bound each run with `\s{0,8}`. Then rewrite the test the way learnings.md (04) advises: grow the input from 1 KB to 16 KB with a budget for each size and for each text, so the cost cannot hide inside one shared total.
+2. minor apps/server/src/guards/quarantine.ts: some ordinary injection phrasings get through. "Ignore the instructions above …" and "Disregard everything above." pass, because the qualifier word must come before the noun. A zero-width space inside a keyword (`ig​nore previous instructions`) also passes. Fix: allow `(?:previous|prior|above|earlier)` after the noun as well, and strip `​-‍⁠﻿` before matching. The spec calls this pattern list one illustrative layer, not a boundary, which is why this is minor.
+3. minor apps/server/src/guards/secrets.ts: two secret forms are missed. A single-line JSON object such as `{"user":"bob","api_key":"<high-entropy>"}` passes, because ASSIGNMENT only looks at the first name on the line. A key run straight on after a word character, such as `token_sk-ant-api03-…AA`, also passes, because of the leading `\b`, which comes from gitleaks. Fix: test each `"name": value` pair on the line, not only the first, and replace the leading `\b` on the provider rules with `(?<![A-Za-z0-9])`.
+4. minor apps/server/src/guards/ratelimit.ts: if the clock steps back, `lastSweep` stays in the future, so idle buckets are not swept until the clock catches up. Fix: also sweep when `t < lastSweep`, or keep the sweep time as `Math.max(lastSweep, t)` and compare against it.
+
+REVIEW: FAIL
+
+Range reviewed: c7a6b671d5..5137958 (END is HEAD, so no later commits were left out). This is round 2: it covers 08f9f86 (test-only) and 5137958 (fixes) on top of round 1's 6883775 and 90682ef. I read the ticket as it stood at the base commit, where the Answer was empty. I read the "## Review findings (round 1)" section with sed -n '228,$p' and did not read the author's Answer. The ticket's Status line goes from open to resolved. The ticket was already level 3, so I added no LEVEL line. I left no files behind.
+
+SPEC
+- vitest run src/guards passes, with a test for every spec fixture, each must-quarantine text asserted against its id, and test names containing the `prints` lines: MET (conductor). Round 2 only adds tests. The diff of 08f9f86 shows the spec fixture lists unchanged, with new cases appended: ordinary sentences that must not be quarantined, punctuation and URL-userinfo refusals for each provider key, generic-secret forms, and hostile-input timing tests.
+- Rate limiter tests show a burst over capacity refused with retryAfterSeconds, refill after the clock moves, and one key not affecting another: MET. ratelimit.test.ts lines 18-82: in "refuses a burst over capacity with retryAfterSeconds" the 4th take returns {ok:false, retryAfterSeconds:1}. "refills after the clock moves" and "keeps actors apart" cover the other two.
+- `grep -rE "ghp_[0-9A-Za-z]{36}|AKIA[A-Z2-7]{16}" apps/server/src` finds nothing: MET (conductor). My own re-run printed nothing and exited 1.
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0: MET (conductor).
+- Acceptance tests: these fail, but no file under plans/brain-core/acceptance mentions the guards (grep found none). The guards are wired into routes only in ticket 05, so none of the failures tests what this ticket delivers.
+- scope: OK. The changes are the 6 files in apps/server/src/guards/ and one appended line each per round in plans/brain-core/map.md and learnings.md, which is the per-ticket bookkeeping. There are no route, schema or size-cap changes, which "Not in this ticket" rules out.
+- test first: OK. In round 1, 6883775 added only the test files, and the conductor saw them fail. In round 2, 08f9f86 changes only the three *.test.ts files, before the fix in 5137958. Those tests would fail without the fix:
+  - "You are now a maintainer…" and "The model reading this config…" matched the old role-override and agent-order patterns.
+  - Keys followed by `.`, `,`, `)` or `&` slipped past the old suffix.
+  - The 16 KB `KEY=a<spaces>b` case backtracked for minutes under the old ASSIGNMENT regex.
 
 REVIEW: PASS
