@@ -166,6 +166,137 @@ describe("scanForSecrets", () => {
   });
 });
 
+// Review round 1: provider keys followed by punctuation or inside URL userinfo.
+const providerKeys: [string, string, string][] = [
+  ["an AWS access key", "AK" + "IA" + base32(16), "aws-access-token"],
+  ["a GitHub token", githubPat, "github-pat"],
+  ["a GitHub OAuth token", "gh" + "o_" + alnum(36, 12), "github-oauth"],
+  ["a GitHub app token", "gh" + "s_" + alnum(36, 13), "github-app-token"],
+  [
+    "a GitHub fine-grained token",
+    "github" + "_pat_" + alnum(82, 14),
+    "github-fine-grained-pat",
+  ],
+  [
+    "an Anthropic key",
+    "sk-" + "ant-" + "api03-" + alnum(93, 15) + "AA",
+    "anthropic-api-key",
+  ],
+  ["an OpenAI key", openaiKey, "openai-api-key"],
+  ["a GCP API key", "AI" + "za" + alnum(35, 18), "gcp-api-key"],
+];
+
+describe("scanForSecrets, keys next to punctuation", () => {
+  for (const [label, key, rule] of providerKeys) {
+    it(`refuses ${label} followed by a period (${rule})`, () => {
+      expect(scanForSecrets(body(`my key is ${key}.`))).toEqual({
+        field: "body",
+        rule,
+      });
+    });
+
+    it(`refuses ${label} followed by , ) & (${rule})`, () => {
+      for (const after of [",", ")", "&v=3"]) {
+        expect([after, scanForSecrets(body(`(${key}${after}`))]).toEqual([
+          after,
+          { field: "body", rule },
+        ]);
+      }
+    });
+
+    it(`refuses ${label} inside URL userinfo (${rule})`, () => {
+      expect(
+        scanForSecrets([
+          { name: "refs.0", value: `https://u:${key}@h.example/o/r` },
+        ]),
+      ).toEqual({ field: "refs.0", rule });
+    });
+  }
+
+  it("refuses a GCP API key in a query string", () => {
+    const key = "AI" + "za" + alnum(35, 18);
+    expect(
+      scanForSecrets(body(`https://maps.test/api?key=${key}&v=3`)),
+    ).toEqual({ field: "body", rule: "gcp-api-key" });
+  });
+
+  it("still accepts a key-shaped prefix that runs on into more characters", () => {
+    const key = "AI" + "za" + alnum(35, 18) + "Q";
+    expect(scanForSecrets(body(key))).toBeUndefined();
+  });
+});
+
+const secretValue = "Zx9" + "qL2vB7mN4pR8wT6k";
+
+describe("scanForSecrets, generic-secret forms", () => {
+  const refuse: [string, string][] = [
+    ["a JSON object with a quoted name", `{"api_key": "${secretValue}"}`],
+    ["a JSON member line", `{\n  "client_secret": "${secretValue}",\n}`],
+    ["a const assignment", `const apiKey = "${secretValue}";`],
+    ["a value followed by a # comment", `PASSWORD=${secretValue} # prod`],
+    ["lines separated only by \\r", `notes\rDB_PASSWORD=${secretValue}\rmore`],
+  ];
+  for (const [label, text] of refuse) {
+    it(`refuses ${label} (generic-secret)`, () => {
+      expect(scanForSecrets(body(text))).toEqual({
+        field: "body",
+        rule: "generic-secret",
+      });
+    });
+  }
+
+  const accept: [string, string][] = [
+    ["a process.env reference", "const apiKey = process.env.OPENAI_API_KEY;"],
+    [
+      "an import.meta.env reference",
+      "const token = import.meta.env.VITE_TOKEN;",
+    ],
+    ["a placeholder followed by a comment", "API_KEY=<your key here> # set me"],
+  ];
+  for (const [label, text] of accept) {
+    it(`accepts ${label}`, () => {
+      expect(scanForSecrets(body(text))).toBeUndefined();
+    });
+  }
+});
+
+describe("scanForSecrets, time on hostile input", () => {
+  // Review round 1: a 16 KB line of `KEY=a<spaces>b` took minutes. The input grows from 1 KB
+  // to 16 KB and each size must finish within the budget, so a slow pattern fails early
+  // instead of hanging the run.
+  const cases: [string, (n: number) => string][] = [
+    ["spaces", (n) => "KEY=a" + " ".repeat(n) + "b"],
+    ["tabs", (n) => "KEY=a" + "\t".repeat(n) + "b"],
+    ["spaces then a semicolon", (n) => "KEY=a" + " ".repeat(n) + ";x"],
+    ["leading spaces", (n) => " ".repeat(n) + "KEY"],
+    ["spaces after =", (n) => "KEY=" + " ".repeat(n) + "\u2028"],
+    ["spaces before #", (n) => "KEY=a" + " ".repeat(n) + "#"],
+    [
+      "many BEGIN lines",
+      (n) => "-----BEGIN RSA PRIVATE KEY-----\n".repeat(n / 32),
+    ],
+  ];
+  const budgetMs = 200;
+  for (const [label, make] of cases) {
+    it(`scans a 16 KB line of ${label} within ${budgetMs} ms`, () => {
+      for (const n of [1024, 2048, 4096, 8192, 16_384]) {
+        const start = performance.now();
+        scanForSecrets(body(make(n)));
+        expect([n, performance.now() - start < budgetMs]).toEqual([n, true]);
+      }
+      // 50 refs of 2,048 characters, the largest a write may carry.
+      const start = performance.now();
+      scanForSecrets(
+        Array.from({ length: 50 }, (_, i) => ({
+          name: `refs.${i}`,
+          value: make(2048).slice(0, 2048),
+        })),
+      );
+      expect(performance.now() - start).toBeLessThan(budgetMs);
+    });
+  }
+});
+
 describe("shannonEntropy", () => {
   it("is 0 for one repeated character and log2(n) for n distinct ones", () => {
     expect(shannonEntropy("")).toBe(0);

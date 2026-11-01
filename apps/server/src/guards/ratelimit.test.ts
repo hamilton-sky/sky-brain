@@ -120,6 +120,45 @@ describe("createRateLimiter", () => {
     expect(limiter.take("old").ok).toBe(false);
   });
 
+  it("does not refill twice when the clock steps backwards", () => {
+    const c = clock();
+    const limiter = createRateLimiter({
+      capacity: 2,
+      refillPerSecond: 1,
+      now: c.now,
+    });
+    expect(limiter.take("k").ok).toBe(true);
+    expect(limiter.take("k").ok).toBe(true);
+    c.advance(-5);
+    expect(limiter.take("k").ok).toBe(false);
+    // Back where it was: no time has really passed, so no token is back.
+    c.advance(5);
+    expect(limiter.take("k").ok).toBe(false);
+    c.advance(1);
+    expect(limiter.take("k")).toEqual({ ok: true });
+  });
+
+  it("sweeps idle buckets at most once a minute", () => {
+    const c = clock();
+    const limiter = createRateLimiter({
+      capacity: 1,
+      refillPerSecond: 1,
+      now: c.now,
+    });
+    limiter.take("a"); // sweeps (the first take), a is full again 1 s later
+    c.advance(30);
+    limiter.take("b"); // under a minute since the last sweep: no sweep
+    c.advance(601 - 30);
+    limiter.take("c"); // sweeps: a has been full for 600 s, not over ten minutes
+    expect(limiter.size()).toBe(3);
+    c.advance(30);
+    limiter.take("c"); // a is past ten minutes, but the last sweep was 30 s ago
+    expect(limiter.size()).toBe(3);
+    c.advance(30);
+    limiter.take("c"); // a minute since the last sweep: a and b go
+    expect(limiter.size()).toBe(1);
+  });
+
   it("refuses options that cannot make a bucket", () => {
     expect(() => createRateLimiter({ capacity: 0 })).toThrow(/capacity/);
     expect(() => createRateLimiter({ capacity: 1.5 })).toThrow(/capacity/);
