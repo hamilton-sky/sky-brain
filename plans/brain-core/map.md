@@ -195,3 +195,4 @@ The acceptance ticket (11, the last in the graph) runs both.
   deploy feature proves it.
 - 04 — round 2: secret scan matches a trimmed line and cleans the value in code (no backtracking; quoted NAME, `const`, `# comment`, `\r` lines), provider keys end on `(?![\w-])`; role-override and agent-order narrowed; limiter sweeps once a minute and never moves `at` back.
 - 04 — round 3: role-tag/tool-call/agent-order lose their doubled whitespace runs (linear on hostile text), ignore-instructions takes the qualifier after the noun and zero-width characters are stripped; generic-secret scans every quoted `name: "value"` pair on a line; provider keys start on `(?<![A-Za-z0-9])`; a backwards clock sweeps at once.
+- 04 — round 4: `ASSIGNMENT` keeps the whitespace after `{`/`,` in its own group (no `export`+spaces n²), aws ends on `(?![A-Za-z0-9])`, `detectInjection` runs NFKC and strips the soft hyphen.

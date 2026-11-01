@@ -1,7 +1,7 @@
 # Build the write guards: secret scan, quarantine detector and per-actor rate limiter
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -274,6 +274,45 @@ cases, two one-line objects and the backwards-clock sweep).
 
 **Shortcuts taken** (round 3): none new. The per-size budgets are wall time (50 ms in
 quarantine, 200 ms in secrets); the fixed code takes 0 to 7 ms.
+
+**For later tickets**: unchanged.
+
+**Round 4 (review round 3 send-back)**
+
+Work restarted at `cd2ede8`. New failing tests committed alone as `62305c2 test(brain-core): 04
+failing test` (6 failed, 163 passed: soft hyphen, fullwidth, `AKIA…_prod`, and the `export`,
+`let` and `var` keyword-plus-whitespace timing cases at 280 to 298 ms against the 200 ms budget;
+the `const` + tabs case stayed just under budget on this machine).
+
+**Built**: `apps/server/src/guards/secrets.ts`, `quarantine.ts`, `secrets.test.ts`,
+`quarantine.test.ts`.
+
+**Review fixes**
+1. major, quadratic keyword prefix in `ASSIGNMENT`: reproduced (above). The prefix is now
+   `^(?:(?:export|const|let|var)\s+)?(?:[{,]\s*)?…`: the whitespace after `{` or `,` sits inside
+   its own group behind that character, so it is never next to the run after the keyword. The
+   same forms still match: a scratch run (tsx) refused `const { apiKey = <v>`, `{  api_key: <v>`,
+   `, token=<v>` and `export   SECRET=<v>` as generic-secret. Timing cases added: `export` +
+   spaces, `const` + tabs, `let` + spaces and tabs, `var` + spaces then `{`. Now 1 ms each.
+2. minor, aws trailing `\b`: now `(?![A-Za-z0-9])`. Test "refuses an AWS access key run straight
+   on into an underscore" (`<key>_prod`). A scratch run (tsx) showed `AKIA` + 16 key characters +
+   `Q` still accepted, as under gitleaks' `\b`.
+3. minor, soft hyphen and fullwidth: `ZERO_WIDTH` takes U+00AD, and `detectInjection` runs
+   `text.normalize("NFKC")` before stripping. Must-quarantine tests `ig­nore previous
+   instructions` and fullwidth `ｉｇｎｏｒｅ previous instructions`, both `ignore-instructions`.
+
+**Proof** (round 4, all run fresh after the last edit)
+- `pnpm --filter @sky-brain/server exec vitest run src/guards --reporter=verbose`: exit 0, 169
+  passed (3 files). Every `prints` line of the check block is in the output (grep -F of each).
+- `grep -rE "ghp_[0-9A-Za-z]{36}|AKIA[A-Z2-7]{16}" apps/server/src`: no output, exit 1.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0. "All matched files use Prettier code
+  style!", shared 15/15, server 239/239 (14 files).
+
+**Decisions** (round 4)
+- NFKC runs before the invisible-character strip; NFKC leaves U+00AD in place, so the order does
+  not matter for it, and both are linear.
+
+**Shortcuts taken** (round 4): none.
 
 **For later tickets**: unchanged.
 

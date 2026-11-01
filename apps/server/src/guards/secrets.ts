@@ -6,13 +6,13 @@ export type SecretHit = { field: string; rule: string };
 // Provider rules: gitleaks v8.28.0 regexes, in the order spec.md lists them. Where gitleaks ends
 // a key with a list of allowed next characters, a lookahead takes its place: the key must not
 // run on into more key characters, so a key followed by `.`, `,`, `)`, `@` or `&` is still found.
-// Where gitleaks starts a key with `\b`, a lookbehind for a letter or digit takes its place, so a
-// key run straight on after `_` (`token_<key>`) is still found.
+// Where gitleaks starts or ends a key with `\b`, a lookaround for a letter or digit takes its
+// place, so a key run straight on after or into `_` (`token_<key>`, `<key>_prod`) is still found.
 const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   {
     rule: "aws-access-token",
     pattern:
-      /(?<![A-Za-z0-9])((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b/,
+      /(?<![A-Za-z0-9])((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})(?![A-Za-z0-9])/,
   },
   { rule: "github-pat", pattern: /ghp_[0-9a-zA-Z]{36}/ },
   { rule: "github-oauth", pattern: /gho_[0-9a-zA-Z]{36}/ },
@@ -38,9 +38,10 @@ const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
 // generic-secret: a line `[export] NAME=value` or `NAME: value`, read from a trimmed line. NAME
 // may be quoted (`"api_key": …`) and follow `{`, `,` or `const`/`let`/`var`. The value is
 // everything after the first `:` or `=`, cleaned up in code (see `valueOf`), so no part of the
-// pattern can backtrack over a long run of spaces.
+// pattern can backtrack over a long run of spaces. The whitespace after `{` or `,` is its own run,
+// never next to the one after the keyword, so `export` + spaces cannot cost n².
 const ASSIGNMENT =
-  /^(?:(?:export|const|let|var)\s+)?[{,]?\s*["'`]?([\w.-]+)["'`]?\s*[:=]([\s\S]*)$/;
+  /^(?:(?:export|const|let|var)\s+)?(?:[{,]\s*)?["'`]?([\w.-]+)["'`]?\s*[:=]([\s\S]*)$/;
 // A `name: "value"` pair anywhere on a line, so a secret that is not the first name on a
 // one-line object (`{"user":"bob","api_key":"…"}`) is still found. The value must be quoted.
 const PAIR = /(?:^|[{,\s])["'`]?([\w.-]+)["'`]?\s*:\s*(["'`])([^"'`\r\n]*)\2/g;

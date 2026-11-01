@@ -48,12 +48,13 @@ const PATTERNS: { id: string; pattern: RegExp }[] = [
   },
 ];
 
-// Zero-width characters a writer can hide inside a keyword ("ig\u200bnore").
-const ZERO_WIDTH = /[\u200B-\u200D\u2060\uFEFF]/g;
+// Invisible characters a writer can hide inside a keyword ("ig\u200bnore", "ig\u00adnore").
+const ZERO_WIDTH = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
 
 /** The id of the first quarantine pattern `text` matches, or undefined. */
 export function detectInjection(text: string): string | undefined {
-  const visible = text.replace(ZERO_WIDTH, "");
+  // NFKC folds fullwidth and other compatibility letters ("\uff49gnore") to plain ones.
+  const visible = text.normalize("NFKC").replace(ZERO_WIDTH, "");
   for (const { id, pattern } of PATTERNS) {
     if (pattern.test(visible)) return id;
   }
