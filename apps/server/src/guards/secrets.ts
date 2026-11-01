@@ -3,7 +3,9 @@
 
 export type SecretHit = { field: string; rule: string };
 
-// Provider rules: gitleaks v8.28.0 regexes, in the order spec.md lists them.
+// Provider rules: gitleaks v8.28.0 regexes, in the order spec.md lists them. Where gitleaks ends
+// a key with a list of allowed next characters, a lookahead takes its place: the key must not
+// run on into more key characters, so a key followed by `.`, `,`, `)`, `@` or `&` is still found.
 const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   {
     rule: "aws-access-token",
@@ -15,14 +17,14 @@ const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   { rule: "github-fine-grained-pat", pattern: /github_pat_\w{82}/ },
   {
     rule: "anthropic-api-key",
-    pattern: /\b(sk-ant-api03-[a-zA-Z0-9_-]{93}AA)(?:[`'"\s;]|\\[nr]|$)/,
+    pattern: /\b(sk-ant-api03-[a-zA-Z0-9_-]{93}AA)(?![\w-])/,
   },
   {
     rule: "openai-api-key",
     pattern:
-      /\b(sk-(?:proj|svcacct|admin)-(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})T3BlbkFJ(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})\b|sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})(?:[`'"\s;]|\\[nr]|$)/,
+      /\b(sk-(?:proj|svcacct|admin)-(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})T3BlbkFJ(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})\b|sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})(?![\w-])/,
   },
-  { rule: "gcp-api-key", pattern: /\b(AIza[\w-]{35})(?:[`'"\s;]|\\[nr]|$)/ },
+  { rule: "gcp-api-key", pattern: /\b(AIza[\w-]{35})(?![\w-])/ },
   {
     rule: "private-key",
     pattern:
@@ -30,8 +32,12 @@ const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   },
 ];
 
-// generic-secret: a line `[export] NAME=value` or `NAME: value`.
-const ASSIGNMENT = /^\s*(?:export\s+)?([\w.-]+)\s*[:=]\s*(.*?)\s*;?\s*$/;
+// generic-secret: a line `[export] NAME=value` or `NAME: value`, read from a trimmed line. NAME
+// may be quoted (`"api_key": …`) and follow `{`, `,` or `const`/`let`/`var`. The value is
+// everything after the first `:` or `=`, cleaned up in code (see `valueOf`), so no part of the
+// pattern can backtrack over a long run of spaces.
+const ASSIGNMENT =
+  /^(?:(?:export|const|let|var)\s+)?[{,]?\s*["'`]?([\w.-]+)["'`]?\s*[:=]([\s\S]*)$/;
 const SECRET_NAME = /key|secret|token|passw(?:or)?d|credential/i;
 const MIN_LENGTH = 12;
 const MIN_ENTROPY = 3.5;
@@ -43,6 +49,7 @@ const PLACEHOLDERS = [
   /changeme/i,
   /example/i,
   /^your/i,
+  /^(?:process\.env|import\.meta\.env|os\.environ)\b/, // a reference to the environment
 ];
 
 /** Shannon entropy of `text`, in bits per character. */
@@ -70,12 +77,21 @@ function unquote(value: string): string {
   return value;
 }
 
+/** The value of an assignment: no trailing `# comment`, `;`, `,` or `}`, and no quotes. */
+function valueOf(raw: string): string {
+  let value = raw.trim();
+  const comment = value.search(/\s#/);
+  if (comment >= 0) value = value.slice(0, comment).trimEnd();
+  while (/[;,}]$/.test(value)) value = value.slice(0, -1).trimEnd();
+  return unquote(value);
+}
+
 function isGenericSecret(line: string): boolean {
-  const m = ASSIGNMENT.exec(line);
+  const m = ASSIGNMENT.exec(line.trim());
   if (!m) return false;
   const [, name = "", raw = ""] = m;
   if (!SECRET_NAME.test(name)) return false;
-  const value = unquote(raw);
+  const value = valueOf(raw);
   // A secret value is one token; text with spaces after `Key:` is prose.
   if (value.length < MIN_LENGTH || /\s/.test(value)) return false;
   if (PLACEHOLDERS.some((p) => p.test(value))) return false;
@@ -86,7 +102,7 @@ function ruleFor(value: string): string | undefined {
   for (const { rule, pattern } of PROVIDER_RULES) {
     if (pattern.test(value)) return rule;
   }
-  if (value.split(/\r?\n/).some(isGenericSecret)) return "generic-secret";
+  if (value.split(/\r\n|\r|\n/).some(isGenericSecret)) return "generic-secret";
   return undefined;
 }
 

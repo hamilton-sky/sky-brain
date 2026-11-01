@@ -22,6 +22,8 @@ export type RateLimiterOptions = {
 
 /** A bucket that has been full this long is dropped on the next access. */
 const IDLE_MS = 10 * 60 * 1000;
+/** Idle buckets are looked for at most this often, so a write does not walk every bucket. */
+const SWEEP_MS = 60 * 1000;
 
 type Bucket = { tokens: number; at: number };
 
@@ -48,7 +50,8 @@ export function createRateLimiter(
       capacity,
       bucket.tokens + elapsed * refillPerSecond,
     );
-    bucket.at = t;
+    // A clock that steps backwards must not move `at` back, or that interval refills twice.
+    bucket.at = Math.max(bucket.at, t);
   }
 
   /** When the bucket is (or was) full again, in ms. */
@@ -56,7 +59,11 @@ export function createRateLimiter(
     return bucket.at + ((capacity - bucket.tokens) / refillPerSecond) * 1000;
   }
 
+  let lastSweep = -Infinity;
+
   function dropIdle(t: number): void {
+    if (t - lastSweep < SWEEP_MS) return;
+    lastSweep = t;
     for (const [key, bucket] of buckets) {
       if (t - fullAt(bucket) > IDLE_MS) buckets.delete(key);
     }

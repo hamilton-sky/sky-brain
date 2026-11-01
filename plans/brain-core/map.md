@@ -193,3 +193,4 @@ The acceptance ticket (11, the last in the graph) runs both.
   T8's concern.
 - Whether Render's Node runtime runs `corepack enable && pnpm install` in `buildCommand`: the
   deploy feature proves it.
+- 04 — round 2: secret scan matches a trimmed line and cleans the value in code (no backtracking; quoted NAME, `const`, `# comment`, `\r` lines), provider keys end on `(?![\w-])`; role-override and agent-order narrowed; limiter sweeps once a minute and never moves `at` back.
