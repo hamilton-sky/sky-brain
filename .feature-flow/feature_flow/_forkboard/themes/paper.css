@@ -1,0 +1,35 @@
+/* fonts: https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;500&display=swap */
+/* suits: decisions to share, print or send to people outside the team */
+/*
+  Style "paper": an editorial page. Fraunces headings, Newsreader body, thin ink lines and square boxes, one oxblood
+  accent. Prints cleanly: the sidebar and the diagram tools are left off paper.
+*/
+:root{
+  --bg:#fbfaf6; --card:#fffefb; --box:#ffffff; --fg:#1d1b18; --muted:#5e5850; --line:#e2ddd3; --line-strong:#3b3731;
+  --acc:#8c2a2a; --acc-soft:#f4e3e0; --warn:#9a5a12; --warn-soft:#f6ead9; --sec:#2c4f7c; --sec-soft:#e2e9f3;
+  --zone:#f2efe8; --code-bg:#f1eee7; --radius:2px;
+  --f-display:"Fraunces", Georgia, "Times New Roman", serif;
+  --f-body:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --node-font:"Newsreader", Georgia, serif; --node-size:14px; --node-weight:600;
+  --node-radius:1px; --node-stroke:1; --edge-width:1.1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#181715; --card:#1f1d1a; --box:#24221e; --fg:#ece7de; --muted:#aaa296; --line:#35322c; --line-strong:#cfc8bb;
+    --acc:#e48f86; --acc-soft:#3f2523; --warn:#e3a95e; --warn-soft:#3b2d19; --sec:#9cbbe6; --sec-soft:#22303f;
+    --zone:#211f1c; --code-bg:#24221e; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181715; --card:#1f1d1a; --box:#24221e; --fg:#ece7de; --muted:#aaa296; --line:#35322c; --line-strong:#cfc8bb;
+  --acc:#e48f86; --acc-soft:#3f2523; --warn:#e3a95e; --warn-soft:#3b2d19; --sec:#9cbbe6; --sec-soft:#22303f;
+  --zone:#211f1c; --code-bg:#24221e; color-scheme:dark;
+}
+h1{font-weight:700;letter-spacing:-0.015em}
+h2{font-weight:500}
+@media print{
+  nav.route,.dg .tools,.dg .hint,.live-bar,.live-panel{display:none !important}
+  .wrap{display:block}
+  body{background:#fff}
+}

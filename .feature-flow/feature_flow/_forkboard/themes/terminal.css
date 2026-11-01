@@ -1,0 +1,30 @@
+/* fonts: https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600&display=swap */
+/* suits: infrastructure, CLIs, dev tools, pipelines and data jobs */
+/*
+  Style "terminal": a console. JetBrains Mono headings, labels and boxes, IBM Plex Sans body, square boxes with
+  thin rules, a phosphor green accent. Dark reads best; the light side is a pale console.
+*/
+:root{
+  --bg:#eef2ee; --card:#f7faf7; --box:#ffffff; --fg:#122016; --muted:#4c5e50; --line:#cdd8ce; --line-strong:#3d5244;
+  --acc:#14783f; --acc-soft:#dbefe2; --warn:#9a5d00; --warn-soft:#f4e9d2; --sec:#1c5f8c; --sec-soft:#dcebf5;
+  --zone:#e3eae4; --code-bg:#e1e9e2; --radius:0px;
+  --f-display:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --node-font:"JetBrains Mono", ui-monospace, monospace; --node-size:12px; --node-weight:500;
+  --node-radius:0px; --node-stroke:1.2; --edge-width:1.2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0f0b; --card:#0f1611; --box:#111a14; --fg:#d3f5dc; --muted:#83a68c; --line:#1f2e23; --line-strong:#5f8a6b;
+    --acc:#3ddc84; --acc-soft:#123222; --warn:#f2b84b; --warn-soft:#33270f; --sec:#5fc4ff; --sec-soft:#0f2a3a;
+    --zone:#0d1510; --code-bg:#0d1510; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0f0b; --card:#0f1611; --box:#111a14; --fg:#d3f5dc; --muted:#83a68c; --line:#1f2e23; --line-strong:#5f8a6b;
+  --acc:#3ddc84; --acc-soft:#123222; --warn:#f2b84b; --warn-soft:#33270f; --sec:#5fc4ff; --sec-soft:#0f2a3a;
+  --zone:#0d1510; --code-bg:#0d1510; color-scheme:dark;
+}
+h1,h2{letter-spacing:-0.01em;font-weight:700}
+h2::before{content:"$ ";color:var(--acc)}

@@ -1,0 +1,28 @@
+
+.live-panel{display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius,12px);padding:18px 20px;max-width:52rem}
+.live-panel[hidden],.live-bar[hidden]{display:none}
+.live-panel h2{font-size:1.2rem}
+.live-panel .who{font-family:var(--f-display);font-size:.82rem;color:var(--muted)}
+.live-panel ol{list-style:none;padding:0;display:grid;gap:12px}
+.live-panel li{display:grid;gap:4px;border-left:3px solid var(--line);padding-left:12px}
+.live-panel li.answered{border-left-color:var(--acc)}
+.live-panel .reply{background:var(--acc-soft);border-radius:8px;padding:8px 12px}
+.live-panel form{display:grid;gap:8px}
+.live-panel textarea,.live-bar input[type=text]{font:inherit;font-size:.92rem;background:var(--box);color:var(--fg);border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;width:100%;min-height:4.5em;resize:vertical}
+.live-bar input[type=text]{min-height:0}
+.live-panel .row,.live-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--f-display);font-size:.82rem}
+.live-bar{padding:8px 10px;border:1px dashed var(--line-strong);border-radius:8px}
+.live-panel select,.live-bar select,.live-panel button,.live-bar button{font:inherit;background:var(--box);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px 10px;cursor:pointer}
+.live-panel button.go,.live-bar button.go{background:var(--acc);color:var(--box);border-color:var(--acc)}
+.live-panel button:disabled,.live-bar button:disabled{opacity:.45;cursor:default}
+.live-bar label{display:inline-flex;gap:6px;align-items:center;color:var(--muted)}
+.live-bar .said{flex-basis:100%;color:var(--muted)}
+.live-note{font-family:var(--f-display);font-size:.85rem;color:var(--muted)}
+g.node.diff-add .shape{stroke:#2f8a3e;stroke-width:2.6}
+g.node.diff-ren .shape{stroke:#b58100;stroke-width:2.6}
+g.node.diff-ren text.was{fill:var(--muted);text-decoration:line-through;font-size:11px;font-weight:400}
+g.ghost .shape{fill:none;stroke:#c8402f;stroke-width:1.6;stroke-dasharray:5 4;opacity:.75}
+g.ghost text{fill:#c8402f;opacity:.75;text-decoration:line-through;font-family:var(--f-display);font-size:13px}
+.dg g.edge.diff-add path:not(.hit){stroke:#2f8a3e;stroke-width:2.4}
+g.edge.ghost path{fill:none;stroke:#c8402f;stroke-width:1.6;stroke-dasharray:5 4;opacity:.75}
+.diff-sum{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}

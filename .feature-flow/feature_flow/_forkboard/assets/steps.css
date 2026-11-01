@@ -1,0 +1,26 @@
+.steps{list-style:none;padding:0;margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--f-display);font-size:.85rem}
+.steps li{display:inline-flex;gap:6px;align-items:baseline;color:var(--muted)}
+.steps li .n,.step-head .n{display:inline-grid;place-items:center;min-width:1.5em;height:1.5em;border-radius:50%;border:1px solid var(--line-strong);font-size:.75rem}
+.steps li.done .n,.step.done .step-head .n{background:var(--acc-soft);border-color:var(--acc)}
+.steps li.current{color:var(--fg)}
+.steps li.current .n,.step.current .step-head .n{background:var(--acc);color:var(--box);border-color:var(--acc)}
+.steps li .sum{display:none}
+.step{display:grid;gap:18px}
+.step-head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-family:var(--f-display);font-size:.92rem;padding:8px 0;border-bottom:1px solid var(--line)}
+.step-head .sum{color:var(--muted)}
+.step.later{opacity:.55}
+.step-body>summary{cursor:pointer;font-family:var(--f-display);font-size:.82rem;color:var(--muted);padding:4px 0}
+.step-body[open]{display:grid;gap:18px}
+.step-head button.change{font:inherit;font-size:.8rem;background:var(--box);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:2px 10px;cursor:pointer}
+.step-head button.change[hidden]{display:none}
+.choices{display:grid;gap:12px;margin-top:12px}
+.choice{border:1px solid var(--line);border-radius:var(--radius,12px);padding:10px 14px;display:grid;gap:8px;min-width:0}
+.choice legend{font-family:var(--f-display);font-size:.85rem;padding:0 4px}
+.choice .most{color:var(--muted);font-size:.78rem}
+.choice .pick{display:flex;flex-wrap:wrap;gap:6px 10px;font-family:var(--f-display);font-size:.85rem}
+.choice .pick button{font:inherit;background:var(--box);color:var(--fg);border:1px solid var(--line-strong);border-radius:6px;padding:4px 12px;cursor:pointer}
+.choice .pick button[aria-pressed=true]{background:var(--acc);color:var(--box);border-color:var(--acc)}
+.choice .pick button:disabled{cursor:default}
+.choice .pick button:disabled:not([aria-pressed=true]){opacity:.6}
+.choice .pick label{display:inline-flex;gap:6px;align-items:center}
+.choice .note,.choice-hint{font-family:var(--f-display);font-size:.8rem;color:var(--muted);margin:0}

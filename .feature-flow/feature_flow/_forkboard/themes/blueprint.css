@@ -1,0 +1,28 @@
+/* fonts: https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500;75..125,750&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Martian+Mono:wght@400;500&display=swap */
+/* suits: architecture, backends and system design */
+/*
+  Style "blueprint": a drafting-table look. Condensed Archivo headings, Source Serif body, Martian Mono labels,
+  a cobalt accent on a faint grid, square corners. Tokens only, like every style.
+*/
+:root{
+  --bg:#f1f4f9; --card:#f8fafd; --box:#ffffff; --fg:#14213a; --muted:#4f5d78; --line:#cfd8e6; --line-strong:#5b6f93;
+  --acc:#1f4fd1; --acc-soft:#dfe7fb; --warn:#a2541b; --warn-soft:#f5e5d7; --sec:#0f7a6c; --sec-soft:#dbf0ec;
+  --zone:#e6ecf5; --code-bg:#e3e9f3; --radius:3px;
+  --f-display:"Archivo", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono:"Martian Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1324; --card:#101b31; --box:#14223d; --fg:#e3e9f6; --muted:#9aa8c4; --line:#22324f; --line-strong:#7d92ba;
+    --acc:#7ea2ff; --acc-soft:#1a2a52; --warn:#e8a061; --warn-soft:#3b2816; --sec:#5fd1bf; --sec-soft:#12322e;
+    --zone:#13203a; --code-bg:#16243f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1324; --card:#101b31; --box:#14223d; --fg:#e3e9f6; --muted:#9aa8c4; --line:#22324f; --line-strong:#7d92ba;
+  --acc:#7ea2ff; --acc-soft:#1a2a52; --warn:#e8a061; --warn-soft:#3b2816; --sec:#5fd1bf; --sec-soft:#12322e;
+  --zone:#13203a; --code-bg:#16243f; color-scheme:dark;
+}
+body{background-image:linear-gradient(var(--zone) 1px, transparent 1px),linear-gradient(90deg, var(--zone) 1px, transparent 1px);background-size:32px 32px;background-attachment:fixed}
+h1,h2{text-transform:uppercase;letter-spacing:0.02em;font-stretch:90%}

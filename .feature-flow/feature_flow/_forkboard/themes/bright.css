@@ -1,0 +1,29 @@
+/* fonts: https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&family=DM+Mono:wght@400;500&display=swap */
+/* suits: consumer apps, screens, onboarding and other UI and UX features */
+/*
+  Style "bright": friendly and colourful. Fredoka headings and boxes, Nunito Sans body, round boxes with a thick
+  outline and a soft drop, a coral accent with violet beside it.
+*/
+:root{
+  --bg:#fff7f1; --card:#ffffff; --box:#ffffff; --fg:#2a1f2d; --muted:#6b5a6e; --line:#f0dfd6; --line-strong:#4b3a50;
+  --acc:#d9480f; --acc-soft:#ffe6d9; --warn:#b4235a; --warn-soft:#fde2ec; --sec:#6b3fd4; --sec-soft:#ece4fd;
+  --zone:#fdeee5; --code-bg:#fbeee6; --radius:20px;
+  --f-display:"Fredoka", "Segoe UI Rounded", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"DM Mono", ui-monospace, Menlo, Consolas, monospace;
+  --node-font:"Fredoka", "Segoe UI", sans-serif; --node-size:14px; --node-weight:600;
+  --node-radius:16px; --node-stroke:2.2; --edge-width:2; --node-filter:drop-shadow(0 3px 0 rgb(75 58 80 / .16));
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1d1520; --card:#251b29; --box:#2c2131; --fg:#f6ecf4; --muted:#bba9bd; --line:#3d2f42; --line-strong:#e2cfe4;
+    --acc:#ff8f5c; --acc-soft:#46261b; --warn:#ff7aa8; --warn-soft:#45202f; --sec:#b69cff; --sec-soft:#2f2550;
+    --zone:#2a1f2e; --code-bg:#2a1f2e; color-scheme:dark; --node-filter:drop-shadow(0 3px 0 rgb(0 0 0 / .45));
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1d1520; --card:#251b29; --box:#2c2131; --fg:#f6ecf4; --muted:#bba9bd; --line:#3d2f42; --line-strong:#e2cfe4;
+  --acc:#ff8f5c; --acc-soft:#46261b; --warn:#ff7aa8; --warn-soft:#45202f; --sec:#b69cff; --sec-soft:#2f2550;
+  --zone:#2a1f2e; --code-bg:#2a1f2e; color-scheme:dark; --node-filter:drop-shadow(0 3px 0 rgb(0 0 0 / .45));
+}
+h1{font-weight:600;letter-spacing:-0.01em}

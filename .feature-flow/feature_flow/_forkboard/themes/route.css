@@ -1,0 +1,28 @@
+/* fonts: https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap */
+/* suits: the default: a calm page for most features, to read the options side by side */
+/*
+  Style "route": a sticky route sidebar beside a reading column. Bricolage Grotesque for headings, Literata
+  for body, IBM Plex Mono for code and labels, one teal accent. A style is only these tokens (and any
+  flourish below them): the page's layout and components come from the brainstorm page itself.
+*/
+:root{
+  --bg:#eef2f3; --card:#fbfcfc; --box:#ffffff; --fg:#17232b; --muted:#55656e; --line:#d2dade; --line-strong:#6a7d87;
+  --acc:#0e7268; --acc-soft:#d9eeeb; --warn:#a95e1a; --warn-soft:#f6e7d6; --sec:#4457a0; --sec-soft:#e2e6f5;
+  --zone:#e6ecee; --code-bg:#e4eaec; --radius:12px;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Literata", Georgia, "Times New Roman", serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1518; --card:#141f23; --box:#1a272c; --fg:#e2e9eb; --muted:#93a3aa; --line:#28363c; --line-strong:#7f949c;
+    --acc:#4cc3b5; --acc-soft:#173733; --warn:#e3a25d; --warn-soft:#3a2918; --sec:#9eabef; --sec-soft:#232a48;
+    --zone:#18252a; --code-bg:#1b292e; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1518; --card:#141f23; --box:#1a272c; --fg:#e2e9eb; --muted:#93a3aa; --line:#28363c; --line-strong:#7f949c;
+  --acc:#4cc3b5; --acc-soft:#173733; --warn:#e3a25d; --warn-soft:#3a2918; --sec:#9eabef; --sec-soft:#232a48;
+  --zone:#18252a; --code-bg:#1b292e; color-scheme:dark;
+}
+h1{letter-spacing:-0.02em}

@@ -1,0 +1,30 @@
+/* fonts: https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap */
+/* suits: early, fuzzy ideas and first sketches, when nothing is decided yet */
+/*
+  Style "sketch": a whiteboard. Kalam handwriting for headings and boxes, Nunito body, boxes and arrows drawn with a
+  slightly shaky line (the page's url(#fb-rough) filter), a marker blue accent on warm paper.
+*/
+:root{
+  --bg:#f7f4ec; --card:#fffdf7; --box:#fffef9; --fg:#25221d; --muted:#615a4e; --line:#ddd5c4; --line-strong:#4a443a;
+  --acc:#2457c5; --acc-soft:#e1e8f8; --warn:#b4531d; --warn-soft:#f8e6d8; --sec:#7a3fb8; --sec-soft:#eee4f8;
+  --zone:#efe9dc; --code-bg:#efe9dc; --radius:14px;
+  --f-display:"Kalam", "Comic Sans MS", "Segoe Print", cursive;
+  --f-body:"Nunito", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --node-font:"Kalam", "Comic Sans MS", cursive; --node-size:15px; --node-weight:700;
+  --node-radius:12px; --node-stroke:1.8; --edge-width:1.7; --node-filter:url(#fb-rough); --edge-filter:url(#fb-rough);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1f2421; --card:#262c28; --box:#2b322d; --fg:#eef0e8; --muted:#a9b0a4; --line:#3a433d; --line-strong:#d6dccf;
+    --acc:#8fb3ff; --acc-soft:#26324a; --warn:#f0a36b; --warn-soft:#3d2c1f; --sec:#c9a2f2; --sec-soft:#33284a;
+    --zone:#29302b; --code-bg:#2a312c; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1f2421; --card:#262c28; --box:#2b322d; --fg:#eef0e8; --muted:#a9b0a4; --line:#3a433d; --line-strong:#d6dccf;
+  --acc:#8fb3ff; --acc-soft:#26324a; --warn:#f0a36b; --warn-soft:#3d2c1f; --sec:#c9a2f2; --sec-soft:#33284a;
+  --zone:#29302b; --code-bg:#2a312c; color-scheme:dark;
+}
+h1,h2,h3{font-weight:700;letter-spacing:0}
+h1{transform:rotate(-0.6deg)}
