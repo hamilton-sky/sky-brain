@@ -28,3 +28,8 @@ export function readConfig(env: Record<string, string | undefined>): Config {
     nodeEnv: env.NODE_ENV,
   };
 }
+
+/** The dev actor header is an allow-list: on only for `NODE_ENV=development` exactly (D15). */
+export function devActorHeaderEnabled(env: { NODE_ENV?: string }): boolean {
+  return env.NODE_ENV === "development";
+}

@@ -1,6 +1,6 @@
 import type { Server } from "node:http";
 import { createApp } from "./app.ts";
-import type { Config } from "./config.ts";
+import { devActorHeaderEnabled, type Config } from "./config.ts";
 import {
   closeDb,
   createPgliteDb,
@@ -31,17 +31,25 @@ export async function start(config: Config): Promise<Server> {
   const db = await openDb(config);
   let closing: Promise<void> | undefined;
   const closeOnce = () => (closing ??= closeDb(db));
-  // createApp does not take the database yet: the actor ticket wires it in.
-  const app = createApp();
+  const devActorHeader = devActorHeaderEnabled({ NODE_ENV: config.nodeEnv });
+  const app = createApp({ db, devActorHeader });
   return new Promise((resolve, reject) => {
-    const server = app.listen(config.port, (err?: Error) => {
+    const onListen = (err?: Error) => {
       if (err) {
         void closeOnce().finally(() => reject(err));
         return;
       }
-      console.log(`sky-brain listening on port ${config.port}`);
+      console.log(
+        devActorHeader
+          ? `sky-brain listening on 127.0.0.1 port ${config.port} (dev actor header on)`
+          : `sky-brain listening on port ${config.port}`,
+      );
       resolve(server);
-    });
+    };
+    // With the dev actor header on, only this machine can reach the server (D15).
+    const server = devActorHeader
+      ? app.listen(config.port, "127.0.0.1", onListen)
+      : app.listen(config.port, onListen);
     server.on("close", () => {
       closeOnce().catch((closeErr: unknown) => {
         console.error("closing the database failed", closeErr);

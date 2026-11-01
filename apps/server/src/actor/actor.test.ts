@@ -199,7 +199,8 @@ describe("requireHuman", () => {
     reached = [];
     const res = await call("agent");
     expect(res.status).toBe(403);
-    expect(((await res.json()) as any).error.code).toBe("humans_only");
+    const body: any = await res.json();
+    expect(body.error.code).toBe("humans_only");
     expect(reached).toEqual([]);
   });
 });

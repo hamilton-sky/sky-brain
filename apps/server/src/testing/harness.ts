@@ -7,7 +7,13 @@ import type {
   Source,
   Status,
 } from "@sky-brain/shared/enums";
+import type { Actor } from "@sky-brain/shared/actor";
 import { normalizeGitRemote } from "@sky-brain/shared/git-remote";
+import { randomBytes } from "node:crypto";
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
+import type { ActorResolver } from "../actor/middleware.ts";
+import { createApp } from "../app.ts";
 import { closeDb, createPgliteDb, migrateDb, type Db } from "../db/client.ts";
 import {
   entries,
@@ -135,4 +141,120 @@ export async function seedEntry(
     })
     .returning({ id: entries.id, seq: entries.seq });
   return row!;
+}
+
+export interface TestResponse {
+  status: number;
+  headers: Headers;
+  /** The parsed JSON body, or null when the body is not JSON. */
+  body: any;
+  text: string;
+}
+
+export interface TestClient {
+  get(path: string): Promise<TestResponse>;
+  post(path: string, body?: unknown): Promise<TestResponse>;
+  delete(path: string, body?: unknown): Promise<TestResponse>;
+  request(path: string, init?: RequestInit): Promise<TestResponse>;
+}
+
+export interface TestServer {
+  /** http://127.0.0.1:<port> */
+  url: string;
+  /** Every request carries that actor. */
+  as(actor: Actor): TestClient;
+  /** Requests carry no actor. */
+  anonymous: TestClient;
+  close(): Promise<void>;
+}
+
+export interface TestServerOptions {
+  db: Db;
+  now?: () => Date;
+  /** Default false. */
+  devActorHeader?: boolean;
+  webDist?: string;
+}
+
+async function toTestResponse(res: Response): Promise<TestResponse> {
+  const text = await res.text();
+  let body: any;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = null;
+  }
+  return { status: res.status, headers: res.headers, body, text };
+}
+
+function testClient(url: string, token: string | undefined): TestClient {
+  const request = async (path: string, init: RequestInit = {}) => {
+    const headers = new Headers(init.headers);
+    if (token) headers.set("authorization", `Bearer ${token}`);
+    return toTestResponse(await fetch(url + path, { ...init, headers }));
+  };
+  const withBody = (method: string) => (path: string, body?: unknown) =>
+    request(
+      path,
+      body === undefined
+        ? { method }
+        : {
+            method,
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          },
+    );
+  return {
+    get: (path) => request(path),
+    post: withBody("POST"),
+    delete: withBody("DELETE"),
+    request,
+  };
+}
+
+/**
+ * The app on a free 127.0.0.1 port. `as(actor)` sends an opaque `Authorization: Bearer <random>`
+ * that this harness's resolver maps back to the actor, the header real tokens will use.
+ */
+export async function startTestServer(
+  opts: TestServerOptions,
+): Promise<TestServer> {
+  const actors = new Map<string, Actor>();
+  const tokens = new Map<string, string>();
+  const resolveActor: ActorResolver = (req) => {
+    const match = /^Bearer (\S+)$/.exec(req.get("authorization") ?? "");
+    return match ? actors.get(match[1]!) : undefined;
+  };
+  const app = createApp({
+    db: opts.db,
+    resolveActor,
+    devActorHeader: opts.devActorHeader ?? false,
+    ...(opts.now ? { now: opts.now } : {}),
+    ...(opts.webDist ? { webDist: opts.webDist } : {}),
+  });
+  const server = await new Promise<Server>((resolve, reject) => {
+    const s = app.listen(0, "127.0.0.1", (err?: Error) =>
+      err ? reject(err) : resolve(s),
+    );
+  });
+  const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  return {
+    url,
+    as(actor) {
+      const key = JSON.stringify(actor);
+      let token = tokens.get(key);
+      if (!token) {
+        token = randomBytes(16).toString("hex");
+        tokens.set(key, token);
+        actors.set(token, actor);
+      }
+      return testClient(url, token);
+    },
+    anonymous: testClient(url, undefined),
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((err) => (err ? reject(err) : resolve()));
+        server.closeAllConnections();
+      }),
+  };
 }

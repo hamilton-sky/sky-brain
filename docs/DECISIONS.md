@@ -163,3 +163,24 @@ own and open-source use. Pick a distinct product name before any commercial laun
 **Rejected:**
 - A local Postgres (Docker) for dev: one more thing to install before `pnpm dev` works.
 - Falling back to PGlite in production: a deploy without its database would silently lose data.
+
+### D15. A dev actor header, only in development and only on 127.0.0.1
+**Chosen:**
+- Until the auth feature lands, `pnpm dev` takes the caller from an `X-Dev-Actor` header that
+  holds the actor JSON, for example
+  `{"kind":"agent","agent_id":"claude-code/builder","on_behalf_of":"u1"}`.
+- It is an allow-list: honoured only when `NODE_ENV` is exactly `development` (`pnpm dev` sets
+  it in `src/dev.ts`). Unset, `test`, `production` and anything else keep it off.
+- While it is on, the server listens on 127.0.0.1 only.
+- When it is off, a request carrying the header is refused loudly with 401
+  `dev_actor_disabled`, even if it also carries a valid token. A malformed header is 401
+  `invalid_dev_actor`.
+- The auth feature replaces it with sessions and tokens behind the same `ActorResolver`.
+**Why:**
+- The core API needs a caller before real sign-in exists, and CLAUDE.md hard rule 2 rules out
+  identity from a request body.
+- An allow-list fails closed: a deploy that forgets `NODE_ENV` does not trust the header.
+- Refusing the header instead of ignoring it makes a misconfigured client fail at once.
+**Rejected:**
+- Refusing the header only when `NODE_ENV=production`: an unset `NODE_ENV` would trust it.
+- Ignoring the header when it is off: a client could believe it was acting as someone it was not.

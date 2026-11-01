@@ -192,6 +192,9 @@ Better Auth runs inside the server.
   most 30 minutes and is bound to one workspace, one project, one role and a list of verbs.
 - **Fallback**: if Better Auth's MCP support fails the T0 test, WorkOS AuthKit becomes the OAuth
   server and the rest of the design stays the same.
+- **Until then** (D15): `pnpm dev` takes the caller from an `X-Dev-Actor` header, only when
+  `NODE_ENV=development` and on 127.0.0.1; otherwise the header is refused with 401. This
+  section's sign-in replaces it.
 
 ## 10. Security bar
 

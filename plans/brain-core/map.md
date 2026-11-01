@@ -173,6 +173,7 @@ The acceptance ticket (11, the last in the graph) runs both.
   for example `refs.3`).
 - 01 — pnpm monorepo scaffolded (all lint/type/test/CI config fixed here); `createApp({ webDist? })` serves `/healthz`, an `/api` 404 JSON and the web shell with SPA fallback on `/{*splat}`; tsx runs the server (D13).
 - 02 — Drizzle schema + generated migration and custom audit-trigger migration in `apps/server/drizzle/`; `db/client.ts` (`Db`, PGlite/Postgres, `migrateDb`, `closeDb`), `writeAudit`, `toWireEntry`/`notExpiredAt`, `normalizeGitRemote`, harness seeds; `start` uses Postgres with `DATABASE_URL`, else PGlite migrated at start, refuses production without it (D14).
+- 03 — `/api/v1` runs `actorMiddleware` (dev `X-Dev-Actor` only for `NODE_ENV=development` on 127.0.0.1, else `ActorResolver`) then `express.json` 64 KB; `HttpError` + `errorHandler` on `/api`; `validate`, `IdSchema`/`ScopeRefSchema`, `resolveScope`/`memberRole`, `requireHuman`, `actorKey`/`auditActor`; `createApp({ db, ... })`; `startTestServer` maps `as(actor)` to a Bearer token (D15).
 
 ## Open questions
 
