@@ -6,3 +6,4 @@ docs/
 scripts/
 .feature-flow/
 .claude/
+apps/server/drizzle/

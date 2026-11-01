@@ -75,7 +75,9 @@ describe("audit_log", () => {
         .update(auditLog)
         .set({ action: "changed" })
         .where(eq(auditLog.workspaceId, workspaceId)),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/append-only: UPDATE/) },
+    });
     expect(await rows()).toEqual(before);
   });
 
@@ -83,13 +85,19 @@ describe("audit_log", () => {
     const before = await rows();
     await expect(
       db.delete(auditLog).where(eq(auditLog.workspaceId, workspaceId)),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/append-only: DELETE/) },
+    });
     expect(await rows()).toEqual(before);
   });
 
   it("refuses a truncate of audit_log", async () => {
     const before = await rows();
-    await expect(db.execute(sql`truncate table audit_log`)).rejects.toThrow();
+    await expect(
+      db.execute(sql`truncate table audit_log`),
+    ).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/append-only: TRUNCATE/) },
+    });
     expect(await rows()).toEqual(before);
     expect(before.length).toBeGreaterThan(0);
   });

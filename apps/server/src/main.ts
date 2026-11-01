@@ -1,4 +1,9 @@
 import { readConfig } from "./config.ts";
-import { start } from "./server.ts";
+import { closeOnSignals, start } from "./server.ts";
 
-await start(readConfig(process.env));
+try {
+  closeOnSignals(await start(readConfig(process.env)));
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+}

@@ -149,7 +149,11 @@ describe("entries", () => {
         title: "t",
         body: "b",
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: {
+        message: expect.stringMatching(/entries_project_in_workspace_fk/),
+      },
+    });
     await expect(
       seedEntry(db, {
         workspaceId: a.workspaceId,
@@ -160,7 +164,11 @@ describe("entries", () => {
         title: "t",
         body: "b",
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: {
+        message: expect.stringMatching(/entries_feature_in_project_fk/),
+      },
+    });
   });
 
   it("refuses a feature without a project and a confidence outside 0..1", async () => {
@@ -174,7 +182,11 @@ describe("entries", () => {
         title: "t",
         body: "b",
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: {
+        message: expect.stringMatching(/entries_feature_needs_project/),
+      },
+    });
     await expect(
       db.insert(entries).values({
         workspaceId: w.workspaceId,
@@ -188,7 +200,9 @@ describe("entries", () => {
         source: "human",
         confidence: 1.5,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/entries_confidence_range/) },
+    });
   });
 });
 

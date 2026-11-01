@@ -2,6 +2,6 @@
 process.env.NODE_ENV ??= "development";
 
 const { readConfig } = await import("./config.ts");
-const { start } = await import("./server.ts");
+const { closeOnSignals, start } = await import("./server.ts");
 
-await start(readConfig(process.env));
+closeOnSignals(await start(readConfig(process.env)));

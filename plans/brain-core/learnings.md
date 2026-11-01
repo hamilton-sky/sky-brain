@@ -6,3 +6,5 @@ ticket number. Never edit or delete another line. Keep it short; a human prunes 
 
 - (01) Express 5: `app.get("/*splat")` does not match `GET /`; use `"/{*splat}"` for a catch-all that includes the root.
 - (01) Registry access works here (`npm view`, `pnpm install`); pnpm prints an update banner you can ignore. Run `pnpm exec prettier --write .` after writing new files: `pnpm lint` runs `prettier --check`.
+- (02) Close stdin when running long commands here (`< /dev/null`): a stray `cat > file` with no input hangs the shell. Vitest hides `console.log` of passing tests unless `--reporter=verbose`.
+- (02) Drizzle wraps Postgres errors in `DrizzleQueryError`; assert on `err.cause.message` (constraint name or trigger text), e.g. `rejects.toMatchObject({ cause: { message: expect.stringMatching(/fk_name/) } })`. `drizzle-kit generate` printing "No schema changes" proves schema.ts and the SQL agree.

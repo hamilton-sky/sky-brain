@@ -172,6 +172,7 @@ The acceptance ticket (11, the last in the graph) runs both.
 - user — One ref over 2,048 characters is 413 `too_large` with `field: "refs.<index>"` (0-based,
   for example `refs.3`).
 - 01 — pnpm monorepo scaffolded (all lint/type/test/CI config fixed here); `createApp({ webDist? })` serves `/healthz`, an `/api` 404 JSON and the web shell with SPA fallback on `/{*splat}`; tsx runs the server (D13).
+- 02 — Drizzle schema + generated migration and custom audit-trigger migration in `apps/server/drizzle/`; `db/client.ts` (`Db`, PGlite/Postgres, `migrateDb`, `closeDb`), `writeAudit`, `toWireEntry`/`notExpiredAt`, `normalizeGitRemote`, harness seeds; `start` uses Postgres with `DATABASE_URL`, else PGlite migrated at start, refuses production without it (D14).
 
 ## Open questions
 

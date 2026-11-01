@@ -147,3 +147,19 @@ own and open-source use. Pick a distinct product name before any commercial laun
   external.
 - `tsc` emit with project references and a built `packages/shared`: two outputs to keep in step.
   The deploy feature can switch if cold start matters.
+
+### D14. PGlite is the dev database when `DATABASE_URL` is unset
+**Chosen:**
+- `pnpm dev` opens PGlite in `apps/server/.pglite` (gitignored; `PGLITE_DATA_DIR` changes it,
+  `memory://` keeps it in memory) and applies the migrations at start.
+- With `DATABASE_URL` set the server uses Postgres through node-postgres; Render migrates it in
+  `preDeployCommand`. With `NODE_ENV=production` and no `DATABASE_URL` the server refuses to
+  start.
+- Tests use an in-memory PGlite with every migration applied.
+**Why:**
+- `pnpm dev` must work on a fresh clone with no service to install.
+- PGlite 0.5.14 is Postgres 18.6, the major `render.yaml` asks Render for, so the same
+  drizzle-kit migrations, tsvector column and triggers run in dev, tests and production.
+**Rejected:**
+- A local Postgres (Docker) for dev: one more thing to install before `pnpm dev` works.
+- Falling back to PGlite in production: a deploy without its database would silently lose data.

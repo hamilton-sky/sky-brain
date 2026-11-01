@@ -4,6 +4,7 @@ services:
     runtime: node
     plan: 0.5c-512mb # paid: free instances sleep (PLAN section 12)
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    preDeployCommand: pnpm --filter @sky-brain/server exec tsx src/db/migrate-cli.ts
     startCommand: pnpm --filter @sky-brain/server start
     healthCheckPath: /healthz
     envVars:

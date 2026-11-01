@@ -54,6 +54,8 @@ pnpm test                        Vitest in every package
 pnpm build                       build the web shell (apps/web/dist)
 pnpm dev                         build the web shell, then run the server on one port
 node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it
+pnpm --filter @sky-brain/server exec drizzle-kit generate
+                                 write a migration after changing apps/server/src/db/schema.ts
 ```
 
 Environment:
