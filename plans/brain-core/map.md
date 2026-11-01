@@ -175,6 +175,7 @@ The acceptance ticket (11, the last in the graph) runs both.
 - 02 — Drizzle schema + generated migration and custom audit-trigger migration in `apps/server/drizzle/`; `db/client.ts` (`Db`, PGlite/Postgres, `migrateDb`, `closeDb`), `writeAudit`, `toWireEntry`/`notExpiredAt`, `normalizeGitRemote`, harness seeds; `start` uses Postgres with `DATABASE_URL`, else PGlite migrated at start, refuses production without it (D14).
 - 03 — `/api/v1` runs `actorMiddleware` (dev `X-Dev-Actor` only for `NODE_ENV=development` on 127.0.0.1, else `ActorResolver`) then `express.json` 64 KB; `HttpError` + `errorHandler` on `/api`; `validate`, `IdSchema`/`ScopeRefSchema`, `resolveScope`/`memberRole`, `requireHuman`, `actorKey`/`auditActor`; `createApp({ db, ... })`; `startTestServer` maps `as(actor)` to a Bearer token (D15).
 - 03 (round 2) — other body-parser 4xx client errors map to 400 `invalid_json`; `X-Dev-Actor` also needs a loopback `Host` (127.0.0.1, localhost, [::1]) against DNS rebinding (D15).
+- 04 — `src/guards/`: `scanForSecrets` (gitleaks v8.28.0 provider regexes without their entropy floors, then the spec's per-line `generic-secret`; returns `{field, rule}`), `detectInjection` (5 ordered pattern ids, `source-web` left to 05), `createRateLimiter` (ms clock, `take` + `size`, idle-full buckets dropped after 10 min).
 
 ## Open questions
 

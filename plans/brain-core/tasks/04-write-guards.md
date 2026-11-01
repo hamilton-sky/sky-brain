@@ -1,7 +1,7 @@
 # Build the write guards: secret scan, quarantine detector and per-actor rate limiter
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -81,3 +81,86 @@ exit 0
 - map.md § Decisions so far (gitleaks v8.28.0 source, OWASP)
 
 ## Answer
+
+Work started at commit `c7a6b671d54ec43eec95dadd9b1155a01597bfd6`. Failing tests committed alone
+first as `6883775 test(brain-core): 04 failing test` (all three files failed with "Cannot find
+module").
+
+**Built**
+- `apps/server/src/guards/secrets.ts` (new): `scanForSecrets(fields)` returns `undefined` or
+  `{ field, rule }` (type `SecretHit`); also exports `shannonEntropy(text)`.
+- `apps/server/src/guards/quarantine.ts` (new): `detectInjection(text)` returns `undefined` or
+  `ignore-instructions` | `role-override` | `role-tag` | `tool-call` | `agent-order`.
+- `apps/server/src/guards/ratelimit.ts` (new): `createRateLimiter({ capacity?, refillPerSecond?,
+  now? })` returns `{ take(key), size() }`; types `TakeResult`, `RateLimiter`,
+  `RateLimiterOptions`.
+- Tests beside them: `secrets.test.ts`, `quarantine.test.ts`, `ratelimit.test.ts`.
+
+**Proof** (all run fresh after the last edit)
+- `pnpm --filter @sky-brain/server exec vitest run src/guards --reporter=verbose`: 71 passed (3
+  files). Every must-refuse secret (9 provider shapes plus ASIA and ghu variants, the
+  `OPENAI_API_KEY=` line, the `export DB_PASSWORD=` line as `generic-secret`, the
+  `https://user:<github-pat>@github.com/o/r` ref named as field `refs.1`) and every must-accept
+  text of spec.md (AKIA prefix, UUID, git sha, `API_KEY=<your key here>`, `set GITHUB_TOKEN…`,
+  PUBLIC KEY block, `password: ********`) has its own test. All 15 must-quarantine texts are
+  asserted against their ids (one test each, plus "names the pattern that matched, for every
+  spec example"), the 5 must-not-quarantine texts each have a test. Output contains every
+  `prints` line: "refuses a GitHub token (github-pat)", "refuses a private key block
+  (private-key)", "accepts a placeholder API_KEY line", "quarantines ignore previous
+  instructions", "does not quarantine an ordinary rule", "names the pattern that matched, for
+  every spec example", "refuses a burst over capacity with retryAfterSeconds", "keeps actors
+  apart".
+- Rate limiter: "refuses a burst over capacity with retryAfterSeconds" (capacity 3: 4th take is
+  `{ ok: false, retryAfterSeconds: 1 }`), "refills after the clock moves" (after `advance(1)` one
+  more take is ok, and refill caps at capacity), "keeps actors apart" (an exhausted `human:a`
+  leaves `agent:x:a` and `human:b` ok), plus whole-second rounding (10, 8, 1 at 0.1/s), defaults
+  60 and 1/s, and the ten-minute drop (`size()` 2 → 1).
+- `grep -rE "ghp_[0-9A-Za-z]{36}|AKIA[A-Z2-7]{16}" apps/server/src`: no output, exit 1.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0. "All matched files use Prettier code
+  style!", shared 15/15, server 141/141 (14 files).
+
+**Decisions**
+- Provider regexes are copied from gitleaks v8.28.0's `gitleaks.toml` (fetched and read), with
+  `` \x60 `` written as a backtick. Their per-rule entropy floors (3 or 4) are not applied: the
+  spec puts the entropy floor on the generic rule only, and the ticket's own example fixture
+  `"gh" + "p_" + "A".repeat(36)` must be refused (it would pass gitleaks' entropy 3).
+- Rules are tried in spec order, providers before `generic-secret`, so an `OPENAI_API_KEY=` line
+  with a real-shaped key reports `openai-api-key`. Fields are scanned in the order given; the
+  first field with any hit wins.
+- `generic-secret` is the spec's line rule, applied per line: `^[export] NAME (=|:) value$`,
+  NAME matching `key|secret|token|passw(or)d|credential` (any case), value unquoted (`'`, `"`,
+  backtick), at least 12 characters, entropy at least 3.5, not a placeholder (`<...>`, `${...}`,
+  `$VAR`, one repeated character, contains `changeme` or `example`, starts with `your`). A value
+  that contains whitespace is not a secret (gitleaks' value class has no spaces), so prose such
+  as "Key: we rotate them every month in the vault" passes.
+- Quarantine patterns go a little beyond the spec examples, toward the signatures the ticket
+  lists: `ignore-instructions` also takes `preceding`, `rules`, `commands` and up to three filler
+  words (all, any, the, your, …); `role-tag` takes `<assistant>`, `<|im_end|>`, `<<SYS>>`;
+  `tool-call` takes `<tool_result>`; `agent-order` takes "<AI|assistant|agent|model|LLM|bot>
+  reading this" or an address "Assistant, you must/should/will/now/need…" at the start of a
+  sentence. `<user>` is left out of `role-tag` on purpose: docs use it as a placeholder
+  (`human:<user>`). `role-override` needs "you are now" followed by `in <x> mode`, a/an/the/my,
+  acting, unrestricted, jailbroken or DAN, so "you are now able to…" passes.
+- Rate limiter clock is in milliseconds (`now` defaults to `Date.now`). Idle buckets are swept
+  on every `take`; a bucket is dropped when the time since it became full is over ten minutes
+  (dropping a full bucket is invisible, a new one starts full). Bad options throw an `Error`
+  naming the option (capacity must be a whole number ≥ 1, refillPerSecond finite and > 0).
+- `size()` is added to the limiter beside `take(key)` so the memory bound is testable; it
+  changes nothing in `take`'s shape.
+
+**Shortcuts taken**
+- The idle sweep walks every bucket on each `take`: O(active actors) per write. Fine for one
+  instance and a small team; if write volume or actor count grows, sweep at most once per
+  minute or keep buckets ordered by time.
+- One in-memory limiter per process: limits are per instance and reset on restart (the brief
+  accepts a single instance). A second instance needs a shared store.
+- Pattern screening is not a security boundary (OWASP, map.md); a paraphrased injection gets
+  through. The boundary stays the trust rules and the fenced packet.
+
+**For later tickets**
+- 05: import `scanForSecrets` from `src/guards/secrets.ts` and pass fields named as the 422 should
+  name them (`title`, `body`, `refs.<index>`): the hit's `field` is the `name` you passed. The
+  hit never carries the matched text. `detectInjection` returns the id for
+  `quarantined_because`; `source-web` is yours to set. `createRateLimiter({ capacity,
+  refillPerSecond })` matches the `rateLimit` option shape; use `retryAfterSeconds` for
+  `Retry-After`, and `actorKey(actor)` as the key.

@@ -1,0 +1,45 @@
+// The quarantine detector (spec.md Interfaces -> Quarantine patterns). Patterns aim at
+// injection signatures, not at ordinary imperatives. This is one illustrative layer, not a
+// security boundary (OWASP); `source-web` is set by the caller from `source`, not from text.
+
+const PATTERNS: { id: string; pattern: RegExp }[] = [
+  {
+    // ignore / disregard / forget + previous / prior / above / earlier + instructions etc.
+    id: "ignore-instructions",
+    pattern:
+      /\b(?:ignore|disregard|forget)\s+(?:(?:all|any|the|your|my|of|these|those)\s+){0,3}(?:previous|prior|above|earlier|preceding)\s+(?:instructions?|prompts?|directions?|messages?|rules|commands)\b/i,
+  },
+  {
+    // "you are now in developer mode", "you are now DAN", "you are now an unrestricted …"
+    id: "role-override",
+    pattern:
+      /\byou\s+are\s+now\s+(?:in\s+[\w-]+\s+mode\b|an?\s+|the\s+|my\s+|acting\b|unrestricted\b|jailbroken\b|dan\b)/i,
+  },
+  {
+    // <system>, </system>, <assistant>, <|im_start|>, <|im_end|>, [INST], <<SYS>>
+    id: "role-tag",
+    pattern:
+      /<\s*\/?\s*(?:system|assistant)\s*>|<\|im_(?:start|end|sep)\|>|\[\/?INST\]|<<\/?SYS>>/i,
+  },
+  {
+    // <tool_use>, <function_calls>, <invoke name=, "tool_calls": [, "function_call":
+    id: "tool-call",
+    pattern:
+      /<\s*\/?\s*(?:tool_use|tool_result|function_calls)\b|<\s*invoke\s+name\s*=|"(?:tool_calls|function_call)"\s*:/i,
+  },
+  {
+    // Orders addressed to an AI, assistant, agent or model: "AI agents reading this: …",
+    // "Assistant, you must now …".
+    id: "agent-order",
+    pattern:
+      /\b(?:ai|assistants?|agents?|models?|llms?|bots?)\s+reading\s+this\b|(?:^|[.!?\n]\s*)(?:dear\s+|hey\s+)?(?:ai|assistants?|agents?|models?|llms?)\s*[,:]\s*(?:you\s+(?:must|should|will|now|need)|now\b|please\b|run\b|execute\b|ignore\b)/i,
+  },
+];
+
+/** The id of the first quarantine pattern `text` matches, or undefined. */
+export function detectInjection(text: string): string | undefined {
+  for (const { id, pattern } of PATTERNS) {
+    if (pattern.test(text)) return id;
+  }
+  return undefined;
+}
