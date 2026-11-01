@@ -1,7 +1,7 @@
 # Build the write guards: secret scan, quarantine detector and per-actor rate limiter
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -164,3 +164,33 @@ module").
   `quarantined_because`; `source-web` is yours to set. `createRateLimiter({ capacity,
   refillPerSecond })` matches the `rateLimit` option shape; use `retryAfterSeconds` for
   `Retry-After`, and `actorKey(actor)` as the key.
+
+## Review findings (round 1, pair review)
+
+Notes for the conductor:
+- `$END` = HEAD (90682ef), so no later commits were excluded. I read the ticket only as it stood at c7a6b67. I did not read the `## Answer`.
+- Done when results: the guards vitest run passed 71 tests. The grep found nothing (exit 1). `pnpm lint && pnpm typecheck && pnpm test` exited 0.
+- Level 3 probing. Inputs I probed: every field value passed to `scanForSecrets` (title, body, each ref), the text passed to `detectInjection`, and the key and clock given to the rate limiter. I timed regex runs on pathological inputs up to 64 KB, and I tried keys followed by different trailing characters.
+- I left these files behind: /tmp/rev04-full.log, /tmp/rev04-probe.mts and /tmp/rev04-probe2.mts.
+
+QUALITY
+1. blocker apps/server/src/guards/secrets.ts: `ASSIGNMENT` (`^\s*(?:export\s+)?([\w.-]+)\s*[:=]\s*(.*?)\s*;?\s*$`) backtracks catastrophically, at roughly cubic cost. The lazy `(.*?)` is followed by two `\s*` around an optional `;`. Measured: `"KEY=a" + " ".repeat(2000) + "b"` takes about 1 s, and the same with 8000 spaces takes 57 s (a tab run is as bad). The spec allows a 16,384-byte body and 50 refs of 2,048 chars each, so one authenticated write (human or agent) can block the single-instance server for many minutes. The rate limit does not help, because one request is enough. Fix: stop backtracking. Strip the line and a trailing `;` in code, then match `^(?:export\s+)?([\w.-]+)\s*[:=]\s*(\S+)$`, or capture the value with `([^\s;]*)`. Add a test that scans a 16 KB line of `KEY=a<spaces>b` within a small time budget.
+2. major apps/server/src/guards/secrets.ts: the anthropic-api-key, openai-api-key and gcp-api-key rules use gitleaks' suffix ``(?:[`'"\s;]|\\[nr]|$)`` without the m flag. A key followed by `.`, `,`, `)`, `@` or `&` is therefore not detected. These all pass the scan: "my key is sk-ant-…AA.", `(sk-ant-…AA)`, `https://u:<anthropic key>@h/o/r` (the same ref shape that spec.md's must-refuse list names for github-pat), `https://…?key=AIza…&v=3`, and "use sk-…T3BlbkFJ…." at the end of a sentence. Hard rule 6 says every write is scanned for secrets, and these are ordinary ways a key gets pasted. Fix: replace the suffix with a boundary lookahead such as `(?![A-Za-z0-9_-])`, and add a refuse test for each provider with a trailing period and inside URL userinfo.
+3. minor apps/server/src/guards/quarantine.ts: some ordinary sentences are quarantined. "You are now a maintainer of this repo." and "Once approved you are now the owner of the scope." hit role-override (the `an?\s+` and `the\s+` alternatives). "The model reading this config picks a default." hits agent-order (a bare `models? reading this`). Fix: narrow role-override to mode, jailbreak and "acting as" forms. Make agent-order require a `:` or `,` and an order after "reading this". Add these sentences to the must-not-quarantine tests.
+4. minor apps/server/src/guards/secrets.ts: generic-secret misses common forms. These pass: `{"api_key": "…"}` (the NAME cannot be quoted), `const apiKey = "…";`, `PASSWORD=<value> # prod` (the whitespace rule treats it as prose), and lines separated only by `\r`. This follows the spec's literal wording, but it is worth allowing a quoted NAME and stripping a trailing ` #comment`.
+5. minor apps/server/src/guards/ratelimit.ts: `dropIdle` scans every bucket on every `take`, so each write costs O(active actors). Sweep at most once a minute instead. Separately, a backwards `Date.now()` step moves `bucket.at` back, so the bucket refills that interval twice. Keep `at` as `Math.max(bucket.at, t)`.
+
+REVIEW: FAIL
+
+Range reviewed: c7a6b671d5..90682ef (END is HEAD, so no later commits are excluded). I read the ticket at the base commit, where the Answer was empty. I did not read the author's Answer. The ticket's Status line goes from open to resolved.
+
+SPEC
+- vitest run src/guards passes, with a test for every spec fixture, each must-quarantine text asserted against its id, and test names containing the check-block `prints` lines: MET (conductor). I also read the tests myself. All 7 spec must-accept secret fixtures are there. Every must-refuse case is there: each provider rule id (aws via AKIA and ASIA, github-pat, oauth, app-token as ghu and ghs, fine-grained, anthropic, openai, gcp, private-key), the OPENAI_API_KEY= line, the DB_PASSWORD= line and the user:<pat>@ ref. All 14 spec must-quarantine texts are asserted against their ids. All 5 must-not-quarantine texts are tested. Every `prints` string is a substring of a test name.
+- Rate limiter tests cover a burst over capacity refused with retryAfterSeconds, refill after the clock moves, and one key not affecting another: MET. ratelimit.test.ts has "refuses a burst over capacity with retryAfterSeconds" (4th take gives {ok:false, retryAfterSeconds:1}), "refills after the clock moves", and "keeps actors apart".
+- `grep -rE "ghp_[0-9A-Za-z]{36}|AKIA[A-Z2-7]{16}" apps/server/src` finds nothing: MET (conductor). My own read-only re-run also printed nothing, exit 1.
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0: MET (conductor).
+- Acceptance tests: these fail, but the guards are not wired into any route until ticket 05, and no acceptance test imports src/guards (grep found none). So none of the failures tests what this ticket delivers.
+- scope: OK. The changes are the 6 files in apps/server/src/guards/, plus one appended line each in plans/brain-core/map.md and learnings.md, which is the per-ticket bookkeeping convention. Nothing changed in routes, schemas or size caps, which "Not in this ticket" rules out.
+- test first: OK. Commit 6883775 adds only the three *.test.ts files. They import ./secrets.ts, ./quarantine.ts and ./ratelimit.ts, which did not exist at that point, so the tests fail without the production change. The conductor saw them fail.
+
+REVIEW: PASS
