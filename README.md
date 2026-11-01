@@ -29,7 +29,8 @@ and to write back what they learned after.
 
 ## Status
 
-Planning. Nothing is built yet.
+Layer 1's offline core is being built: the monorepo, the server and its trust rules, tested on
+PGlite. Login is not in yet, so nothing is deployed and only tests and `pnpm dev` reach it.
 
 - [docs/PLAN.md](docs/PLAN.md): what we build and how
 - [docs/ROADMAP.md](docs/ROADMAP.md): the five layers and when each is done

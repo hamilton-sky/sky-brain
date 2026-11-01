@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+**/dist/
+*.md
+plans/
+docs/
+scripts/
+.feature-flow/
+.claude/
+apps/server/drizzle/

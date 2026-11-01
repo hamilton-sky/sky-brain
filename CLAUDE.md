@@ -44,7 +44,26 @@ render.yaml      Render Blueprint
 
 ## Commands
 
-To be filled in by ticket T1 (scaffold).
+Node 22 (`>=22.12`) and pnpm 10 (`packageManager` in `package.json`).
+
+```
+pnpm install --frozen-lockfile   install exactly what pnpm-lock.yaml pins
+pnpm lint                        ESLint and prettier --check
+pnpm typecheck                   tsc --noEmit in every package
+pnpm test                        Vitest in every package
+pnpm build                       build the web shell (apps/web/dist)
+pnpm dev                         build the web shell, then run the server on one port
+node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it
+pnpm --filter @sky-brain/server exec drizzle-kit generate
+                                 write a migration after changing apps/server/src/db/schema.ts
+```
+
+Environment:
+
+- `PORT`: the server's port (default 3000).
+- `DATABASE_URL`: Postgres; required when `NODE_ENV=production`.
+- `PGLITE_DATA_DIR`: dev only; default `.pglite` under `apps/server`; `memory://` for in-memory.
+- `NODE_ENV`: `pnpm dev` sets `development` itself (in `apps/server/src/dev.ts`).
 
 ## Docs stay in sync
 

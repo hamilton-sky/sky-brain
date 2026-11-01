@@ -130,3 +130,60 @@ GPL-3.0 or commercial.
 **Known clash:** Skypoint sells "skyBrain", an AI memory product for healthcare that works with
 Claude over MCP ([skypoint.ai](https://skypoint.ai/products/skybrain)). That is fine for our
 own and open-source use. Pick a distinct product name before any commercial launch.
+
+### D13. TypeScript 6.0, and tsx runs the server in production
+**Chosen:**
+- TypeScript `~6.0.3`, not 7.
+- The server runs from source with `tsx src/main.ts`, in production too. `pnpm build` only
+  builds the web shell.
+**Why:**
+- typescript-eslint 8.72.1 supports `typescript >=4.8.4 <6.1.0`, and TypeScript 7 ships the
+  native compiler without the classic compiler API that type-aware lint needs.
+- With tsx, `packages/shared` stays TypeScript source: no build order and no export conditions
+  to keep in step.
+**Rejected:**
+- TypeScript 7, until typescript-eslint supports it.
+- Bundling the server with esbuild: workspace packages must be bundled while the others stay
+  external.
+- `tsc` emit with project references and a built `packages/shared`: two outputs to keep in step.
+  The deploy feature can switch if cold start matters.
+
+### D14. PGlite is the dev database when `DATABASE_URL` is unset
+**Chosen:**
+- `pnpm dev` opens PGlite in `apps/server/.pglite` (gitignored; `PGLITE_DATA_DIR` changes it,
+  `memory://` keeps it in memory) and applies the migrations at start.
+- With `DATABASE_URL` set the server uses Postgres through node-postgres; Render migrates it in
+  `preDeployCommand`. With `NODE_ENV=production` and no `DATABASE_URL` the server refuses to
+  start.
+- Tests use an in-memory PGlite with every migration applied.
+**Why:**
+- `pnpm dev` must work on a fresh clone with no service to install.
+- PGlite 0.5.14 is Postgres 18.6, the major `render.yaml` asks Render for, so the same
+  drizzle-kit migrations, tsvector column and triggers run in dev, tests and production.
+**Rejected:**
+- A local Postgres (Docker) for dev: one more thing to install before `pnpm dev` works.
+- Falling back to PGlite in production: a deploy without its database would silently lose data.
+
+### D15. A dev actor header, only in development and only on 127.0.0.1
+**Chosen:**
+- Until the auth feature lands, `pnpm dev` takes the caller from an `X-Dev-Actor` header that
+  holds the actor JSON, for example
+  `{"kind":"agent","agent_id":"claude-code/builder","on_behalf_of":"u1"}`.
+- It is an allow-list: honoured only when `NODE_ENV` is exactly `development` (`pnpm dev` sets
+  it in `src/dev.ts`). Unset, `test`, `production` and anything else keep it off.
+- While it is on, the server listens on 127.0.0.1 only, and honours the header only when the
+  request's `Host` is `127.0.0.1`, `localhost` or `[::1]`; any other `Host` is 401
+  `dev_actor_disabled`. The bind alone does not stop DNS rebinding: a page on another name that
+  resolves to 127.0.0.1 is same-origin to the browser and could send the header.
+- When it is off, a request carrying the header is refused loudly with 401
+  `dev_actor_disabled`, even if it also carries a valid token. A malformed header is 401
+  `invalid_dev_actor`.
+- The auth feature replaces it with sessions and tokens behind the same `ActorResolver`.
+**Why:**
+- The core API needs a caller before real sign-in exists, and CLAUDE.md hard rule 2 rules out
+  identity from a request body.
+- An allow-list fails closed: a deploy that forgets `NODE_ENV` does not trust the header.
+- Refusing the header instead of ignoring it makes a misconfigured client fail at once.
+**Rejected:**
+- Refusing the header only when `NODE_ENV=production`: an unset `NODE_ENV` would trust it.
+- Ignoring the header when it is off: a client could believe it was acting as someone it was not.

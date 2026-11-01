@@ -1,7 +1,7 @@
 # Resolve the actor, the scope and membership for every /api/v1 request
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -117,3 +117,172 @@ exit 0
 - `apps/server/src/testing/harness.ts` (new in this plan) from the database ticket
 
 ## Answer
+
+Work started at commit `95c910f4acbf5551c5a1959d5129692162ad222c`. The test-only commit is
+`616996b test(brain-core): 03 failing test` (it failed on the missing modules,
+`devActorHeaderEnabled is not a function` and a 404 where 401 was expected).
+
+**Built**
+- `packages/shared/src/actor.ts`: `UserIdSchema`, `AgentIdSchema`, `ActorSchema` (a
+  discriminated union on `kind`) and `Actor`.
+- `packages/shared/src/scope.ts`: `IdSchema` (`z.uuid()`), `ScopeRefSchema` (a union of three
+  strict objects, so two ids or none fail) and `ScopeRef`.
+- `apps/server/src/http/http-error.ts` (`HttpError(status, code, message, extra?)`),
+  `error-handler.ts` (`errorHandler`), `validate.ts` (`validate(schema, value)`).
+- `apps/server/src/actor/middleware.ts` (`ActorResolver`, `actorMiddleware`, `actorOf`),
+  `keys.ts` (`personOf`, `actorKey`, `auditActor`), `require-human.ts` (`requireHuman`).
+- `apps/server/src/scope/resolve-scope.ts` (`resolveScope`, `ResolvedScope`) and
+  `member-role.ts` (`memberRole`).
+- `apps/server/src/config.ts`: `devActorHeaderEnabled(env)`.
+- `apps/server/src/app.ts`: `createApp({ db, resolveActor?, devActorHeader?, now?, webDist? })`.
+- `apps/server/src/server.ts`: passes `db` and `devActorHeader` to `createApp`; listens on
+  127.0.0.1 when the dev header is on.
+- `apps/server/src/testing/harness.ts`: `startTestServer`, `TestServer`, `TestClient`,
+  `TestResponse`, `TestServerOptions`.
+- Tests: `src/actor/actor.test.ts`, `src/scope/resolve-scope.test.ts`,
+  `src/scope/validate.test.ts`, `src/http/error-handler.test.ts`,
+  `src/testing/harness.test.ts`; `src/config.test.ts` and `src/app.test.ts` extended (app tests
+  now open a test db and send an actor for the unknown-path 404, plus a no-actor 401 case).
+- `docs/DECISIONS.md` D15; `docs/PLAN.md` section 9 gains the "Until then (D15)" line.
+
+**Proof** (each run fresh after the last edit)
+- `pnpm --filter @sky-brain/server exec vitest run src/actor src/scope src/config --reporter=verbose`:
+  4 files, 34 tests passed, exit 0. All eight `prints` names appear: refuses a request with no
+  actor; refuses the dev header when it is off; refuses a malformed dev header; accepts the dev
+  header in development; checks the actor before the body; refuses an agent on a humans-only
+  route; hides a workspace the caller is not a member of; refuses an id that is not a uuid.
+  The same run covers malformed JSON → 400 `invalid_json`, 70 KB → 413 `too_large`, `/healthz`
+  without an actor → 200, resolveScope at each level, a viewer's role, an agent for a member,
+  missing ids → 404, `memberRole`, `actorKey`/`auditActor`, and `devActorHeaderEnabled` for
+  `development`, `production`, `test`, unset, empty and near-misses.
+- `node tools/dev-smoke.mjs`: printed `sky-brain listening on 127.0.0.1 port 46755 (dev actor
+  header on)` then `healthz 200`, exit 0.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0. Prettier "All matched files use Prettier
+  code style!"; shared 15/15 tests, server 11 files 68/68 tests.
+- Extra manual check (scratch script calling `start`): `nodeEnv: "development"` bound
+  `127.0.0.1` and a request with `X-Dev-Actor` got 404 `not_found` (passed the actor);
+  `nodeEnv: "test"` bound `0.0.0.0` and the same request got 401 `dev_actor_disabled`.
+
+**Decisions**
+- The actor is attached through a `WeakMap<Request, Actor>` read with `actorOf(req)`, not by
+  augmenting Express's `Request` type: typed, no global declaration, and a route that runs
+  without the middleware throws instead of seeing `undefined`.
+- `X-Dev-Actor` counts as present whenever the header is sent, even empty; empty is
+  `invalid_dev_actor` when on, `dev_actor_disabled` when off.
+- With no `resolveActor`, `createApp` resolves nobody, so production answers 401 to every
+  `/api/v1` request until the auth feature supplies a resolver.
+- The error middleware is the last middleware and is mounted on `/api`, so non-API paths (the
+  web shell) keep Express's own error page instead of a JSON 500.
+- `start` derives the flag from `Config.nodeEnv` (`devActorHeaderEnabled({ NODE_ENV:
+  config.nodeEnv })`), so `Config` keeps its shape and `server.test.ts` (not in Touches) needs no
+  change.
+- `validate` reports the first zod issue's message and its path joined with `.` as `field`
+  (omitted when the path is empty).
+- `resolveScope` and `memberRole` take `DbOrTx` so routes can call them inside a transaction.
+  `resolveScope` throws `HttpError(404, "not_found")`; `memberRole` returns `undefined` and the
+  route answers.
+- The harness reuses one random token per distinct actor and closes all connections on
+  `close()` so keep-alive sockets from `fetch` do not hold the server open.
+
+**Shortcuts taken**
+- Body-parser errors other than parse failure and too-large (unsupported charset or encoding)
+  become 500 `internal`, as the ticket says. Worth a 415 mapping if a client ever sends them.
+- `now` is accepted by `createApp` but unused until routes arrive.
+
+**For later tickets**
+- Routes: `actorOf(req)` gives the actor; put `requireHuman` first on human-only routes; check
+  path ids with `validate(IdSchema, req.params.id)` and bodies with `validate(schema, req.body)`;
+  `resolveScope(db, actor, ref)` for a scope, `memberRole(db, workspaceId, actor)` from an entry.
+  Throw `HttpError` for any refusal; Express 5 forwards async throws to `errorHandler`.
+- Mount routers in `createApp` on `/api/v1` after the actor/json middleware and before the
+  `/api` 404 handler.
+- 05: `startTestServer` ignores `rateLimit` today (acceptance helpers already pass it); add it to
+  `TestServerOptions` and forward it to `createApp`. Audit: `writeAudit(tx, { actor:
+  auditActor(a).actor, details: { ...auditActor(a).details, ... } })`.
+
+
+**Round 2 (send-back)**: work restarted at `77ad9a6`. Test-only commit `7ac15db
+test(brain-core): 03 failing test` (two new tests failed: `br2` got 500 where 400 was expected,
+and a `Host: evil.example` dev-header request got 404 where 401 was expected).
+
+**Review fixes**
+- Quality 1 (major, client body errors as 500): `apps/server/src/http/error-handler.ts` now maps
+  any other body-parser error that is a 4xx with `expose: true` (unsupported encoding or
+  charset, corrupt gzip stream) to 400 `invalid_json` ("The body could not be read."), with no
+  "unhandled error" log line. I chose 400 over 415 because spec.md Check order step 2 names only
+  400 `invalid_json` and 413 `too_large` for the body. Test: "answers an unsupported or corrupt
+  body encoding from an actor with 400" sends `Content-Encoding: br2` and `gzip` with a plain
+  body, expects 400 `invalid_json` for both and that `console.error` is never called.
+- Quality 2 (minor, DNS rebinding): `apps/server/src/actor/middleware.ts` honours `X-Dev-Actor`
+  only when `req.hostname` is `127.0.0.1`, `localhost` or `[::1]`; any other Host is 401
+  `dev_actor_disabled`. D15 in `docs/DECISIONS.md` says so and why. Test: "refuses the dev header
+  when the Host is not this machine" (via `node:http`, which sets `Host` as given):
+  `evil.example[:port]` → 401, the three loopback names → pass to the 404.
+- Quality 3 (minor, non-JSON bodies left unparsed): no code change; it is a note for the route
+  tickets, under For later tickets below.
+
+**Proof (round 2, each run fresh after the last edit)**
+- The vitest filter: 4 files, 36 tests passed, exit 0; all eight `prints` names present, plus
+  the two new tests.
+- `node tools/dev-smoke.mjs`: `sky-brain listening on 127.0.0.1 port 43143 (dev actor header
+  on)` then `healthz 200`.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0; Prettier clean, shared 15/15, server 11
+  files 70/70.
+
+**For later tickets (round 2)**
+- `express.json` only parses `application/json`; any other content type leaves `req.body`
+  undefined. Route tickets should validate `req.body ?? {}` (or `validate(schema, req.body)`,
+  which then answers 400 `invalid_request`) consistently.
+- Dev-header tests that set a custom `Host` need `node:http`, not the harness client.
+
+## Review findings (round 1, pair review)
+
+Reviewed `brain-core 03` (quality pass, level 3) over 95c910f..0d80bcf. END is HEAD (0d80bcf), so I reviewed every commit after the base. I read the ticket as it stood at 95c910f. I did not read the Answer: I saw only the ticket hunk's `Status:` line.
+
+I re-ran the Done when commands and all three pass:
+- The vitest filter: 34 tests passed, and they include every `prints` name.
+- `node tools/dev-smoke.mjs` prints `healthz 200`.
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0.
+
+Files left behind:
+- My log `/tmp/rev03.log`.
+- The web build output from dev-smoke in `apps/web/dist`.
+
+Inputs I probed as a hostile caller, against a live `startTestServer` run through `tsx --eval`:
+- The `X-Dev-Actor` header: off, on, malformed, empty, and with extra keys. Extra keys are stripped by zod and nothing is gained.
+- The `Authorization` bearer: unknown values and none.
+- `Content-Type` and `charset`.
+- `Content-Encoding`.
+- Body size and malformed bodies.
+- OPTIONS preflight: answers 401.
+- The `ScopeRef` and `IdSchema` uuids: the hardcoded acceptance ids are valid v4, so `z.uuid()` accepts them.
+- `resolveScope` with an unknown id and with a non-member: both give the same 404.
+- `requireHuman` with an agent.
+- `NODE_ENV` and the 127.0.0.1 bind.
+
+What holds:
+- The actor is checked before the body.
+- The dev header fails closed.
+- The membership join is in the same query.
+- No identity is taken from the body.
+
+QUALITY
+1. major apps/server/src/http/error-handler.ts: a request body the client controls can produce a 500 `internal` and an "unhandled error" log line. I checked this live. With a valid actor, `Content-Encoding: br2` gives 500 (body-parser `encoding.unsupported`, 415). `Content-Encoding: gzip` with a body that is not gzip gives 500 (zlib `Z_DATA_ERROR`, status 400, expose true). `toHttpError` only maps `entity.parse.failed` and `entity.too.large`, so every other client-side body-parser error is reported as a server fault. Anyone with an actor can then flood the error log. Change: treat any body-parser error with `status`/`statusCode` from 400 to 499 (or `expose: true`) as a client error, mapping it to 400 `invalid_json` (or 415 if the spec allows that). Add a test for an unsupported and a corrupt `Content-Encoding`.
+2. minor apps/server/src/server.ts: in dev mode, binding to 127.0.0.1 does not stop DNS rebinding. A page on an attacker's domain that rebinds to 127.0.0.1 is same-origin, so it can send `X-Dev-Actor` as any user. Change: while the dev header is on, also refuse requests whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`. Alternatively, record this as a known limit in D15.
+3. minor apps/server/src/app.ts: `/api/v1` bodies that are not JSON (for example `text/plain`) are silently left unparsed, so `req.body` is undefined. Later routes then answer 400 `invalid_request` rather than `invalid_json`. This is acceptable, but later route tickets should validate `req.body ?? {}` consistently, or the app should refuse non-JSON content types on write routes.
+
+The major finding means this review fails.
+
+REVIEW: FAIL
+
+I reviewed ticket 03 of brain-core (actor, scope and membership) and it passes. I read the ticket as it stood at the base commit, so the author's Answer never reached me, and I didn't write or change any files. The range ends at 0d80bcf, which is the current HEAD, so no later commits were left out.
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/actor src/scope src/config --reporter=verbose` passes, with test names containing the check block's `prints` lines: MET (conductor) - the conductor's check block passed, so I did not run it again.
+- `GET /healthz` still answers 200 without an actor, and `node tools/dev-smoke.mjs` prints `healthz 200`: MET (conductor).
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0: MET (conductor).
+- Acceptance tests: I ran `plans/brain-core/acceptance` for actor, request-shape and isolation: 14 passed, 28 failed. I checked the one failure that looks like it belongs to this ticket, "takes the actor from a valid X-Dev-Actor header". It sends `POST /api/v1/entries` and expects 201, but gets 404 because that route does not exist yet. The ticket rules out any entries route. The other 27 failures also need routes, size caps or isolation behaviour that later tickets build (going by the test names; I did not trace each one), so none counts as NOT MET here.
+- scope: OK - every changed file is in `Touches`, apart from `plans/brain-core/learnings.md` and `plans/brain-core/map.md`, which the flow updates with each ticket. `docs/DECISIONS.md` gains a new decision (D15) at the end, and `docs/PLAN.md` section 9 gains one line.
+- test first: OK - commit 616996b adds the tests before the code: `actor.test.ts`, `resolve-scope.test.ts`, `validate.test.ts`, `error-handler.test.ts`, `harness.test.ts`, and changes to `app.test.ts` and `config.test.ts`. They import modules that only exist after 0d80bcf, and the conductor saw 616996b fail the Test command, so the tests would fail without the production change.
+
+REVIEW: PASS

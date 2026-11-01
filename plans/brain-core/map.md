@@ -171,6 +171,11 @@ The acceptance ticket (11, the last in the graph) runs both.
   entry objects.
 - user — One ref over 2,048 characters is 413 `too_large` with `field: "refs.<index>"` (0-based,
   for example `refs.3`).
+- 01 — pnpm monorepo scaffolded (all lint/type/test/CI config fixed here); `createApp({ webDist? })` serves `/healthz`, an `/api` 404 JSON and the web shell with SPA fallback on `/{*splat}`; tsx runs the server (D13).
+- 02 — Drizzle schema + generated migration and custom audit-trigger migration in `apps/server/drizzle/`; `db/client.ts` (`Db`, PGlite/Postgres, `migrateDb`, `closeDb`), `writeAudit`, `toWireEntry`/`notExpiredAt`, `normalizeGitRemote`, harness seeds; `start` uses Postgres with `DATABASE_URL`, else PGlite migrated at start, refuses production without it (D14).
+- 03 — `/api/v1` runs `actorMiddleware` (dev `X-Dev-Actor` only for `NODE_ENV=development` on 127.0.0.1, else `ActorResolver`) then `express.json` 64 KB; `HttpError` + `errorHandler` on `/api`; `validate`, `IdSchema`/`ScopeRefSchema`, `resolveScope`/`memberRole`, `requireHuman`, `actorKey`/`auditActor`; `createApp({ db, ... })`; `startTestServer` maps `as(actor)` to a Bearer token (D15).
+- 03 (round 2) — other body-parser 4xx client errors map to 400 `invalid_json`; `X-Dev-Actor` also needs a loopback `Host` (127.0.0.1, localhost, [::1]) against DNS rebinding (D15).
+- 04 — `src/guards/`: `scanForSecrets` (gitleaks v8.28.0 provider regexes without their entropy floors, then the spec's per-line `generic-secret`; returns `{field, rule}`), `detectInjection` (5 ordered pattern ids, `source-web` left to 05), `createRateLimiter` (ms clock, `take` + `size`, idle-full buckets dropped after 10 min).
 
 ## Open questions
 
@@ -188,3 +193,6 @@ The acceptance ticket (11, the last in the graph) runs both.
   T8's concern.
 - Whether Render's Node runtime runs `corepack enable && pnpm install` in `buildCommand`: the
   deploy feature proves it.
+- 04 — round 2: secret scan matches a trimmed line and cleans the value in code (no backtracking; quoted NAME, `const`, `# comment`, `\r` lines), provider keys end on `(?![\w-])`; role-override and agent-order narrowed; limiter sweeps once a minute and never moves `at` back.
+- 04 — round 3: role-tag/tool-call/agent-order lose their doubled whitespace runs (linear on hostile text), ignore-instructions takes the qualifier after the noun and zero-width characters are stripped; generic-secret scans every quoted `name: "value"` pair on a line; provider keys start on `(?<![A-Za-z0-9])`; a backwards clock sweeps at once.
+- 04 — round 4: `ASSIGNMENT` keeps the whitespace after `{`/`,` in its own group (no `export`+spaces n²), aws ends on `(?![A-Za-z0-9])`, `detectInjection` runs NFKC and strips the soft hyphen.

@@ -101,8 +101,19 @@ sky-brain adds:
 | `supersedes` | the entry this one replaces |
 | `confidence` | optional, 0 to 1, from the writer |
 | `expires_at` | claims get a default expiry; rules and approved decisions do not |
+| `allow_agent_answers` | set by the asker of a question: whether an agent may answer it (default false) |
+| `quarantined_because` | the id of the quarantine pattern that held the entry, written once when it is stored; null otherwise |
 | `created_at`, `updated_at` | |
 | `search` | generated full-text vector over title and body, with a GIN index |
+
+The scope is backed by composite foreign keys: (`project_id`, `workspace_id`) references
+`projects` (`id`, `workspace_id`) and (`feature_id`, `project_id`) references `features`
+(`id`, `project_id`), so an entry can never hang off another workspace's project or another
+project's feature. `seq` comes from one sequence (`entries_seq`) that every insert and every
+status change draws from.
+
+`audit_log.workspace_id` has no foreign key, so audit rows outlive a deleted workspace. A
+database trigger refuses `UPDATE`, `DELETE` and `TRUNCATE` on `audit_log`.
 
 Text is never edited after approval. A change is a new entry that supersedes the old one.
 Every status change goes through the API and lands in the audit log.
@@ -181,6 +192,9 @@ Better Auth runs inside the server.
   most 30 minutes and is bound to one workspace, one project, one role and a list of verbs.
 - **Fallback**: if Better Auth's MCP support fails the T0 test, WorkOS AuthKit becomes the OAuth
   server and the rest of the design stays the same.
+- **Until then** (D15): `pnpm dev` takes the caller from an `X-Dev-Actor` header, only when
+  `NODE_ENV=development` and on 127.0.0.1; otherwise the header is refused with 401. This
+  section's sign-in replaces it.
 
 ## 10. Security bar
 

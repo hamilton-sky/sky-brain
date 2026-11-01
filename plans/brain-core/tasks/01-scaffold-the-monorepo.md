@@ -1,7 +1,7 @@
 # Scaffold the pnpm monorepo with CI, render.yaml and the healthz server
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 3
@@ -152,3 +152,77 @@ prints 0
 - CLAUDE.md "Code rules" (400-line files, shared schemas in `packages/shared`)
 
 ## Answer
+
+Work started at commit `0c6037d3c48d5200fe5d013678118dded62314d1`.
+
+**Built**
+- Root: `package.json` (scripts exactly as the ticket says; root devDependencies `typescript ~6.0.3`,
+  `vitest 5.0.5`, `eslint 10.14.0`, `@eslint/js 10.0.1`, `typescript-eslint 8.72.1`,
+  `prettier 3.9.10`, `globals 17.14.0`, `@types/node 22.20.5`), `pnpm-workspace.yaml`
+  (`onlyBuiltDependencies: [esbuild]`), `pnpm-lock.yaml`, `.gitignore`, `.prettierignore`,
+  `.prettierrc.json`, `eslint.config.js`, `tsconfig.base.json`.
+- `packages/shared`: `package.json` (`exports: {"./*": "./src/*.ts"}`, zod 4.6.7), `tsconfig.json`,
+  `src/enums.ts`, `src/enums.test.ts`.
+- `apps/server`: `package.json` (express 5.3.0, tsx 4.23.15, zod 4.6.7, `@sky-brain/shared`
+  `workspace:*`, `@types/express` 5.0.6), `tsconfig.json`, `vitest.config.ts` (hook 60 s,
+  test 30 s), `src/app.ts`, `src/config.ts`, `src/server.ts`, `src/main.ts`, `src/dev.ts`,
+  `src/app.test.ts`.
+- `apps/web`: `package.json` (react/react-dom 19.3.1, vite 8.3.5, @vitejs/plugin-react 6.1.2,
+  @types/react(-dom) 19.3.0), `tsconfig.json` (`jsx: react-jsx`), `vite.config.ts`, `index.html`,
+  `src/main.tsx` (renders `<h1>sky-brain</h1>` only).
+- `tools/dev-smoke.mjs`, `.github/workflows/ci.yml`, `render.yaml`.
+- Docs: `CLAUDE.md` Commands section filled; `README.md` Status rewritten; `docs/DECISIONS.md`
+  D13 (TypeScript 6.0 and tsx in production, with rejected options).
+
+**Proof** (all run fresh after the last edit, after `rm -rf apps/web/dist` and
+`pnpm install --frozen-lockfile`)
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0. ESLint clean, "All matched files use
+  Prettier code style!", three packages typecheck Done, shared 5/5 tests, server 5/5 tests.
+- `pnpm --filter @sky-brain/server exec vitest run --reporter=verbose`: 5 passed, including
+  `GET /healthz answers 200`, `GET / serves the web build`, `unknown /api path answers 404 JSON`
+  (plus the SPA fallback and the plain 404 with no build).
+- `node tools/dev-smoke.mjs`: printed `sky-brain listening on port <n>` then `healthz 200`,
+  exit 0; afterwards no tsx, vite or pnpm process was left running.
+- `cat .github/workflows/ci.yml`: has `pnpm install --frozen-lockfile`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm test`. `cat render.yaml`: has `healthCheckPath: /healthz` and
+  `property: connectionString`.
+- `grep -c "To be filled in by ticket T1" CLAUDE.md`: prints `0`, exit 1.
+
+**Decisions**
+- The SPA fallback route is `/{*splat}`, not `/*splat`: in Express 5 `/*splat` needs at least one
+  path segment, so `GET /` with no web build fell through to Express's HTML "Cannot GET /"
+  instead of the plain 404. `{...}` makes the wildcard optional; it is still the Express 5 named
+  wildcard syntax.
+- `index.html` is served with `res.sendFile` on each request (not checked once at start), so a
+  build made after the server starts is picked up; a missing file answers `404 Not found`
+  (text/plain).
+- `/api` 404 is `app.use("/api", ...)`, placed before `express.static`, so no static file or SPA
+  fallback can answer an `/api` path.
+- `start(config)` returns a `Promise<Server>` that resolves once listening (rejects on a listen
+  error). `dev.ts` sets `NODE_ENV` and then loads `config.ts`/`server.ts` with dynamic `import()`,
+  so the env is set before any module that reads it is evaluated.
+- `readConfig` refuses a `PORT` that is not a whole number from 0 to 65535 (throws).
+- `tsconfig.base.json` leaves `target` at TypeScript 6's default (es2025). The web tsconfig only
+  adds `jsx: react-jsx`; TypeScript's default lib already includes the DOM.
+- ESLint adds browser globals for `apps/web/src/**/*.tsx` and Node globals elsewhere.
+- CI uses `actions/checkout@v5`, `pnpm/action-setup@v6` (no `version`), `actions/setup-node@v7`
+  with `node-version: 22`, `cache: pnpm`.
+
+**Shortcuts taken**
+- The SPA fallback answers `index.html` for any unknown GET, including a missing
+  `/assets/*.js`; fine for an empty shell, worth a 404 for asset paths once the web app (T8)
+  ships real assets.
+- `dev-smoke.mjs` stops the tree with SIGTERM, so pnpm prints an `ELIFECYCLE ... SIGTERM` line
+  after `healthz 200`; harmless noise, the script's own exit code is 0.
+
+**For later tickets**
+- `createApp(options: AppOptions = {})` in `apps/server/src/app.ts` with `AppOptions { webDist? }`;
+  03 extends it. Keep `/healthz` and the `/api` 404 before `express.static` and the fallback.
+- `start(config)` in `server.ts` calls `createApp()` with no options; 02 must pass the db (and
+  later the dev actor setting) through it. It listens on all interfaces today; the 127.0.0.1-only
+  bind for the dev header is 02/03's to add.
+- `Config` is `{ port }` only; 02 adds `DATABASE_URL` / `PGLITE_DATA_DIR`.
+- Every package tsconfig already includes `src` and `*.ts`, so `drizzle.config.ts` needs no
+  config change. Every package that runs Vitest must have its own `test` script for `pnpm test`.
+- Acceptance tests still cannot run: `apps/server/src/testing/harness.ts` and `src/db/schema.ts`
+  arrive with 02.

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sky-brain
+    runtime: node
+    plan: 0.5c-512mb # paid: free instances sleep (PLAN section 12)
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    preDeployCommand: pnpm --filter @sky-brain/server exec tsx src/db/migrate-cli.ts
+    startCommand: pnpm --filter @sky-brain/server start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sky-brain-db
+          property: connectionString
+
+databases:
+  - name: sky-brain-db
+    plan: 0.1c-256mb
+    databaseName: skybrain
+    user: skybrain
+    postgresMajorVersion: "18"
