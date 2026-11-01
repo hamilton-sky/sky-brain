@@ -171,7 +171,10 @@ own and open-source use. Pick a distinct product name before any commercial laun
   `{"kind":"agent","agent_id":"claude-code/builder","on_behalf_of":"u1"}`.
 - It is an allow-list: honoured only when `NODE_ENV` is exactly `development` (`pnpm dev` sets
   it in `src/dev.ts`). Unset, `test`, `production` and anything else keep it off.
-- While it is on, the server listens on 127.0.0.1 only.
+- While it is on, the server listens on 127.0.0.1 only, and honours the header only when the
+  request's `Host` is `127.0.0.1`, `localhost` or `[::1]`; any other `Host` is 401
+  `dev_actor_disabled`. The bind alone does not stop DNS rebinding: a page on another name that
+  resolves to 127.0.0.1 is same-origin to the browser and could send the header.
 - When it is off, a request carrying the header is refused loudly with 401
   `dev_actor_disabled`, even if it also carries a valid token. A malformed header is 401
   `invalid_dev_actor`.

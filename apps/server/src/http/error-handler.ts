@@ -9,6 +9,15 @@ function bodyParserType(err: unknown): unknown {
     : undefined;
 }
 
+function isClientBodyError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const { status, statusCode, expose } = err as Record<string, unknown>;
+  const code = typeof status === "number" ? status : statusCode;
+  return (
+    expose === true && typeof code === "number" && code >= 400 && code < 500
+  );
+}
+
 function toHttpError(err: unknown): HttpError | undefined {
   if (err instanceof HttpError) return err;
   const type = bodyParserType(err);
@@ -17,6 +26,11 @@ function toHttpError(err: unknown): HttpError | undefined {
   }
   if (type === "entity.too.large") {
     return new HttpError(413, "too_large", "The body is over 64 KB.");
+  }
+  // Any other body the client sent wrong (an unsupported charset or encoding, a corrupt gzip
+  // stream): body-parser marks it a 4xx with `expose`, so it is the client's fault, not ours.
+  if (isClientBodyError(err)) {
+    return new HttpError(400, "invalid_json", "The body could not be read.");
   }
   return undefined;
 }

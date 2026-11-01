@@ -16,6 +16,9 @@ export interface ActorOptions {
 
 const actors = new WeakMap<Request, Actor>();
 
+/** Host names (without the port) a request carrying `X-Dev-Actor` may be addressed to. */
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+
 /** The actor the middleware attached. Throws if a route runs without the middleware. */
 export function actorOf(req: Request): Actor {
   const actor = actors.get(req);
@@ -51,6 +54,15 @@ export function actorMiddleware(options: ActorOptions): RequestHandler {
           401,
           "dev_actor_disabled",
           "X-Dev-Actor is only honoured when NODE_ENV is development.",
+        );
+      }
+      // 127.0.0.1 alone does not stop DNS rebinding: a page on another name that resolves
+      // here is same-origin to the browser, so the Host must name this machine too (D15).
+      if (!LOOPBACK_HOSTS.has(req.hostname)) {
+        throw new HttpError(
+          401,
+          "dev_actor_disabled",
+          "X-Dev-Actor is only honoured for requests addressed to localhost.",
         );
       }
       actor = parseDevActor(devHeader);

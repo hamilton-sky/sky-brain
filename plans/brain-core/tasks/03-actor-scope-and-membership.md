@@ -1,7 +1,7 @@
 # Resolve the actor, the scope and membership for every /api/v1 request
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -200,6 +200,40 @@ Work started at commit `95c910f4acbf5551c5a1959d5129692162ad222c`. The test-only
   `TestServerOptions` and forward it to `createApp`. Audit: `writeAudit(tx, { actor:
   auditActor(a).actor, details: { ...auditActor(a).details, ... } })`.
 
+
+**Round 2 (send-back)**: work restarted at `77ad9a6`. Test-only commit `7ac15db
+test(brain-core): 03 failing test` (two new tests failed: `br2` got 500 where 400 was expected,
+and a `Host: evil.example` dev-header request got 404 where 401 was expected).
+
+**Review fixes**
+- Quality 1 (major, client body errors as 500): `apps/server/src/http/error-handler.ts` now maps
+  any other body-parser error that is a 4xx with `expose: true` (unsupported encoding or
+  charset, corrupt gzip stream) to 400 `invalid_json` ("The body could not be read."), with no
+  "unhandled error" log line. I chose 400 over 415 because spec.md Check order step 2 names only
+  400 `invalid_json` and 413 `too_large` for the body. Test: "answers an unsupported or corrupt
+  body encoding from an actor with 400" sends `Content-Encoding: br2` and `gzip` with a plain
+  body, expects 400 `invalid_json` for both and that `console.error` is never called.
+- Quality 2 (minor, DNS rebinding): `apps/server/src/actor/middleware.ts` honours `X-Dev-Actor`
+  only when `req.hostname` is `127.0.0.1`, `localhost` or `[::1]`; any other Host is 401
+  `dev_actor_disabled`. D15 in `docs/DECISIONS.md` says so and why. Test: "refuses the dev header
+  when the Host is not this machine" (via `node:http`, which sets `Host` as given):
+  `evil.example[:port]` → 401, the three loopback names → pass to the 404.
+- Quality 3 (minor, non-JSON bodies left unparsed): no code change; it is a note for the route
+  tickets, under For later tickets below.
+
+**Proof (round 2, each run fresh after the last edit)**
+- The vitest filter: 4 files, 36 tests passed, exit 0; all eight `prints` names present, plus
+  the two new tests.
+- `node tools/dev-smoke.mjs`: `sky-brain listening on 127.0.0.1 port 43143 (dev actor header
+  on)` then `healthz 200`.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0; Prettier clean, shared 15/15, server 11
+  files 70/70.
+
+**For later tickets (round 2)**
+- `express.json` only parses `application/json`; any other content type leaves `req.body`
+  undefined. Route tickets should validate `req.body ?? {}` (or `validate(schema, req.body)`,
+  which then answers 400 `invalid_request`) consistently.
+- Dev-header tests that set a custom `Host` need `node:http`, not the harness client.
 
 ## Review findings (round 1, pair review)
 
