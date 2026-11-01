@@ -1,7 +1,7 @@
 # Resolve the actor, the scope and membership for every /api/v1 request
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -200,3 +200,55 @@ Work started at commit `95c910f4acbf5551c5a1959d5129692162ad222c`. The test-only
   `TestServerOptions` and forward it to `createApp`. Audit: `writeAudit(tx, { actor:
   auditActor(a).actor, details: { ...auditActor(a).details, ... } })`.
 
+
+## Review findings (round 1, pair review)
+
+Reviewed `brain-core 03` (quality pass, level 3) over 95c910f..0d80bcf. END is HEAD (0d80bcf), so I reviewed every commit after the base. I read the ticket as it stood at 95c910f. I did not read the Answer: I saw only the ticket hunk's `Status:` line.
+
+I re-ran the Done when commands and all three pass:
+- The vitest filter: 34 tests passed, and they include every `prints` name.
+- `node tools/dev-smoke.mjs` prints `healthz 200`.
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0.
+
+Files left behind:
+- My log `/tmp/rev03.log`.
+- The web build output from dev-smoke in `apps/web/dist`.
+
+Inputs I probed as a hostile caller, against a live `startTestServer` run through `tsx --eval`:
+- The `X-Dev-Actor` header: off, on, malformed, empty, and with extra keys. Extra keys are stripped by zod and nothing is gained.
+- The `Authorization` bearer: unknown values and none.
+- `Content-Type` and `charset`.
+- `Content-Encoding`.
+- Body size and malformed bodies.
+- OPTIONS preflight: answers 401.
+- The `ScopeRef` and `IdSchema` uuids: the hardcoded acceptance ids are valid v4, so `z.uuid()` accepts them.
+- `resolveScope` with an unknown id and with a non-member: both give the same 404.
+- `requireHuman` with an agent.
+- `NODE_ENV` and the 127.0.0.1 bind.
+
+What holds:
+- The actor is checked before the body.
+- The dev header fails closed.
+- The membership join is in the same query.
+- No identity is taken from the body.
+
+QUALITY
+1. major apps/server/src/http/error-handler.ts: a request body the client controls can produce a 500 `internal` and an "unhandled error" log line. I checked this live. With a valid actor, `Content-Encoding: br2` gives 500 (body-parser `encoding.unsupported`, 415). `Content-Encoding: gzip` with a body that is not gzip gives 500 (zlib `Z_DATA_ERROR`, status 400, expose true). `toHttpError` only maps `entity.parse.failed` and `entity.too.large`, so every other client-side body-parser error is reported as a server fault. Anyone with an actor can then flood the error log. Change: treat any body-parser error with `status`/`statusCode` from 400 to 499 (or `expose: true`) as a client error, mapping it to 400 `invalid_json` (or 415 if the spec allows that). Add a test for an unsupported and a corrupt `Content-Encoding`.
+2. minor apps/server/src/server.ts: in dev mode, binding to 127.0.0.1 does not stop DNS rebinding. A page on an attacker's domain that rebinds to 127.0.0.1 is same-origin, so it can send `X-Dev-Actor` as any user. Change: while the dev header is on, also refuse requests whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`. Alternatively, record this as a known limit in D15.
+3. minor apps/server/src/app.ts: `/api/v1` bodies that are not JSON (for example `text/plain`) are silently left unparsed, so `req.body` is undefined. Later routes then answer 400 `invalid_request` rather than `invalid_json`. This is acceptable, but later route tickets should validate `req.body ?? {}` consistently, or the app should refuse non-JSON content types on write routes.
+
+The major finding means this review fails.
+
+REVIEW: FAIL
+
+I reviewed ticket 03 of brain-core (actor, scope and membership) and it passes. I read the ticket as it stood at the base commit, so the author's Answer never reached me, and I didn't write or change any files. The range ends at 0d80bcf, which is the current HEAD, so no later commits were left out.
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/actor src/scope src/config --reporter=verbose` passes, with test names containing the check block's `prints` lines: MET (conductor) - the conductor's check block passed, so I did not run it again.
+- `GET /healthz` still answers 200 without an actor, and `node tools/dev-smoke.mjs` prints `healthz 200`: MET (conductor).
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0: MET (conductor).
+- Acceptance tests: I ran `plans/brain-core/acceptance` for actor, request-shape and isolation: 14 passed, 28 failed. I checked the one failure that looks like it belongs to this ticket, "takes the actor from a valid X-Dev-Actor header". It sends `POST /api/v1/entries` and expects 201, but gets 404 because that route does not exist yet. The ticket rules out any entries route. The other 27 failures also need routes, size caps or isolation behaviour that later tickets build (going by the test names; I did not trace each one), so none counts as NOT MET here.
+- scope: OK - every changed file is in `Touches`, apart from `plans/brain-core/learnings.md` and `plans/brain-core/map.md`, which the flow updates with each ticket. `docs/DECISIONS.md` gains a new decision (D15) at the end, and `docs/PLAN.md` section 9 gains one line.
+- test first: OK - commit 616996b adds the tests before the code: `actor.test.ts`, `resolve-scope.test.ts`, `validate.test.ts`, `error-handler.test.ts`, `harness.test.ts`, and changes to `app.test.ts` and `config.test.ts`. They import modules that only exist after 0d80bcf, and the conductor saw 616996b fail the Test command, so the tests would fail without the production change.
+
+REVIEW: PASS
