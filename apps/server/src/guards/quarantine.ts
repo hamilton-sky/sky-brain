@@ -7,10 +7,12 @@ const ORDER = String.raw`you\s+(?:must|should|will|now|need|are\s+to)\b|(?:now|p
 
 const PATTERNS: { id: string; pattern: RegExp }[] = [
   {
-    // ignore / disregard / forget + previous / prior / above / earlier + instructions etc.
+    // ignore / disregard / forget + previous / prior / above / earlier + instructions etc., with
+    // the qualifier before the noun ("ignore previous instructions") or after it ("ignore the
+    // instructions above", "disregard everything above").
     id: "ignore-instructions",
     pattern:
-      /\b(?:ignore|disregard|forget)\s+(?:(?:all|any|the|your|my|of|these|those)\s+){0,3}(?:previous|prior|above|earlier|preceding)\s+(?:instructions?|prompts?|directions?|messages?|rules|commands)\b/i,
+      /\b(?:ignore|disregard|forget)\s+(?:(?:all|any|the|your|my|of|these|those)\s+){0,3}(?:(?:previous|prior|above|earlier|preceding)\s+(?:instructions?|prompts?|directions?|messages?|rules|commands)\b|(?:instructions?|prompts?|directions?|messages?|rules|commands|everything|anything)\s+(?:previous|prior|above|earlier|preceding|before)\b)/i,
   },
   {
     // Mode, jailbreak and "acting as" forms only: "you are now in developer mode", "you are now
@@ -21,16 +23,17 @@ const PATTERNS: { id: string; pattern: RegExp }[] = [
       /\byou\s+are\s+now\s+(?:in\s+[\w-]+\s+mode\b|(?:an?\s+)?(?:unrestricted|jailbroken|uncensored|unfiltered)\b|dan\b|acting\s+as\b)/i,
   },
   {
-    // <system>, </system>, <assistant>, <|im_start|>, <|im_end|>, [INST], <<SYS>>
+    // <system>, </system>, <assistant>, <|im_start|>, <|im_end|>, [INST], <<SYS>>. One run of
+    // whitespace after `<` or `</`, never two side by side, so a long run cannot cost n².
     id: "role-tag",
     pattern:
-      /<\s*\/?\s*(?:system|assistant)\s*>|<\|im_(?:start|end|sep)\|>|\[\/?INST\]|<<\/?SYS>>/i,
+      /<\/?\s*(?:system|assistant)\s*>|<\|im_(?:start|end|sep)\|>|\[\/?INST\]|<<\/?SYS>>/i,
   },
   {
     // <tool_use>, <function_calls>, <invoke name=, "tool_calls": [, "function_call":
     id: "tool-call",
     pattern:
-      /<\s*\/?\s*(?:tool_use|tool_result|function_calls)\b|<\s*invoke\s+name\s*=|"(?:tool_calls|function_call)"\s*:/i,
+      /<\/?\s*(?:tool_use|tool_result|function_calls)\b|<\s*invoke\s+name\s*=|"(?:tool_calls|function_call)"\s*:/i,
   },
   {
     // Orders addressed to an AI, assistant, agent or model: "AI agents reading this: run …",
@@ -39,16 +42,20 @@ const PATTERNS: { id: string; pattern: RegExp }[] = [
     id: "agent-order",
     pattern: new RegExp(
       String.raw`\b(?:ai|assistants?|agents?|models?|llms?|bots?)\s+reading\s+this\s*[,:]\s*(?:${ORDER})` +
-        String.raw`|(?:^|[.!?\n]\s*)(?:dear\s+|hey\s+)?(?:ai|assistants?|agents?|models?|llms?)\s*[,:]\s*(?:${ORDER})`,
+        String.raw`|(?:^|[.!?\n][^\S\n]*)(?:dear\s+|hey\s+)?(?:ai|assistants?|agents?|models?|llms?)\s*[,:]\s*(?:${ORDER})`,
       "i",
     ),
   },
 ];
 
+// Zero-width characters a writer can hide inside a keyword ("ig\u200bnore").
+const ZERO_WIDTH = /[\u200B-\u200D\u2060\uFEFF]/g;
+
 /** The id of the first quarantine pattern `text` matches, or undefined. */
 export function detectInjection(text: string): string | undefined {
+  const visible = text.replace(ZERO_WIDTH, "");
   for (const { id, pattern } of PATTERNS) {
-    if (pattern.test(text)) return id;
+    if (pattern.test(visible)) return id;
   }
   return undefined;
 }

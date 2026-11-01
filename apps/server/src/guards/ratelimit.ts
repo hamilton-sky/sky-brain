@@ -62,7 +62,9 @@ export function createRateLimiter(
   let lastSweep = -Infinity;
 
   function dropIdle(t: number): void {
-    if (t - lastSweep < SWEEP_MS) return;
+    // A clock that steps backwards sweeps at once, or `lastSweep` would sit in the future and
+    // idle buckets would stay until the clock caught up.
+    if (t >= lastSweep && t - lastSweep < SWEEP_MS) return;
     lastSweep = t;
     for (const [key, bucket] of buckets) {
       if (t - fullAt(bucket) > IDLE_MS) buckets.delete(key);

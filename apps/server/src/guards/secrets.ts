@@ -6,10 +6,13 @@ export type SecretHit = { field: string; rule: string };
 // Provider rules: gitleaks v8.28.0 regexes, in the order spec.md lists them. Where gitleaks ends
 // a key with a list of allowed next characters, a lookahead takes its place: the key must not
 // run on into more key characters, so a key followed by `.`, `,`, `)`, `@` or `&` is still found.
+// Where gitleaks starts a key with `\b`, a lookbehind for a letter or digit takes its place, so a
+// key run straight on after `_` (`token_<key>`) is still found.
 const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   {
     rule: "aws-access-token",
-    pattern: /\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b/,
+    pattern:
+      /(?<![A-Za-z0-9])((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b/,
   },
   { rule: "github-pat", pattern: /ghp_[0-9a-zA-Z]{36}/ },
   { rule: "github-oauth", pattern: /gho_[0-9a-zA-Z]{36}/ },
@@ -17,14 +20,14 @@ const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
   { rule: "github-fine-grained-pat", pattern: /github_pat_\w{82}/ },
   {
     rule: "anthropic-api-key",
-    pattern: /\b(sk-ant-api03-[a-zA-Z0-9_-]{93}AA)(?![\w-])/,
+    pattern: /(?<![A-Za-z0-9])(sk-ant-api03-[a-zA-Z0-9_-]{93}AA)(?![\w-])/,
   },
   {
     rule: "openai-api-key",
     pattern:
-      /\b(sk-(?:proj|svcacct|admin)-(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})T3BlbkFJ(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})\b|sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})(?![\w-])/,
+      /(?<![A-Za-z0-9])(sk-(?:proj|svcacct|admin)-(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})T3BlbkFJ(?:[A-Za-z0-9_-]{74}|[A-Za-z0-9_-]{58})\b|sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})(?![\w-])/,
   },
-  { rule: "gcp-api-key", pattern: /\b(AIza[\w-]{35})(?![\w-])/ },
+  { rule: "gcp-api-key", pattern: /(?<![A-Za-z0-9])(AIza[\w-]{35})(?![\w-])/ },
   {
     rule: "private-key",
     pattern:
@@ -38,6 +41,9 @@ const PROVIDER_RULES: { rule: string; pattern: RegExp }[] = [
 // pattern can backtrack over a long run of spaces.
 const ASSIGNMENT =
   /^(?:(?:export|const|let|var)\s+)?[{,]?\s*["'`]?([\w.-]+)["'`]?\s*[:=]([\s\S]*)$/;
+// A `name: "value"` pair anywhere on a line, so a secret that is not the first name on a
+// one-line object (`{"user":"bob","api_key":"…"}`) is still found. The value must be quoted.
+const PAIR = /(?:^|[{,\s])["'`]?([\w.-]+)["'`]?\s*:\s*(["'`])([^"'`\r\n]*)\2/g;
 const SECRET_NAME = /key|secret|token|passw(?:or)?d|credential/i;
 const MIN_LENGTH = 12;
 const MIN_ENTROPY = 3.5;
@@ -86,16 +92,22 @@ function valueOf(raw: string): string {
   return unquote(value);
 }
 
-function isGenericSecret(line: string): boolean {
-  const m = ASSIGNMENT.exec(line.trim());
-  if (!m) return false;
-  const [, name = "", raw = ""] = m;
+function isSecretAssignment(name: string, raw: string): boolean {
   if (!SECRET_NAME.test(name)) return false;
   const value = valueOf(raw);
   // A secret value is one token; text with spaces after `Key:` is prose.
   if (value.length < MIN_LENGTH || /\s/.test(value)) return false;
   if (PLACEHOLDERS.some((p) => p.test(value))) return false;
   return shannonEntropy(value) >= MIN_ENTROPY;
+}
+
+function isGenericSecret(line: string): boolean {
+  const m = ASSIGNMENT.exec(line.trim());
+  if (m && isSecretAssignment(m[1] ?? "", m[2] ?? "")) return true;
+  for (const [, name = "", , value = ""] of line.matchAll(PAIR)) {
+    if (isSecretAssignment(name, value)) return true;
+  }
+  return false;
 }
 
 function ruleFor(value: string): string | undefined {
