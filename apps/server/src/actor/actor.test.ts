@@ -1,9 +1,9 @@
 // The actor layer over HTTP (spec.md Interfaces -> Check order steps 1 to 3).
 import type { Actor } from "@sky-brain/shared/actor";
 import express from "express";
-import type { Server } from "node:http";
+import { request as httpRequest, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { errorHandler } from "../http/error-handler.ts";
 import {
   closeTestDb,
@@ -106,6 +106,46 @@ describe("actor middleware", () => {
     }
   });
 
+  it("refuses the dev header when the Host is not this machine", async () => {
+    const port = new URL(on.url).port;
+    const send = (host: string) =>
+      new Promise<{ status: number; body: { error: { code: string } } }>(
+        (resolve, reject) => {
+          const req = httpRequest(
+            `${on.url}/api/v1/nothing-here`,
+            { headers: { Host: host, "X-Dev-Actor": JSON.stringify(alice) } },
+            (res) => {
+              let text = "";
+              res.setEncoding("utf8");
+              res.on("data", (chunk: string) => (text += chunk));
+              res.on("end", () =>
+                resolve({
+                  status: res.statusCode ?? 0,
+                  body: JSON.parse(text),
+                }),
+              );
+            },
+          );
+          req.on("error", reject);
+          req.end();
+        },
+      );
+    for (const host of [`evil.example:${port}`, "evil.example"]) {
+      const res = await send(host);
+      expect(res.status, host).toBe(401);
+      expect(res.body.error.code, host).toBe("dev_actor_disabled");
+    }
+    for (const host of [
+      `127.0.0.1:${port}`,
+      `localhost:${port}`,
+      `[::1]:${port}`,
+    ]) {
+      const res = await send(host);
+      expect(res.status, host).toBe(404);
+      expect(res.body.error.code, host).toBe("not_found");
+    }
+  });
+
   it("checks the actor before the body", async () => {
     const malformed = await off.anonymous.request("/api/v1/entries", {
       method: "POST",
@@ -143,6 +183,24 @@ describe("actor middleware", () => {
     expect(res.status).toBe(413);
     expect(res.body.error.code).toBe("too_large");
     expect(res.body.error.field).toBeUndefined();
+  });
+
+  it("answers an unsupported or corrupt body encoding from an actor with 400", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      for (const encoding of ["br2", "gzip"]) {
+        const res = await off.as(alice).request("/api/v1/entries", {
+          method: "POST",
+          headers: { ...json, "content-encoding": encoding },
+          body: JSON.stringify({ title: "x" }),
+        });
+        expect(res.status, encoding).toBe(400);
+        expect(res.body.error.code, encoding).toBe("invalid_json");
+      }
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("keeps /healthz open without an actor", async () => {
