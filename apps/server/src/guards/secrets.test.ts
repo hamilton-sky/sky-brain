@@ -220,6 +220,16 @@ describe("scanForSecrets, keys next to punctuation", () => {
     ).toEqual({ field: "body", rule: "gcp-api-key" });
   });
 
+  // Review round 2: a key run straight on after a word character such as `_`.
+  for (const [label, key, rule] of providerKeys) {
+    it(`refuses ${label} right after an underscore (${rule})`, () => {
+      expect(scanForSecrets(body(`token_${key}`))).toEqual({
+        field: "body",
+        rule,
+      });
+    });
+  }
+
   it("still accepts a key-shaped prefix that runs on into more characters", () => {
     const key = "AI" + "za" + alnum(35, 18) + "Q";
     expect(scanForSecrets(body(key))).toBeUndefined();
@@ -235,6 +245,15 @@ describe("scanForSecrets, generic-secret forms", () => {
     ["a const assignment", `const apiKey = "${secretValue}";`],
     ["a value followed by a # comment", `PASSWORD=${secretValue} # prod`],
     ["lines separated only by \\r", `notes\rDB_PASSWORD=${secretValue}\rmore`],
+    // Review round 2: a secret that is not the first name on its line.
+    [
+      "a one-line JSON object with the secret second",
+      `{"user":"bob","api_key":"${secretValue}"}`,
+    ],
+    [
+      "a one-line object literal with the secret second",
+      `const config = { user: 'bob', apiKey: '${secretValue}' };`,
+    ],
   ];
   for (const [label, text] of refuse) {
     it(`refuses ${label} (generic-secret)`, () => {
@@ -252,6 +271,14 @@ describe("scanForSecrets, generic-secret forms", () => {
       "const token = import.meta.env.VITE_TOKEN;",
     ],
     ["a placeholder followed by a comment", "API_KEY=<your key here> # set me"],
+    [
+      "a one-line JSON object with a placeholder second",
+      `{"user":"bob","api_key":"<your key here>"}`,
+    ],
+    [
+      "a one-line JSON object with no secret name",
+      `{"user":"bob","sha":"3f786850e387550fdab836ed7e6dc881de23001b"}`,
+    ],
   ];
   for (const [label, text] of accept) {
     it(`accepts ${label}`, () => {
@@ -275,6 +302,13 @@ describe("scanForSecrets, time on hostile input", () => {
       "many BEGIN lines",
       (n) => "-----BEGIN RSA PRIVATE KEY-----\n".repeat(n / 32),
     ],
+    // Review round 2: the pair scan over a line.
+    ["quotes", (n) => '"'.repeat(n)],
+    ["an open quoted value", (n) => '{"api_key":"' + "a".repeat(n)],
+    ["a quoted name then spaces", (n) => '"api_key"' + " ".repeat(n)],
+    ["words without colons", (n) => "ab ".repeat(n / 3)],
+    ["many short pairs", (n) => '"k":"v",'.repeat(n / 8)],
+    ["underscores", (n) => "_".repeat(n)],
   ];
   const budgetMs = 200;
   for (const [label, make] of cases) {

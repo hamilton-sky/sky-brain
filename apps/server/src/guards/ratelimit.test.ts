@@ -159,6 +159,22 @@ describe("createRateLimiter", () => {
     expect(limiter.size()).toBe(1);
   });
 
+  it("still sweeps after the clock steps backwards", () => {
+    const c = clock();
+    const limiter = createRateLimiter({
+      capacity: 1,
+      refillPerSecond: 1,
+      now: c.now,
+    });
+    limiter.take("a"); // sweeps
+    c.advance(-3600); // the clock steps back an hour
+    limiter.take("b");
+    c.advance(700); // b has been full for over ten minutes
+    limiter.take("c"); // a minute and more since the last sweep, by the clock now: sweeps
+    expect(limiter.size()).toBe(2); // b went; a is full only in the clock's future
+    expect(limiter.take("b")).toEqual({ ok: true });
+  });
+
   it("refuses options that cannot make a bucket", () => {
     expect(() => createRateLimiter({ capacity: 0 })).toThrow(/capacity/);
     expect(() => createRateLimiter({ capacity: 1.5 })).toThrow(/capacity/);
