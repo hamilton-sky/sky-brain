@@ -230,6 +230,15 @@ describe("scanForSecrets, keys next to punctuation", () => {
     });
   }
 
+  // Review round 3: the trailing side of the AWS rule, as round 2 fixed the leading side.
+  it("refuses an AWS access key run straight on into an underscore (aws-access-token)", () => {
+    const key = "AK" + "IA" + base32(16);
+    expect(scanForSecrets(body(`${key}_prod`))).toEqual({
+      field: "body",
+      rule: "aws-access-token",
+    });
+  });
+
   it("still accepts a key-shaped prefix that runs on into more characters", () => {
     const key = "AI" + "za" + alnum(35, 18) + "Q";
     expect(scanForSecrets(body(key))).toBeUndefined();
@@ -309,6 +318,11 @@ describe("scanForSecrets, time on hostile input", () => {
     ["words without colons", (n) => "ab ".repeat(n / 3)],
     ["many short pairs", (n) => '"k":"v",'.repeat(n / 8)],
     ["underscores", (n) => "_".repeat(n)],
+    // Review round 3: a keyword prefix followed by a whitespace run.
+    ["export + spaces", (n) => "export" + " ".repeat(n) + "x"],
+    ["const + tabs", (n) => "const" + "\t".repeat(n) + "x"],
+    ["let + spaces and tabs", (n) => "let" + " \t".repeat(n / 2) + "x"],
+    ["var + spaces then {", (n) => "var" + " ".repeat(n) + "{"],
   ];
   const budgetMs = 200;
   for (const [label, make] of cases) {
