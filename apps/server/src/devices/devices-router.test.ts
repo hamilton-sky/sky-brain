@@ -180,6 +180,22 @@ describe("POST /api/v1/devices/approve", () => {
     ).toBe(200);
   });
 
+  it("answers a sixth approve at minute 3 with 429, and opens again 15 minutes after the first", async () => {
+    const me = server.as(human());
+    const bad = { user_code: "BCDF-GHJK", name: "x" };
+    for (let i = 0; i < 5; i += 1) {
+      error(await me.post("/api/v1/devices/approve", bad), 404, "not_found");
+    }
+    advance(180);
+    const sixth = await me.post("/api/v1/devices/approve", bad);
+    error(sixth, 429, "rate_limited");
+    expect(Number(sixth.headers.get("retry-after"))).toBe(720);
+    advance(719);
+    error(await me.post("/api/v1/devices/approve", bad), 429, "rate_limited");
+    advance(1);
+    error(await me.post("/api/v1/devices/approve", bad), 404, "not_found");
+  });
+
   it("refuses an unknown field with 400 invalid_request", async () => {
     const c = await userCode();
     error(
