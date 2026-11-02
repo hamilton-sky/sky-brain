@@ -154,6 +154,7 @@ Its own map links back here. Rows, not yet tickets:
 - 01 — Review round 1: per-address limits on /api/device (`trust proxy` 1 in app.ts), expired unapproved codes purged on /code, approve is a fixed 15-minute window, a revoked or 60 s-late approved code is handled at poll.
 - 01 — Review round 2: `createApp({ trustProxyHops })` (default 1, forced 0 with the dev actor header, D15), device-flow limits key IPv6 by /64, optional `publicBaseUrl` for `verification_uri`, partial index on pending `expires_at`; Render's real hop count is unverified.
 - 02 — Run tokens `sbr_` (hash only, `run_tokens.role` text+check since schema.ts enums are undefined in auth-schema at load), resolver chained before `options.resolveActor`, full verb table in `run-tokens/verbs.ts` mounted after `express.json`; a person calling mint gets 403 `verb_not_allowed`; `assertRunScope`/`effectiveRole` in `run-tokens/run-scope.ts` for 04-07.
+- 02 — Review round 2: mint is rate-limited per actor and device (default limiter) and purges the device's expired run tokens; the bearer scheme is case-insensitive; HEAD needs the GET verb.
 
 ## Open questions
 

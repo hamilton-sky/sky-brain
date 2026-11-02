@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -96,7 +96,8 @@ $ pnpm typecheck
 
 Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`. Round 2: `e0ce4b9` restores every path
 outside the plan folder to that base; `42ffc8b` adds the test files alone (they fail on the missing
-`actor/run-context.ts` and `run-tokens/*` modules); the next commit restores the code.
+`actor/run-context.ts` and `run-tokens/*` modules); `500257a` restores the code. Round 3 (review
+findings round 2) starts at `16349c6`: a test-only commit, then the fixes.
 
 **Built**
 - New: `packages/shared/src/run-tokens.ts` (`VERBS`, `Verb`, `verbSchema`, `RUN_TOKEN_ROLES`,
@@ -105,7 +106,8 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
   `mint-router.ts`, `run-scope.ts`; migration `apps/server/drizzle/0004_run-tokens.sql`
   (+ `meta/0004_snapshot.json`, `_journal.json`, from `drizzle-kit generate --name run-tokens`).
 - Tests: `apps/server/src/run-tokens/run-tokens.test.ts` (mint, resolver), `verbs.test.ts` (verb
-  table, verbs over HTTP, project binding, effective role), `tests/fixture.ts` (shared setup and the
+  table, verbs over HTTP, project binding, effective role), `mint-limits.test.ts` (round 3: mint
+  rate limit, purge of expired run tokens, bearer scheme case), `tests/fixture.ts` (shared setup and the
   test-only app/router), `apps/server/src/actor/run-context.test.ts`.
 - Changed: `apps/server/src/db/auth-schema.ts` (`runTokens`), `apps/server/src/app.ts` (resolver
   chain, `verbMiddleware()` after `express.json`, `/api/v1/run-tokens` mount),
@@ -125,6 +127,11 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
   `effectiveRole` lower of token and member role; harness bearer tokens still resolve.
 - `pnpm test`: shared 2 files / 15 tests, server 22 files / 318 tests, exit 0 (re-run in round 2).
 - `pnpm lint` exit 0; `pnpm typecheck` exit 0.
+- Round 3, re-run fresh after the last edit: focused run 5 files / 28 tests passed, exit 0;
+  `pnpm test` shared 2 files / 15 tests and server 23 files / 322 tests, exit 0; `pnpm lint` exit
+  0; `pnpm typecheck` exit 0. At the test-only commit the focused run failed 5 tests, each for the
+  missing behaviour (61st mint got 201, 3 rows left instead of 2, `bearer sbr_…` got 401
+  `unauthenticated` / fell through, `HEAD /goals` got no verb).
 - Not required: acceptance `run-tokens` 22 of 31 with `device-login` pass; the 9 failures all
   stop at creating a goal (404, tickets 04-07).
 
@@ -148,6 +155,14 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
   revoked_at IS NULL RETURNING`), so a revoke between resolve and mint mints nothing (401).
 - Mint audit details: `on_behalf_of`, `device_id`, `project_id`, `verbs`, `role`, `ttl_seconds`.
 - The resolver does not touch `last_seen_at` on every request; only mint does (as the ticket says).
+- Round 3: mint has its own `createRateLimiter` (the default 60 burst, 1 per second, on the app
+  clock), keyed `actorKey(actor)|device:<id>`, taken after the device check and before the body
+  is validated (Check order 5 before 6); 429 `rate_limited` with `Retry-After`, like devices
+  approve. One limiter per `createApp`, in memory (spec.md Decisions).
+- Round 3: inside the mint transaction, the minting device's run tokens with `expires_at <= now`
+  are deleted (they can never resolve again). Live ones and other devices' rows stay.
+- Round 3: the bearer scheme matches `/^Bearer\s+(\S+)\s*$/i`; `verbFor` treats `HEAD` as `GET`
+  (Express serves HEAD with the GET route), so `read` covers `HEAD` on the read routes.
 
 **Review fixes**
 - Round 1, test first ("no commit between base and HEAD changes only test files"): the old test
@@ -159,13 +174,23 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
   run fails 3 files on `Cannot find module '../../actor/run-context.ts'`. The code commit then
   restores the production files from `0d99995` unchanged. Re-proved: focused run 4 files / 24 tests
   passed; `pnpm test` (15 + 318), `pnpm lint`, `pnpm typecheck` exit 0.
+- Round 2, quality 1 (major, mint unlimited and expired rows never purged): `mint-router.ts` now
+  takes from a per-actor-and-device limiter before validating (429 `rate_limited` + `Retry-After`)
+  and deletes the device's expired run tokens inside the mint transaction. Tests: 61st mint in a
+  burst 429, another device of the same person still mints, one second later the first mints
+  again; after expiry only the device's live and new rows remain, another device's rows untouched.
+- Round 2, quality 2 (minor, `bearer`/extra spaces fell through): `bearerOf` is case-insensitive
+  and allows any whitespace. Tests: `bearer sbr_…`, `BEARER  sbd_…`, `Bearer\tsbr_…` unknown → 401
+  `invalid_token`; a valid run token with `bearer` resolves (403 `verb_not_allowed` on devices).
+- Round 2, quality 3 (minor, HEAD): `verbFor` maps HEAD to GET. The verb-table test now expects
+  `HEAD /goals` and `HEAD /tasks/:id` → `read` and `HEAD /entries` → none (it expected none for
+  `HEAD /goals` before; changed because the finding changes that behaviour).
 
 **Shortcuts taken**
-- No general per-actor rate limit on mint (Check order step 5): no general limiter is mounted in
-  the app yet (as in ticket 01). A device can mint as fast as it can call; each mint is one row.
-  Worth adding with the first ticket that mounts the general limiter.
-- Expired `run_tokens` rows are never purged. At one mint per 30 minutes per worker the table
-  grows slowly; add a purge (like device codes') if it ever matters.
+- The mint limiter is in memory per server instance (as spec.md Decisions allows for one Render
+  instance); several instances would each give a device its own burst.
+- Expired rows of a device that never mints again stay until the device is deleted (cascade);
+  bounded by what it minted in its last 30 minutes.
 - No migration test that old rows survive 0004: it only creates a new table.
 
 **For later tickets**
@@ -177,6 +202,9 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
   `runContextOf(req).projectId`.
 - Tests can reuse `run-tokens/tests/fixture.ts` (`useRunTokenFixture`, `world`, `device`) and
   `mintRunToken` from `testing/task-seeds.ts`.
+- 04: mint already has its own limiter in `mint-router.ts`; the app-wide board-write limiter of
+  ticket 04 need not cover `POST /api/v1/run-tokens` (covering it too would only take a second
+  token per mint).
 - `db/schema.test.ts` still lists 9 tables (outside this ticket's Touches); `run_tokens` exists
   but is not in that list.
 

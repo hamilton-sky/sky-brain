@@ -56,7 +56,7 @@ describe("purging expired run tokens", () => {
     const w = await world(ctx.db);
     const d = await device(ctx.server, w.editor);
     const other = await device(ctx.server, w.editor);
-    const body = { project_id: w.projectA, verbs: ["read"] };
+    const body = { project_id: w.projectA, verbs: ["read" as const] };
     const short = await mintRunToken(ctx.server, d.deviceToken, {
       ...body,
       ttl_seconds: 60,

@@ -49,8 +49,10 @@ export function verbFor(method: string, path: string): RouteVerb | undefined {
   // Express routes are not strict: `/goals/` reaches the `/goals` route.
   const trimmed = path.length > 1 ? path.replace(/\/$/, "") : path;
   const parts = segments(trimmed);
+  // Express answers HEAD with the GET route, so HEAD needs what GET needs.
+  const asMethod = method === "HEAD" ? "GET" : method;
   for (const [m, pattern, verb] of PATTERNS) {
-    if (m === method && matches(pattern, parts)) return verb;
+    if (m === asMethod && matches(pattern, parts)) return verb;
   }
   return undefined;
 }

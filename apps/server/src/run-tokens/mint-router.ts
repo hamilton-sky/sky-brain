@@ -1,20 +1,21 @@
 // `POST /api/v1/run-tokens` (cloud-task-board spec.md Routes): a device token mints a run token
 // for one project. Check order: actor (app), body (app), verb (app: only a device token reaches
-// here), request shape, then the project and membership (404), then the role (403
+// here), the rate limit per actor and device (429), request shape, then the project and membership (404), then the role (403
 // `role_too_high`). The token is returned once and only its hash is stored.
 import {
   RUN_TOKEN_MAX_TTL_SECONDS,
   RunTokenMintRequestSchema,
   type RunTokenRole,
 } from "@sky-brain/shared/run-tokens";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, lte } from "drizzle-orm";
 import express, { type Router } from "express";
-import { auditActor, personOf } from "../actor/keys.ts";
+import { actorKey, auditActor, personOf } from "../actor/keys.ts";
 import { actorOf } from "../actor/middleware.ts";
 import { runContextOf } from "../actor/run-context.ts";
 import { writeAudit } from "../db/audit.ts";
 import type { Db } from "../db/client.ts";
 import { devices, members, projects, runTokens } from "../db/schema.ts";
+import { createRateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
 import { hashSecretToken, newSecretToken } from "./secret-token.ts";
@@ -27,6 +28,9 @@ export interface MintRouterOptions {
 export function mintRouter(options: MintRouterOptions): Router {
   const { db, now } = options;
   const router = express.Router();
+  // Check order step 5: every POST under /api/v1 is limited per actor and device (the default
+  // burst of 60, then one a second), so a leaked or looping device token cannot mint without end.
+  const limiter = createRateLimiter({ now: () => now().getTime() });
 
   router.post("/", async (req, res) => {
     // The verb table already refuses run tokens here; this refuses people and other agents.
@@ -38,8 +42,13 @@ export function mintRouter(options: MintRouterOptions): Router {
         "Only a device token can mint run tokens.",
       );
     }
-    const body = validate(RunTokenMintRequestSchema, req.body);
     const actor = actorOf(req);
+    const taken = limiter.take(`${actorKey(actor)}|device:${context.deviceId}`);
+    if (!taken.ok) {
+      res.set("Retry-After", String(taken.retryAfterSeconds));
+      throw new HttpError(429, "rate_limited", "Too many mints; wait.");
+    }
+    const body = validate(RunTokenMintRequestSchema, req.body);
 
     const [scope] = await db
       .select({ workspaceId: projects.workspaceId, role: members.role })
@@ -83,6 +92,16 @@ export function mintRouter(options: MintRouterOptions): Router {
           "The token is unknown, expired or revoked.",
         );
       }
+      // The device's expired run tokens can never resolve again; drop them so its rows stay
+      // bounded by what it minted in the last 30 minutes.
+      await tx
+        .delete(runTokens)
+        .where(
+          and(
+            eq(runTokens.deviceId, context.deviceId),
+            lte(runTokens.expiresAt, t),
+          ),
+        );
       const [created] = await tx
         .insert(runTokens)
         .values({

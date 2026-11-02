@@ -26,9 +26,9 @@ const agentOf = (deviceId: string, person: string): Actor => ({
   on_behalf_of: person,
 });
 
-/** The bearer token of a request, or undefined. */
+/** The bearer token of a request, or undefined. The scheme name is case-insensitive (HTTP). */
 function bearerOf(req: Request): string | undefined {
-  return /^Bearer (\S+)$/.exec(req.get("authorization") ?? "")?.[1];
+  return /^Bearer\s+(\S+)\s*$/i.exec(req.get("authorization") ?? "")?.[1];
 }
 
 export function runTokenResolver(db: Db, now: () => Date): ActorResolver {
