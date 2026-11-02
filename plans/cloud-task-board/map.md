@@ -156,6 +156,7 @@ Its own map links back here. Rows, not yet tickets:
 - 02 — Run tokens `sbr_` (hash only, `run_tokens.role` text+check since schema.ts enums are undefined in auth-schema at load), resolver chained before `options.resolveActor`, full verb table in `run-tokens/verbs.ts` mounted after `express.json`; a person calling mint gets 403 `verb_not_allowed`; `assertRunScope`/`effectiveRole` in `run-tokens/run-scope.ts` for 04-07.
 - 02 — Review round 2: mint is rate-limited per actor and device (default limiter) and purges the device's expired run tokens; the bearer scheme is case-insensitive; HEAD needs the GET verb.
 - 03 — Board tables in `db/tasks-schema.ts` (author_kind text+check, new enums local); tasks have composite FKs to `goals (id, project_id)` and `projects (id, workspace_id)`; `task_events` has no FKs and a trigger (0006); `taskTextHash` = SHA-256 of JSON `[title, body, files, context_refs]`; shared `tooLargeField` tells 413 from 400.
+- 04 — Goals API in `tasks/goals-router.ts` + `goals-service.ts`; one board-write limiter in `createApp` (mint keeps its own) via `boardWriteLimit`; `parseRequest` gives 413 via `tooLargeField`; human writes lock the goal `FOR UPDATE`; approve re-sets `approved_by` and pins with `approved_hash IS DISTINCT FROM text_hash`; a feature outside the project is 404; agents get no held goals, tasks or counts of them.
 
 ## Open questions
 

@@ -4,10 +4,12 @@ import { actorMiddleware, type ActorResolver } from "./actor/middleware.ts";
 import type { Db } from "./db/client.ts";
 import { deviceFlowRouter } from "./devices/device-flow.ts";
 import { devicesRouter } from "./devices/devices-router.ts";
+import { createRateLimiter } from "./guards/ratelimit.ts";
 import { errorHandler } from "./http/error-handler.ts";
 import { mintRouter } from "./run-tokens/mint-router.ts";
 import { runTokenResolver } from "./run-tokens/resolver.ts";
 import { verbMiddleware } from "./run-tokens/verbs.ts";
+import { goalsRouter } from "./tasks/goals-router.ts";
 
 export interface AppOptions {
   db: Db;
@@ -120,6 +122,11 @@ export function createApp(options: AppOptions): express.Express {
 
   app.use("/api/v1/devices", devicesRouter({ db, now }));
   app.use("/api/v1/run-tokens", mintRouter({ db, now }));
+
+  // Check order step 5: one limiter for every board write, per actor and device, on the app
+  // clock; the board's routers share it.
+  const boardLimiter = createRateLimiter({ now: () => now().getTime() });
+  app.use("/api/v1/goals", goalsRouter({ db, now, limiter: boardLimiter }));
 
   app.use("/api", (_req, res) => {
     res
