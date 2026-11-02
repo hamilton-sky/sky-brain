@@ -2,6 +2,8 @@ import express from "express";
 import { fileURLToPath } from "node:url";
 import { actorMiddleware, type ActorResolver } from "./actor/middleware.ts";
 import type { Db } from "./db/client.ts";
+import { deviceFlowRouter } from "./devices/device-flow.ts";
+import { devicesRouter } from "./devices/devices-router.ts";
 import { errorHandler } from "./http/error-handler.ts";
 
 export interface AppOptions {
@@ -22,12 +24,17 @@ const defaultWebDist = fileURLToPath(
 
 export function createApp(options: AppOptions): express.Express {
   const webDist = options.webDist ?? defaultWebDist;
-  // db and now are handed to the routers the entries tickets mount on /api/v1.
+  const db = options.db;
+  // Every time comparison in a route uses this clock, so tests can move time.
+  const now = options.now ?? (() => new Date());
   const app = express();
 
   app.get("/healthz", (_req, res) => {
     res.status(200).json({ ok: true });
   });
+
+  // The anonymous device flow: before the actor middleware, with its own body parser.
+  app.use("/api/device", deviceFlowRouter({ db, now }));
 
   // Check order steps 1 and 2: the actor before the body, so an anonymous body is never read.
   app.use(
@@ -38,6 +45,8 @@ export function createApp(options: AppOptions): express.Express {
     }),
     express.json({ limit: "64kb" }),
   );
+
+  app.use("/api/v1/devices", devicesRouter({ db, now }));
 
   app.use("/api", (_req, res) => {
     res

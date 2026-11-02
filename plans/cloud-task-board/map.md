@@ -150,6 +150,7 @@ Its own map links back here. Rows, not yet tickets:
   "**/*.pg.test.ts"]` with `configDefaults` from `vitest/config`. `--config <file>` picks the
   second config for `test:pg`. docs: https://vitest.dev/config/exclude (also the installed
   `vitest/dist/config.d.ts` and `defaults` chunk, `defaultExclude`).
+- 01 — Device flow at /api/device (flat RFC 8628 errors, own body-error handler), human devices routes at /api/v1/devices; device code and `sbd_` token stored as SHA-256 only; user code unique while `device_id IS NULL`; device audit rows use the nil workspace uuid.
 
 ## Open questions
 

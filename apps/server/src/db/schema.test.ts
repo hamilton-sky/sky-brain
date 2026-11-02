@@ -58,8 +58,9 @@ describe("migrations", () => {
       .select({ n: sql<number>`count(*)::int` })
       .from(sql`information_schema.tables`)
       .where(sql`table_schema = 'public' and table_name in (
-      'workspaces','members','invites','projects','features','entries','audit_log','devices')`);
-    expect(rows[0]?.n).toBe(8);
+      'workspaces','members','invites','projects','features','entries','audit_log','devices',
+      'device_codes')`);
+    expect(rows[0]?.n).toBe(9);
   });
 });
 

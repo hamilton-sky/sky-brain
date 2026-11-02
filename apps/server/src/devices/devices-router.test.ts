@@ -55,12 +55,10 @@ describe("POST /api/v1/devices/approve", () => {
   it("creates the caller's device and writes a device.approve audit row", async () => {
     const me = human();
     const c = await userCode();
-    const res = await server
-      .as(me)
-      .post("/api/v1/devices/approve", {
-        user_code: c.user_code,
-        name: "laptop 1",
-      });
+    const res = await server.as(me).post("/api/v1/devices/approve", {
+      user_code: c.user_code,
+      name: "laptop 1",
+    });
     expect(res.status).toBe(200);
     expect(res.body.device).toMatchObject({
       name: "laptop 1",
@@ -88,12 +86,10 @@ describe("POST /api/v1/devices/approve", () => {
     ["without the dash", (c: string) => c.replace("-", "")],
   ])("accepts the user code typed in %s", async (_label, typed) => {
     const c = await userCode();
-    const res = await server
-      .as(human())
-      .post("/api/v1/devices/approve", {
-        user_code: typed(c.user_code),
-        name: "x",
-      });
+    const res = await server.as(human()).post("/api/v1/devices/approve", {
+      user_code: typed(c.user_code),
+      name: "x",
+    });
     expect(res.status).toBe(200);
   });
 
@@ -176,12 +172,10 @@ describe("POST /api/v1/devices/approve", () => {
     // Another person has their own bucket.
     expect(
       (
-        await server
-          .as(human())
-          .post("/api/v1/devices/approve", {
-            user_code: c.user_code,
-            name: "x",
-          })
+        await server.as(human()).post("/api/v1/devices/approve", {
+          user_code: c.user_code,
+          name: "x",
+        })
       ).status,
     ).toBe(200);
   });
