@@ -27,6 +27,7 @@ import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
 import { assertRunScope, effectiveRole } from "../run-tokens/run-scope.ts";
 import { resolveScope } from "../scope/resolve-scope.ts";
+import { addTasksHandler } from "./add-tasks.ts";
 import {
   approveGoal,
   assertAssignable,
@@ -205,6 +206,8 @@ export function goalsRouter(options: GoalsRouterOptions): Router {
       });
     },
   ];
+
+  router.post("/:id/tasks", limit, addTasksHandler({ db, now }));
 
   router.post(
     "/:id/approve",

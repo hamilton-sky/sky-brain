@@ -10,6 +10,7 @@ import { mintRouter } from "./run-tokens/mint-router.ts";
 import { runTokenResolver } from "./run-tokens/resolver.ts";
 import { verbMiddleware } from "./run-tokens/verbs.ts";
 import { goalsRouter } from "./tasks/goals-router.ts";
+import { tasksRouter } from "./tasks/tasks-router.ts";
 
 export interface AppOptions {
   db: Db;
@@ -127,6 +128,7 @@ export function createApp(options: AppOptions): express.Express {
   // clock; the board's routers share it.
   const boardLimiter = createRateLimiter({ now: () => now().getTime() });
   app.use("/api/v1/goals", goalsRouter({ db, now, limiter: boardLimiter }));
+  app.use("/api/v1/tasks", tasksRouter({ db, now, limiter: boardLimiter }));
 
   app.use("/api", (_req, res) => {
     res
