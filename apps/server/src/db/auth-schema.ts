@@ -3,8 +3,6 @@
 // `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
 import { sql } from "drizzle-orm";
 import {
-  check,
-  foreignKey,
   index,
   integer,
   pgTable,
@@ -13,8 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { RunTokenRole, Verb } from "@sky-brain/shared/run-tokens";
-import { devices, projects } from "./schema.ts";
+import { devices } from "./schema.ts";
 
 const at = (name: string) => timestamp(name, { withTimezone: true });
 
@@ -47,38 +44,5 @@ export const deviceCodes = pgTable(
     index("device_codes_pending_expires_at_idx")
       .on(t.expiresAt)
       .where(sql`${t.deviceId} is null`),
-  ],
-);
-
-/** A run token (`sbr_`): at most 30 minutes, bound to a device, a project, a role and verbs. */
-export const runTokens = pgTable(
-  "run_tokens",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    /** SHA-256 hex of the run token; the token itself is never stored. */
-    tokenHash: text("token_hash").notNull().unique(),
-    deviceId: uuid("device_id")
-      .notNull()
-      .references(() => devices.id, { onDelete: "cascade" }),
-    workspaceId: uuid("workspace_id").notNull(),
-    projectId: uuid("project_id").notNull(),
-    /**
-     * `editor` or `viewer`; never `owner`. Text with a check, not schema.ts's `role` enum: this
-     * module loads before schema.ts finishes (schema.ts re-exports it), so the enum is not
-     * defined yet when this table is built.
-     */
-    role: text("role").$type<RunTokenRole>().notNull(),
-    verbs: text("verbs").array().$type<Verb[]>().notNull(),
-    expiresAt: at("expires_at").notNull(),
-    createdAt: at("created_at").notNull().defaultNow(),
-  },
-  (t) => [
-    foreignKey({
-      name: "run_tokens_project_in_workspace_fk",
-      columns: [t.projectId, t.workspaceId],
-      foreignColumns: [projects.id, projects.workspaceId],
-    }).onDelete("cascade"),
-    check("run_tokens_role", sql`${t.role} in ('editor', 'viewer')`),
-    index("run_tokens_device_idx").on(t.deviceId),
   ],
 );

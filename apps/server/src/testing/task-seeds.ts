@@ -1,7 +1,6 @@
 // Seeds and helpers for cloud-task-board tests (spec.md Interfaces -> How a test reaches the
 // server). Tests only.
 import { DEVICE_CODE_GRANT_TYPE } from "@sky-brain/shared/devices";
-import type { Verb } from "@sky-brain/shared/run-tokens";
 import { testClient, type TestClient, type TestServer } from "./harness.ts";
 
 /** A client that sends `Authorization: Bearer <token>`. */
@@ -40,25 +39,4 @@ export async function loginDevice(
     deviceId: token.body.device_id,
     deviceToken: token.body.device_token,
   };
-}
-
-/** A run token minted through `POST /api/v1/run-tokens`, as a device would. */
-export async function mintRunToken(
-  server: TestServer,
-  deviceToken: string,
-  body: {
-    project_id: string;
-    verbs: Verb[];
-    role?: "editor" | "viewer";
-    ttl_seconds?: number;
-  },
-): Promise<{ runToken: string; expiresAt: string }> {
-  const res = await withToken(server, deviceToken).post(
-    "/api/v1/run-tokens",
-    body,
-  );
-  if (res.status !== 201) {
-    throw new Error(`mintRunToken: got ${res.status} ${res.text}`);
-  }
-  return { runToken: res.body.run_token, expiresAt: res.body.expires_at };
 }

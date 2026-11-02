@@ -5,9 +5,6 @@ import type { Db } from "./db/client.ts";
 import { deviceFlowRouter } from "./devices/device-flow.ts";
 import { devicesRouter } from "./devices/devices-router.ts";
 import { errorHandler } from "./http/error-handler.ts";
-import { mintRouter } from "./run-tokens/mint-router.ts";
-import { runTokenResolver } from "./run-tokens/resolver.ts";
-import { verbMiddleware } from "./run-tokens/verbs.ts";
 
 export interface AppOptions {
   db: Db;
@@ -100,26 +97,17 @@ export function createApp(options: AppOptions): express.Express {
   // The anonymous device flow: before the actor middleware, with its own body parser.
   app.use("/api/device", deviceFlowRouter({ db, now, publicBaseUrl }));
 
-  // Check order step 1: a device or run token first (`sbd_`/`sbr_`), then the existing resolver.
-  const runTokens = runTokenResolver(db, now);
-  const otherActors = options.resolveActor ?? (() => undefined);
-  const resolveActor: ActorResolver = async (req) =>
-    (await runTokens(req)) ?? (await otherActors(req));
-
-  // Check order steps 1 to 3: the actor before the body, so an anonymous body is never read;
-  // then the verb check for device and run tokens, before any router.
+  // Check order steps 1 and 2: the actor before the body, so an anonymous body is never read.
   app.use(
     "/api/v1",
     actorMiddleware({
-      resolveActor,
+      resolveActor: options.resolveActor ?? (() => undefined),
       devActorHeader: options.devActorHeader ?? false,
     }),
     express.json({ limit: "64kb" }),
-    verbMiddleware(),
   );
 
   app.use("/api/v1/devices", devicesRouter({ db, now }));
-  app.use("/api/v1/run-tokens", mintRouter({ db, now }));
 
   app.use("/api", (_req, res) => {
     res

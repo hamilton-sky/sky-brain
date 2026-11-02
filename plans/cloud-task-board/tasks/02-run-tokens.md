@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: open
+Status: claimed
 Blocked by: 01
 Test first: yes
 Level: 3
