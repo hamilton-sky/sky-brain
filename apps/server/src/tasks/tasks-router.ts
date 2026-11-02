@@ -1,5 +1,5 @@
-// `/api/v1/tasks` (cloud-task-board spec.md Routes): the ready list, get one task, the claim, and
-// the human-only release-text. Renew and report join it in ticket 07. Check order: actor,
+// `/api/v1/tasks` (cloud-task-board spec.md Routes): the ready list, get one task, the claim,
+// renew, release, done and fail (report.ts), and the human-only release-text. Check order: actor,
 // body and verb (app); humans only (release-text); the board-write rate limit (every POST); the
 // path id; target and membership (404, also for an agent on a held task or a task of a held
 // goal); role (403); state (409).
@@ -22,6 +22,7 @@ import { liveTextHash } from "./eligibility.ts";
 import { assertWriter, boardWriteLimit, pathId } from "./goals-router.ts";
 import { goalNotFound } from "./goals-service.ts";
 import { readyHandler } from "./ready.ts";
+import { reportHandlers } from "./report.ts";
 import { toWireTask, type TaskRow } from "./wire.ts";
 
 export interface TasksRouterOptions {
@@ -91,6 +92,11 @@ export function tasksRouter(options: TasksRouterOptions): Router {
   });
 
   router.post("/:id/claim", limit, claimHandler({ db, now }));
+  const report = reportHandlers({ db, now });
+  router.post("/:id/renew", limit, report.renew);
+  router.post("/:id/release", limit, report.release);
+  router.post("/:id/done", limit, report.done);
+  router.post("/:id/fail", limit, report.fail);
 
   router.post("/:id/release-text", requireHuman, limit, async (req, res) => {
     const id = pathId(req);

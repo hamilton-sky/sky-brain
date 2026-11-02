@@ -158,6 +158,7 @@ Its own map links back here. Rows, not yet tickets:
 - 03 — Board tables in `db/tasks-schema.ts` (author_kind text+check, new enums local); tasks have composite FKs to `goals (id, project_id)` and `projects (id, workspace_id)`; `task_events` has no FKs and a trigger (0006); `taskTextHash` = SHA-256 of JSON `[title, body, files, context_refs]`; shared `tooLargeField` tells 413 from 400.
 - 04 — Goals API in `tasks/goals-router.ts` + `goals-service.ts`; one board-write limiter in `createApp` (mint keeps its own) via `boardWriteLimit`; `parseRequest` gives 413 via `tooLargeField`; human writes lock the goal `FOR UPDATE`; approve re-sets `approved_by` and pins with `approved_hash IS DISTINCT FROM text_hash`; a feature outside the project is 404; agents get no held goals, tasks or counts of them.
 - 05 — Add tasks in `tasks/add-tasks.ts` (routed from goals-router), `/api/v1/tasks` in `tasks-router.ts` (get, release-text, `findTask`); `writeTaskEvent` takes `at` (app clock); deps: index < own index checked with the shape, ids must be visible tasks of this goal; secrets scanned in title, body, lane, files, refs; position = max+1 under the goal lock.
+- 07 — Renew/release/done/fail in `tasks/report.ts`: one conditional update fenced on status, claim_seq, holder actor+person+device and live lease; no row → re-select the fence to tell `lease_lost` from `goal_cancelled`; done keeps the holder for an idempotent repeat; fail cascade (`fail-cascade.ts`) is a recursive CTE blocking pending dependents.
 
 ## Open questions
 
