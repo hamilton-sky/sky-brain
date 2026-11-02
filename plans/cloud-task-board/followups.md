@@ -24,3 +24,8 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - 1. minor apps/server/src/tasks/goals-service.ts: `approveGoal` checks for held tasks, then pins with a separate UPDATE that does not filter `quarantined_because`. Under READ COMMITTED, a held task that ticket 05 inserts between the two statements would be pinned. A later `release-text` would then leave it pinned and claimable without a fresh approval. To fix, add `isNull(tasks.quarantinedBecause)` to the pin UPDATE's where clause. Ticket 05's add-tasks should also lock the goal row (`FOR UPDATE`) the way human writes do. (pair review)
 - 2. minor apps/server/src/tasks/goals-service.ts: `goalTasks` hides held tasks from agents, but it builds `depends_on` from every `task_deps` row. A visible task's `depends_on` can therefore give an agent the id of a held task. To fix, drop dependency ids that are not in the visible set when the caller is an agent. (pair review)
+
+## 05-add-tasks (left for later)
+
+- 1. minor apps/server/src/tasks/tasks-router.ts: `GET /:id` returns every `depends_on` id without filtering. An agent can read a visible task that depends on a held task and so learn the held task's id, although spec says an agent "never sees" a held task. It gets the id only, never the text, and the goal view from ticket 04 has the same gap. Change: for an agent, drop held ids from `depends_on`, or record the choice in followups.md. (pair review)
+- 2. minor packages/shared/src/tasks.ts (used by add-tasks.ts): `depends_on` has no max length. Only the 64 KB body cap limits it, which still allows about 1,500 ids per task, all sent through one `inArray` query. Change: add a `.max(...)` cap, for example `TASK_CAPS.tasks` plus a fixed bound. (pair review)
