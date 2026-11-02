@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -93,3 +93,78 @@ $ pnpm typecheck
   `apps/server/src/scope/resolve-scope.ts` (read-only)
 
 ## Answer
+
+Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests committed alone as `8703472`
+(they failed on the missing `actor/run-context.ts`, `run-tokens/*` modules).
+
+**Built**
+- New: `packages/shared/src/run-tokens.ts` (`VERBS`, `Verb`, `verbSchema`, `RUN_TOKEN_ROLES`,
+  `RunTokenRole`, ttl bounds, strict `RunTokenMintRequestSchema`);
+  `apps/server/src/actor/run-context.ts`; `apps/server/src/run-tokens/resolver.ts`, `verbs.ts`,
+  `mint-router.ts`, `run-scope.ts`; migration `apps/server/drizzle/0004_run-tokens.sql`
+  (+ `meta/0004_snapshot.json`, `_journal.json`, from `drizzle-kit generate --name run-tokens`).
+- Tests: `apps/server/src/run-tokens/run-tokens.test.ts` (mint, resolver), `verbs.test.ts` (verb
+  table, verbs over HTTP, project binding, effective role), `test-fixture.ts` (shared setup and the
+  test-only app/router), `apps/server/src/actor/run-context.test.ts`.
+- Changed: `apps/server/src/db/auth-schema.ts` (`runTokens`), `apps/server/src/app.ts` (resolver
+  chain, `verbMiddleware()` after `express.json`, `/api/v1/run-tokens` mount),
+  `apps/server/src/testing/task-seeds.ts` (`mintRunToken`).
+
+**Proof**
+- `pnpm --filter @sky-brain/server exec vitest run src/run-tokens src/actor/run-context.test.ts`:
+  4 files, 24 tests passed, exit 0. Cases: mint as owner (editor role, 1,800 s, only the hash
+  stored, `last_seen_at`, `run_token.mint` audit without the token), editor (ttl 60), viewer
+  (default viewer; `editor` 403 `role_too_high`); outsider and unknown project 404; body with
+  `device_id` / `workspace_id` (and bad verbs, role, ttl, project id) 400 `invalid_request`;
+  expired run token 401 `invalid_token` from exactly `expires_at`; revoked device's run token and
+  device token 401; unknown `sbr_`/`sbd_` 401; token without `claim` on a claim route 403
+  `verb_not_allowed` (real app and test router) and with `claim` 200 on the test router; device
+  token on everything but mint 403; `POST /api/v1/entries` with an all-verbs run token 403; token
+  for project A 404 from `assertRunScope` for project B (same workspace) and C (other workspace);
+  `effectiveRole` lower of token and member role; harness bearer tokens still resolve.
+- `pnpm test`: shared 2 files / 15 tests, server 22 files / 318 tests, exit 0.
+- `pnpm lint` exit 0; `pnpm typecheck` exit 0.
+- Not required: acceptance `run-tokens` 22 of 31 with `device-login` pass; the 9 failures all
+  stop at creating a goal (404, tickets 04-07).
+
+**Decisions**
+- `run_tokens.role` is `text` with a check `in ('editor','viewer')`, not schema.ts's `role` enum:
+  `auth-schema.ts` is loaded while `schema.ts` is still evaluating (it re-exports it), so
+  `roleEnum` is undefined at table-build time (drizzle-kit crashed). `devices`/`projects` work
+  only because they are referenced inside callbacks.
+- A person (or any non-device agent) calling `POST /api/v1/run-tokens` gets 403
+  `verb_not_allowed` ("Only a device token can mint"): the spec's check order has no better code,
+  and `humans_only` would mean the opposite.
+- The verb table lives in `verbs.ts` with `verbFor(method, path)` exported; `mint` is a pseudo-verb
+  only a device token has. `:id` matches one non-empty segment; literals compare lower-cased
+  (Express routes ignore case) and one trailing slash is dropped (Express is non-strict); anything
+  else, including `HEAD`, is not in the table and refused. Human-only routes (approve, cancel,
+  release, release-text) and devices routes are left out, so a run token gets 403
+  `verb_not_allowed` there before `humans_only` (step 3 before 4).
+- `assertRunScope` also 404s a device-kind context (bound to no project), so it fails closed if a
+  device token ever got past the verb table. A request without a run context passes.
+- Mint re-checks the device inside its transaction (`UPDATE devices SET last_seen_at ... WHERE
+  revoked_at IS NULL RETURNING`), so a revoke between resolve and mint mints nothing (401).
+- Mint audit details: `on_behalf_of`, `device_id`, `project_id`, `verbs`, `role`, `ttl_seconds`.
+- The resolver does not touch `last_seen_at` on every request; only mint does (as the ticket says).
+
+**Shortcuts taken**
+- No general per-actor rate limit on mint (Check order step 5): no general limiter is mounted in
+  the app yet (as in ticket 01). A device can mint as fast as it can call; each mint is one row.
+  Worth adding with the first ticket that mounts the general limiter.
+- Expired `run_tokens` rows are never purged. At one mint per 30 minutes per worker the table
+  grows slowly; add a purge (like device codes') if it ever matters.
+- No migration test that old rows survive 0004: it only creates a new table.
+
+**For later tickets**
+- 04-07: call `assertRunScope(req, { workspaceId, projectId })` after loading the target, and
+  `effectiveRole(req, memberRole)` before the role check; `runContextOf(req)?.deviceId` is the
+  device for task events (null for people). The verb table already lists every route of spec.md
+  Routes; mount routers after `verbMiddleware()` (which is in the `/api/v1` chain in `app.ts`).
+  `GET /api/v1/tasks/ready` with a run token may omit `project_id`: take it from
+  `runContextOf(req).projectId`.
+- Tests can reuse `run-tokens/test-fixture.ts` (`useRunTokenFixture`, `world`, `device`) and
+  `mintRunToken` from `testing/task-seeds.ts`.
+- `db/schema.test.ts` still lists 9 tables (outside this ticket's Touches); `run_tokens` exists
+  but is not in that list.
+

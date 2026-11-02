@@ -37,9 +37,9 @@ export interface RunTokenFixture {
   /** The real app (`createApp`) through the harness. */
   server: TestServer;
   /** A client of the test-only app. */
-  onProbe(token: string): TestClient;
-  now(): Date;
-  advance(seconds: number): void;
+  onProbe: (token: string) => TestClient;
+  now: () => Date;
+  advance: (seconds: number) => void;
 }
 
 function probeRouter(db: Db): express.Router {
@@ -179,7 +179,8 @@ export function expectError(
   status: number,
   code: string,
 ): void {
-  expect({ status: res.status, code: res.body?.error?.code }).toEqual({
+  const body = res.body as { error?: { code?: string } } | undefined;
+  expect({ status: res.status, code: body?.error?.code }).toEqual({
     status,
     code,
   });
