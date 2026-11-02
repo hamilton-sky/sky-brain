@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -184,3 +184,40 @@ outside the plan folder to that base; `42ffc8b` adds the test files alone (they 
 ## Review findings (round 1, test first)
 
 no commit between base and HEAD changes only test files. Commit the failing test alone first, then the code. A test commit does not count when earlier commits already changed production files. If the test and the code are in one commit (or the test commit sits on top of code that is already there), recover: revert that commit, commit the test files alone, then restore the production files in a later commit (git checkout <the old commit> -- <paths>). Do not rewrite history.
+
+## Review findings (round 2, pair review)
+
+Review range: b1dfe0f9a8eff3baf1381e04873316339181a9fd..500257a46f5d3aac27d45a98fe09703be9b09f26. That is the newest commit touching the ticket, and it is also HEAD, so no later commits were left out. I did not read the ticket's `## Answer`. I re-ran `pnpm --filter @sky-brain/server exec vitest run src/run-tokens src/actor/run-context.test.ts`: 4 files and 24 tests passed. The working tree stayed clean. I also ran the run-tokens acceptance file. 9 of its 16 tests fail, and every one fails in `createGoal` with 404 "No such API route.", because `/api/v1/goals` belongs to ticket 04. None of the failures comes from the mint, resolver or verb code.
+
+Inputs I probed as a hostile caller:
+- The Authorization header: scheme case, spacing, `sbd_`/`sbr_` prefixes, unknown, expired and revoked tokens.
+- X-Dev-Actor together with a token.
+- Method and path through the verb table: case, trailing slash, `//`, encoded segments, HEAD, the human-only goal and task routes, `/devices`, `/entries`.
+- The mint body: `project_id`, verbs, role, `ttl_seconds`, and extra fields `device_id` and `workspace_id`.
+- Minting into a project of a workspace where the person is not a member.
+- A device revoked between resolve and mint.
+- Role raise from viewer to editor.
+- How often a device can mint, and how many rows that leaves.
+
+Only the mint rate is a way through. The verb table fails closed, the revoke race is covered inside the transaction, strict bodies refuse unknown fields, and membership is checked by join.
+
+QUALITY
+1. major apps/server/src/run-tokens/mint-router.ts (and apps/server/src/app.ts): `POST /api/v1/run-tokens` has no rate limit, and nothing ever deletes expired `run_tokens` rows. spec.md Check order step 5 rate-limits every POST under `/api/v1` per actor and device. Ticket 04's `createRateLimiter()` covers only board writes, so mint stays unlimited even after that ticket lands. Anyone holding a device token, leaked or buggy, can mint without limit. Each call writes a `run_tokens` row and a `run_token.mint` audit row, so the database grows without bound until a person revokes the device. Ticket 01 had the same kind of unbounded insert and it was rated major there. Fix: put a `createRateLimiter` keyed on `actorKey(actor)` plus the device id in front of mint. Also delete the device's expired run tokens inside the mint transaction, or purge them some other way.
+2. minor apps/server/src/run-tokens/resolver.ts: `bearerOf` matches only `Bearer` in that exact case with a single space. HTTP treats the scheme name as case-insensitive, so a revoked or expired `sbr_`/`sbd_` token sent as `bearer sbr_…` skips the 401 `invalid_token` and falls through to the next resolver. The spec says these tokens never fall through. Fix: match `/^Bearer\s+(\S+)\s*$/i`.
+3. minor apps/server/src/run-tokens/verbs.ts: `verbFor` knows only GET, not HEAD. Express serves HEAD with the GET handler, so a run token with `read` gets 403 on `HEAD /goals`. This fails closed and is harmless, but it is inconsistent. Fix: map HEAD to GET in `verbFor`, or leave it and write down that it is refused on purpose.
+
+REVIEW: FAIL
+
+Notes: I reviewed b1dfe0f..500257a. 500257a is the newest commit that touches the ticket, and it is also HEAD, so there are no later commits left out. I read the ticket as it was at b1dfe0f. The round-1 review findings sit after `## Answer` in the working copy, so I read them with `sed -n '184,$p'` and did not read the Answer. The Answer did not reach me. I ran the acceptance file `run-tokens.test.ts` myself: 7 tests pass and 9 fail. All 9 fail inside `createGoal` (`POST /api/v1/goals` returns 404). The goal routes belong to ticket 04, so none of these failures is about what this ticket delivers. My runs left no files behind (`git status` is clean).
+
+Spec check against the ticket: `run_tokens` table and migration 0004 (hash unique, device FK cascade, composite project/workspace FK, role check, verbs text[]); `run-context.ts` WeakMap; resolver for `sbd_`/`sbr_` (401 `invalid_token` for unknown, expired at `<=` now, or revoked device; any other bearer token returns undefined) chained before `options.resolveActor`; full verb table plus middleware right after `express.json`, failing closed; mint router (strict body, 404 when the person is not a member, role defaults and `role_too_high`, `last_seen_at`, audit row without the token); `assertRunScope` and `effectiveRole`; shared `VERBS`, `Verb`, `verbSchema` and mint schema; `mintRunToken` in task-seeds. All are present and match the ticket. The unit tests cover every case listed under Tests.
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/run-tokens src/actor/run-context.test.ts` passes, covering every case under Tests: MET (conductor). Test names cover: mint as owner, editor and viewer; expired 401; revoked device's run and device tokens 401; missing `claim` 403 `verb_not_allowed`; device token 403 on anything but mint; `POST /api/v1/entries` with a run token 403; `assertRunScope` 404 for project B; `device_id`/`workspace_id` in the body 400 `invalid_request`.
+- All existing tests still pass (`pnpm test`): MET (conductor)
+- `pnpm lint` exits 0: MET (conductor)
+- `pnpm typecheck` exits 0: MET (conductor)
+- scope: OK. Every changed file is under the ticket's Touches (`run-tokens/`, including `run-tokens/tests/fixture.ts`; `actor/run-context*`; `db/auth-schema.ts`; `drizzle/`; `app.ts`; `testing/task-seeds.ts`; `packages/shared/src/run-tokens.ts`). The rest is the flow's own records: `plans/cloud-task-board/map.md`, `learnings.md` and the ticket.
+- test first: OK. 42ffc8b adds only test files (`run-context.test.ts`, `run-tokens.test.ts`, `verbs.test.ts`, `tests/fixture.ts`) on top of e0ce4b9, which reverted all production code, so this fixes the round-1 finding. The conductor saw 42ffc8b fail the Test command before the code was added. 500257a adds only production code.
+
+REVIEW: PASS
