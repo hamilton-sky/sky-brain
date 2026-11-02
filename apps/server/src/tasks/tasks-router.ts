@@ -18,6 +18,7 @@ import { HttpError } from "../http/http-error.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { memberRole } from "../scope/member-role.ts";
 import { claimHandler } from "./claim.ts";
+import { liveTextHash } from "./eligibility.ts";
 import { assertWriter, boardWriteLimit, pathId } from "./goals-router.ts";
 import { goalNotFound } from "./goals-service.ts";
 import { readyHandler } from "./ready.ts";
@@ -42,7 +43,11 @@ export async function findTask(
   forUpdate = false,
 ): Promise<{ task: TaskRow; role: Role }> {
   const query = db
-    .select({ task: tasks, goalHeld: goals.quarantinedBecause })
+    .select({
+      task: tasks,
+      liveHash: liveTextHash,
+      goalHeld: goals.quarantinedBecause,
+    })
     .from(tasks)
     .innerJoin(goals, eq(goals.id, tasks.goalId))
     .where(eq(tasks.id, id));
@@ -56,7 +61,8 @@ export async function findTask(
   }
   const role = await memberRole(db, row.task.workspaceId, actor);
   if (!role) throw goalNotFound();
-  return { task: row.task, role };
+  // The text as it is now, so `pinned` on the wire agrees with ready and claim.
+  return { task: { ...row.task, textHash: row.liveHash }, role };
 }
 
 async function dependsOn(db: DbOrTx, taskId: string): Promise<string[]> {

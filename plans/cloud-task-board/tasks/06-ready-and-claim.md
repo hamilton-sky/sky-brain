@@ -1,7 +1,7 @@
 # Add the ready list and the claim: eligibility filter, lease, fencing number and file overlap
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 05
 Test first: yes
 Level: 3
@@ -164,6 +164,58 @@ module; `/tasks/ready` answered 400 through `GET /:id`; claim 404 "No such API r
   after approval ..."). Claim and ready already refuse such a task. A fix: recompute `text_hash`
   in approve (or reuse the SQL hash in `eligibility.ts`) and in the wire mapping; a ticket that
   owns `goals-service.ts` and `wire.ts` should take it (13, or a follow-up).
+
+**Round 1 send-back** (work restarted at `c053edb`; test-only commit `a8a604a`, where the
+focused run failed 2 of 11 in `ready-claim.test.ts`: `liveTextHash` not exported, and GET
+`/tasks/:id` answered `pinned: true` for a task edited in the database).
+
+**Review fixes**
+- Finding 1 (major), fixed. `eligibility.ts` exports the SQL hash as `liveTextHash`, and every
+  place that decides "pinned" uses it: `approveGoal` (`goals-service.ts`) now sets `text_hash`
+  and `approved_hash` to `liveTextHash` for every task of the goal whose `approved_hash` or
+  `text_hash` differs from it (so re-approving corrects a stale `text_hash`); `findTask`
+  (`tasks-router.ts`, so GET `/tasks/:id`) and `goalTasks` (`goals-service.ts`, GET
+  `/goals/:id`) read the live hash into the row's `textHash`, so `wire.ts`'s unchanged
+  `pinned` comparison agrees with ready and claim. `wire.ts` is not touched. New test "a task
+  edited in the database reads unpinned until the goal is approved again, then is ready and
+  claimable": GET and the goal's list say `pinned: false`, not ready, 409 `not_ready`; approve
+  answers `pinned: 1`; then GET `pinned: true`, ready, claim 200. Acceptance `goals.test.ts`
+  now passes 23/23 (it failed at line 263 before).
+- Finding 2 (minor), fixed by a test rather than one definition: one definition is not
+  possible here because the plan's spike rules out a generated column on PGlite and the app
+  must hash before insert. The odd-strings test is replaced by "the SQL text hash equals
+  taskTextHash over a wide sample": every ASCII character 1..127 in one string (each character
+  escapes independently, so this covers all of them), U+0080, U+00FF, U+07FF, U+0800,
+  U+2028/2029, U+FEFF, U+FFFF, CJK, an emoji, in titles, bodies, files and context refs, files
+  null / [] / [""], and it compares the stored `text_hash` with `liveTextHash` row by row. Cost:
+  the hash runs per candidate row on ready and claim, and once per row on GET; left as is (see
+  Shortcuts).
+- Finding 3 (minor), not changed. spec.md § Stories defines ready as pending, deps done,
+  approved goal of the person, not held, pinned, in scope; it does not mention files, and the
+  ticket says ready and claim share one eligibility condition so they never disagree. Filtering
+  busy files out of ready would add a rule the spec does not have; a worker that gets 409
+  `files_busy` moves to the next ready task. If the product owner wants ready to hide them, that
+  is a spec change (I may not edit spec.md).
+
+Extra file: apps/server/src/tasks/goals-service.ts - finding 1 needs approve to re-pin from the
+live text (and the goal's task list to report `pinned` from it); approve lives only here.
+
+**Proof (round 1, run fresh after the last edit)**
+- Focused command: 3 files, 36 tests passed.
+- `pnpm test`: shared 3 files / 30 tests, server 34 files / 423 tests, exit 0.
+- `pnpm lint` exit 0 (eslint and prettier clean); `pnpm typecheck` exit 0.
+- Not required: `pnpm exec vitest run --root plans/cloud-task-board/acceptance goals.test.ts`
+  23 passed.
+
+**Shortcuts taken (round 1)**
+- `liveTextHash` is SHA-256 in SQL per row on ready, claim, GET task and GET goal. Fine for
+  tens to hundreds of tasks per project; if ready gets slow, store a trigger-maintained hash
+  (a trigger, not a generated column, is allowed on PGlite) and drop the recompute.
+
+**For later tickets (round 1)**
+- The previous note to 13 about `wire.ts`/`approveGoal` re-pinning is done here; nothing left
+  for it. Any new code that decides `pinned` should compare against `liveTextHash`, or read the
+  row through `findTask`.
 
 ## Review findings (round 1, pair review)
 

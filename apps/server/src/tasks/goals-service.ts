@@ -17,6 +17,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -26,6 +27,7 @@ import type { Db, DbOrTx } from "../db/client.ts";
 import { goals, members, taskDeps, tasks } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
 import { memberRole } from "../scope/member-role.ts";
+import { liveTextHash } from "./eligibility.ts";
 import { countTasks, toWireGoal, toWireTask, type GoalRow } from "./wire.ts";
 
 const isAgent = (actor: Actor) => actor.kind === "agent";
@@ -128,11 +130,13 @@ export async function goalTasks(
   goalId: string,
   now: Date,
 ): Promise<Task[]> {
-  const rows = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.goalId, goalId), visibleTasks(actor)))
-    .orderBy(asc(tasks.position), asc(tasks.id));
+  const rows = (
+    await db
+      .select({ task: tasks, liveHash: liveTextHash })
+      .from(tasks)
+      .where(and(eq(tasks.goalId, goalId), visibleTasks(actor)))
+      .orderBy(asc(tasks.position), asc(tasks.id))
+  ).map((r) => ({ ...r.task, textHash: r.liveHash }));
   const deps = rows.length
     ? await db
         .select()
@@ -277,13 +281,18 @@ export async function approveGoal(
       "The goal or one of its tasks is held; a person must release it first.",
     );
   }
+  // Pins the text as it is now, hashed in SQL, so a stale `text_hash` (a direct database edit)
+  // is corrected here too and the task can be claimed again.
   const pinned = await tx
     .update(tasks)
-    .set({ approvedHash: sql`${tasks.textHash}`, updatedAt: now })
+    .set({ textHash: liveTextHash, approvedHash: liveTextHash, updatedAt: now })
     .where(
       and(
         eq(tasks.goalId, goal.id),
-        sql`${tasks.approvedHash} is distinct from ${tasks.textHash}`,
+        or(
+          sql`${tasks.approvedHash} is distinct from ${liveTextHash}`,
+          sql`${tasks.textHash} <> ${liveTextHash}`,
+        ),
       ),
     )
     .returning({ id: tasks.id });

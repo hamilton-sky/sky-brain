@@ -167,3 +167,4 @@ Its own map links back here. Rows, not yet tickets:
 - The draft docs text at https://claude.ai/artifact/A5fT85ZwmHv5QH5yda3ywn could not be read by
   the planner (no tool for it); ticket 10's builder reconciles its wording with the ticket.
 - 06 — Ready and claim: one `eligibleTask` SQL condition (`tasks/eligibility.ts`) shared by ready and claim; pinned also re-hashes the text in SQL (matches `taskTextHash`) so a direct DB edit unpins; claim locks the project, then checks eligibility (409 already_claimed/not_ready) before file overlap (409 files_busy); events carry the new claim_seq.
+- 06 — Review round 1: `liveTextHash` (eligibility.ts) is the one pinned test: approve re-pins `text_hash` and `approved_hash` from it, GET task and the goal's task list read it, so a direct DB edit unpins everywhere until re-approved; ready does not filter busy files (spec).
