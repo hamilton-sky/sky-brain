@@ -42,7 +42,10 @@ describe("the verb table", () => {
       ["POST", "/devices/approve", undefined],
       ["GET", "/run-tokens", undefined],
       ["DELETE", `/tasks/${UUID}`, undefined],
-      ["HEAD", "/goals", undefined],
+      // Express answers HEAD with the GET route, so HEAD needs the GET verb.
+      ["HEAD", "/goals", "read"],
+      ["HEAD", `/tasks/${UUID}`, "read"],
+      ["HEAD", "/entries", undefined],
       ["GET", `/tasks/${UUID}/claim/x`, undefined],
       ["GET", "/tasks//", undefined],
       ["GET", "/", undefined],
