@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:pg": "vitest run --config vitest.pg.config.ts",
     "dev": "tsx watch src/dev.ts",
     "start": "tsx src/main.ts"
   },

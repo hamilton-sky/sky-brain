@@ -1,7 +1,7 @@
 # Prove the claim race and the file-overlap lock on a real Postgres in CI
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 06
 Test first: no
 Level: 3
@@ -68,3 +68,34 @@ $ pnpm typecheck
 - `apps/server/src/db/client.ts` (`createPostgresDb`), `.github/workflows/ci.yml`
 
 ## Answer
+
+- **Built**: `apps/server/src/tasks/claim-race.pg.test.ts` (new), `apps/server/vitest.pg.config.ts`
+  (new), `apps/server/vitest.config.ts` (exclude `**/*.pg.test.ts`, extending
+  `configDefaults.exclude`), `apps/server/package.json` (`test:pg`), `.github/workflows/ci.yml`
+  (`postgres:18` service with `pg_isready` health options, `test:pg` step after `pnpm test`).
+- **Proof**:
+  - `pnpm test` exit 0: server 36 files / 439 tests, shared 3 / 30; no `claim-race` in the
+    output. `grep -n "configDefaults.exclude" apps/server/vitest.config.ts` prints
+    `7:    exclude: [...configDefaults.exclude, "**/*.pg.test.ts"],`.
+  - Local Postgres 16.15 (initdb in a scratch folder, port 55432):
+    `TEST_DATABASE_URL=postgres://postgres:postgres@localhost:55432/postgres pnpm --filter
+    @sky-brain/server test:pg` -> `Test Files 1 passed (1)`, `Tests 3 passed (3)`, exit 0;
+    run a second time on the same database: 3 passed again. Without the variable: exit 1,
+    `Test Files 1 failed`, error `TEST_DATABASE_URL is not set: claim-race.pg.test.ts needs a
+    real Postgres ...`. Sanity check (reverted, `git diff` of claim.ts empty after): with the
+    `pg_advisory_xact_lock` call removed from claim.ts, the overlap case fails (1 failed,
+    2 passed), so the test does catch a real interleaving.
+  - `.github/workflows/ci.yml`: service `postgres:18`, `POSTGRES_PASSWORD: postgres`,
+    `ports: ["5432:5432"]`, step `pnpm --filter @sky-brain/server test:pg` with
+    `TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres` (YAML parsed with
+    PyYAML).
+  - `pnpm lint` exit 0, `pnpm typecheck` exit 0.
+- **Decisions**: the missing-variable error is thrown at module load, so the file fails (never
+  a skip, and no tests count as skipped). Agents are `server.as({kind: "agent", ...})` actors of
+  the editor (no run token, as in ready-claim.test.ts). Each case calls the fixture's `world()`
+  for a fresh workspace and project. The overlap case gives every task `src/shared` plus its own
+  file so every pair overlaps (folder rule) and the losers must answer 409 `files_busy`; the
+  20-way case expects 19 × 409 `already_claimed`.
+- **Shortcuts taken**: none.
+- **For later tickets**: 13 can cite `pnpm --filter @sky-brain/server test:pg` as the
+  Postgres half of the race proof; it needs `TEST_DATABASE_URL`.
