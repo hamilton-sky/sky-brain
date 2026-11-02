@@ -17,6 +17,8 @@ import {
   seedTask,
   withToken,
 } from "../testing/task-seeds.ts";
+import { liveTextHash } from "./eligibility.ts";
+import { taskTextHash } from "./task-text.ts";
 
 const ctx = useRunTokenFixture();
 type W = Awaited<ReturnType<typeof world>>;
@@ -182,29 +184,65 @@ describe("ready and claim", () => {
     expect((await claim(ed, second.id)).status).toBe(200);
   });
 
-  it("a pinned task with quotes, backslashes, control characters and non-ASCII text stays ready", async () => {
+  it("the SQL text hash equals taskTextHash over a wide sample, and such tasks stay ready", async () => {
     const w = await world(ctx.db);
     const g = await goal(w);
-    const odd = [
-      {
-        title: 'say "hi" \\ there',
-        body: "line\nnext\ttab\r\b\f\u0001\u001f\u007f",
-        files: [],
-      },
-      {
-        title: "ünïcødé ✓ 漢字 😀",
-        body: "  </script>",
-        files: ["a\\b", "c/"],
-      },
-      { title: "null files", body: "", files: null },
-    ];
-    const ids: string[] = [];
-    for (const t of odd) {
-      ids.push((await seedTask(ctx.db, { goalId: g.id, ...t })).id);
-    }
-    expect(await readyIds(as(w.editor), `?project_id=${w.projectA}`)).toEqual(
-      ids,
+    const ascii = String.fromCharCode(
+      ...Array.from({ length: 128 }, (_, i) => i).slice(1),
     );
+    const wide = "\u0080\u00ff\u07ff\u0800\u2028\u2029\ufeff\uffff 漢字 😀 ünï";
+    const odd: [string, string, string[] | null, string[]][] = [
+      [ascii, wide, [], []],
+      [wide, ascii, ["a\\b", "c/", ascii], [wide, ""]],
+      ['say "hi" \\ </script>', "", null, ["ref:1"]],
+      ["", "", [""], []],
+    ];
+    for (const [title, body, files, refs] of odd) {
+      const { id } = await seedTask(ctx.db, {
+        goalId: g.id,
+        title,
+        body,
+        files,
+      });
+      const hash = taskTextHash({ title, body, files, context_refs: refs });
+      await ctx.db
+        .update(tasks)
+        .set({ contextRefs: refs, textHash: hash, approvedHash: hash })
+        .where(eq(tasks.id, id));
+    }
+    const rows = await ctx.db
+      .select({ id: tasks.id, stored: tasks.textHash, live: liveTextHash })
+      .from(tasks)
+      .where(eq(tasks.goalId, g.id))
+      .orderBy(asc(tasks.position));
+    for (const r of rows) expect(r.live).toBe(r.stored);
+    expect(await readyIds(as(w.editor), `?project_id=${w.projectA}`)).toEqual(
+      rows.map((r) => r.id),
+    );
+  });
+
+  it("a task edited in the database reads unpinned until the goal is approved again, then is ready and claimable", async () => {
+    const w = await world(ctx.db);
+    const g = await goal(w);
+    const t = await seedTask(ctx.db, { goalId: g.id, title: "as approved" });
+    await ctx.db
+      .update(tasks)
+      .set({ title: "edited" })
+      .where(eq(tasks.id, t.id));
+    const ed = as(w.editor);
+    expect((await ed.get(`/api/v1/tasks/${t.id}`)).body.task.pinned).toBe(
+      false,
+    );
+    const listed = await ed.get(`/api/v1/goals/${g.id}`);
+    expect(listed.body.tasks[0].pinned).toBe(false);
+    expect(await readyIds(ed, `?project_id=${w.projectA}`)).toEqual([]);
+    expectError(await claim(ed, t.id), 409, "not_ready");
+    const again = await ed.post(`/api/v1/goals/${g.id}/approve`, {});
+    expect(again.status).toBe(200);
+    expect(again.body.pinned).toBe(1);
+    expect((await ed.get(`/api/v1/tasks/${t.id}`)).body.task.pinned).toBe(true);
+    expect(await readyIds(ed, `?project_id=${w.projectA}`)).toEqual([t.id]);
+    expect((await claim(ed, t.id)).status).toBe(200);
   });
 
   it("draft or cancelled goals, held tasks or goals, and unpinned tasks are never ready nor claimable", async () => {
