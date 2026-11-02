@@ -6,15 +6,17 @@ import {
   DeviceCodeRequestSchema,
   DeviceTokenRequestSchema,
 } from "@sky-brain/shared/devices";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, lte, sql } from "drizzle-orm";
 import express, {
   type ErrorRequestHandler,
+  type RequestHandler,
   type Response,
   type Router,
 } from "express";
 import { randomBytes } from "node:crypto";
 import type { Db } from "../db/client.ts";
 import { deviceCodes, devices } from "../db/schema.ts";
+import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
 import { hashSecretToken, newSecretToken } from "../run-tokens/secret-token.ts";
 import { formatUserCode, newUserCode } from "./user-code.ts";
 
@@ -24,6 +26,21 @@ export const POLL_INTERVAL_SECONDS = 5;
 const VERIFICATION_PATH = "/devices/approve";
 /** A fresh user code collides with a pending one about once in 2.5e10; retry a few times. */
 const USER_CODE_ATTEMPTS = 5;
+/**
+ * An approved code still hands out its token this long after it expired, so a code approved in
+ * its last second is not lost to the client's next poll.
+ */
+export const ISSUE_GRACE_SECONDS = 60;
+/**
+ * A never-approved code is deleted this long after it expired (on the next `/code`), so anonymous
+ * callers cannot grow the table without bound and the user code is free again. Until then a poll
+ * still gets `expired_token`; after it, `invalid_grant`.
+ */
+const PURGE_AFTER_SECONDS = 900;
+/** Per client address: a burst of 60 codes, then one per 15 s (60 per 15 minutes). */
+const CODE_LIMIT = { capacity: 60, refillPerSecond: 1 / 15 };
+/** Per client address: a burst of 60 polls, then one per second (a client polls every 5 s). */
+const POLL_LIMIT = { capacity: 60, refillPerSecond: 1 };
 
 export interface DeviceFlowOptions {
   db: Db;
@@ -36,7 +53,8 @@ type FlowError =
   | "authorization_pending"
   | "slow_down"
   | "expired_token"
-  | "invalid_grant";
+  | "invalid_grant"
+  | "rate_limited";
 
 type PollResult =
   { error: FlowError } | { deviceToken: string; deviceId: string };
@@ -68,18 +86,48 @@ const flowBodyErrors: ErrorRequestHandler = (err, _req, res, next) => {
   next(err);
 };
 
+/** 429 `rate_limited` with `Retry-After`, keyed by the client address (`trust proxy` in app.ts). */
+function perAddress(limiter: RateLimiter): RequestHandler {
+  return (req, res, next) => {
+    const taken = limiter.take(req.ip ?? "unknown");
+    if (taken.ok) return next();
+    res.set("Retry-After", String(taken.retryAfterSeconds));
+    flowError(res, "rate_limited", 429);
+  };
+}
+
 export function deviceFlowRouter(options: DeviceFlowOptions): Router {
   const { db, now } = options;
+  const clock = () => now().getTime();
   const router = express.Router();
+  // Before the body parser, so a refused caller's body is never read.
+  router.use(
+    "/code",
+    perAddress(createRateLimiter({ ...CODE_LIMIT, now: clock })),
+  );
+  router.use(
+    "/token",
+    perAddress(createRateLimiter({ ...POLL_LIMIT, now: clock })),
+  );
   router.use(express.json({ limit: "64kb" }));
 
   router.post("/code", async (req, res) => {
     const parsed = DeviceCodeRequestSchema.safeParse(req.body);
     if (!parsed.success) return flowError(res, "invalid_request");
+    const t = now();
+    await db
+      .delete(deviceCodes)
+      .where(
+        and(
+          isNull(deviceCodes.deviceId),
+          lte(
+            deviceCodes.expiresAt,
+            new Date(t.getTime() - PURGE_AFTER_SECONDS * 1000),
+          ),
+        ),
+      );
     const deviceCode = randomBytes(32).toString("base64url");
-    const expiresAt = new Date(
-      now().getTime() + DEVICE_CODE_TTL_SECONDS * 1000,
-    );
+    const expiresAt = new Date(t.getTime() + DEVICE_CODE_TTL_SECONDS * 1000);
     for (let attempt = 0; attempt < USER_CODE_ATTEMPTS; attempt += 1) {
       const userCode = newUserCode();
       const inserted = await db
@@ -90,7 +138,7 @@ export function deviceFlowRouter(options: DeviceFlowOptions): Router {
           clientName: parsed.data.client_name,
           expiresAt,
           intervalSeconds: POLL_INTERVAL_SECONDS,
-          createdAt: now(),
+          createdAt: t,
         })
         .onConflictDoNothing({
           target: deviceCodes.userCode,
@@ -132,7 +180,17 @@ export function deviceFlowRouter(options: DeviceFlowOptions): Router {
         )
         .for("update");
       if (!row || row.issuedAt) return { error: "invalid_grant" } as const;
-      if (row.expiresAt.getTime() <= t.getTime()) {
+      // Locked so a revoke cannot land between this check and storing the token hash.
+      const [device] = row.deviceId
+        ? await tx
+            .select({ revokedAt: devices.revokedAt })
+            .from(devices)
+            .where(eq(devices.id, row.deviceId))
+            .for("update")
+        : [];
+      if (device?.revokedAt) return { error: "invalid_grant" } as const;
+      const grace = row.deviceId ? ISSUE_GRACE_SECONDS * 1000 : 0;
+      if (row.expiresAt.getTime() + grace <= t.getTime()) {
         return { error: "expired_token" } as const;
       }
       const last = row.lastPolledAt;

@@ -1,7 +1,7 @@
 # Add device login: the device flow, approve, list and revoke
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: yes
 Level: 3
@@ -85,6 +85,7 @@ $ pnpm typecheck
 ## Answer
 
 Work started at `43c4e4e3c46cacaefb296829f2ddfe985c08ce1b`; failing tests committed alone as `c1f47f4`.
+Review round 1 fixes started at `35b2689`; their failing tests committed alone as `83ba066`.
 
 **Built**
 - New: `apps/server/src/run-tokens/secret-token.ts`, `apps/server/src/db/auth-schema.ts`,
@@ -92,14 +93,20 @@ Work started at `43c4e4e3c46cacaefb296829f2ddfe985c08ce1b`; failing tests commit
   `apps/server/src/devices/user-code.ts`, `apps/server/src/testing/task-seeds.ts`,
   `packages/shared/src/devices.ts`, `apps/server/drizzle/0002_device-login.sql` (+ `meta/0002_snapshot.json`,
   `_journal.json`), tests `devices/device-flow.test.ts`, `devices/devices-router.test.ts`,
-  `run-tokens/secret-token.test.ts`.
+  `run-tokens/secret-token.test.ts`. Round 1 fixes: `devices/window-limiter.ts` (fixed-window
+  limit), `devices/device-flow-guards.test.ts` (new tests); `devices/device-flow.ts`,
+  `devices/devices-router.ts`, `devices/devices-router.test.ts` and `app.ts` (`trust proxy`) changed.
 - Changed: `db/schema.ts` (`devices.secretHash` nullable unique, `export * from "./auth-schema.ts"`),
   `app.ts` (`now` default, `/api/device` mount before `/api/v1`, `/api/v1/devices` after the actor
   middleware and before the `/api` 404), `testing/harness.ts` (`export` on `testClient` only; prettier
   wrapped the line), `db/schema.test.ts` (table count 8 -> 9 with `device_codes`).
 
 **Proof**
-- `pnpm --filter @sky-brain/server exec vitest run src/devices`: 2 files, 30 tests passed. Covers
+- After the round 1 fixes: `vitest run src/devices` 3 files / 38 tests passed; secret-token 1 file / 2
+  tests passed; `pnpm test` shared 15 passed, server 18 files / 279 tests passed, exit 0; `pnpm lint`
+  exit 0; `pnpm typecheck` exit 0; acceptance `device-login.test.ts` 15/15 passed (the other files
+  still fail first at routes of later tickets, createGoal / run-tokens, none on a 429).
+- Round 0: `pnpm --filter @sky-brain/server exec vitest run src/devices`: 2 files, 30 tests passed. Covers
   authorization_pending, slow_down, expired_token (at exactly 900 s by the app clock), invalid_grant
   (unknown code and after the token was issued), token once and only its hash stored, approve as
   agent 403 `humans_only`, wrong / expired / already-approved user code 404, sixth approve 429 with
@@ -127,8 +134,8 @@ Work started at `43c4e4e3c46cacaefb296829f2ddfe985c08ce1b`; failing tests commit
   that turns body-parser errors (broken JSON, over 64 KB) into `invalid_request` (400/413) in that
   shape. A wrong `grant_type` is `unsupported_grant_type` (RFC 6749); other schema failures are
   `invalid_request`.
-- Approve: `requireHuman` (router-wide) -> limiter (5 per 900 s, `refillPerSecond` 5/900, keyed by the
-  person, clock = app `now`) -> `validate` -> 404 lookup. The limiter sets `Retry-After` itself before
+- Approve: `requireHuman` (router-wide) -> limiter (fixed window: 5 per 900 s from the person's first
+  approve, clock = app `now`; see Review fixes) -> `validate` -> 404 lookup. The limiter sets `Retry-After` itself before
   throwing the 429 `HttpError`. A user code that cannot be normalized to 8 letters is 404, not 400.
 - Revoke of an already-revoked own device answers 200 with the existing `revoked_at` and writes no
   second audit row.
@@ -137,14 +144,47 @@ Work started at `43c4e4e3c46cacaefb296829f2ddfe985c08ce1b`; failing tests commit
   secret is compared in app code.
 
 **Shortcuts taken**
+- Purge of expired codes runs as one `DELETE` on each `/code` call with no index on `expires_at`;
+  the table stays small because of the per-address limit and the purge. Add an index (or a timed
+  job) if the table ever grows to many thousands of rows.
+- The per-address limits key on `req.ip` with `trust proxy` 1 (one Render proxy hop). If Render
+  ever puts a second hop in front, every caller behind one edge shares a bucket (not spoofable,
+  just coarser); set the hop count then. In `pnpm dev`, with no proxy, a caller can choose its own
+  `X-Forwarded-For` and so its own bucket: dev only.
 - The approve limiter is in memory per server instance (like `createRateLimiter` everywhere); a
   second instance doubles the budget. Upgrade when sky-brain runs more than one instance.
-- `verification_uri` echoes the request's Host header; it only goes back to the same anonymous caller.
-  Upgrade to a configured public base URL when R2-01 adds the page.
+- `verification_uri` echoes the request's Host header (scheme now from the proxy); see Review fix 5.
+- An approved code whose client never polls within the 60 s grace leaves a device with no token in
+  the person's list; the person can revoke it. Hide token-less devices if that confuses people.
 - No migration test proving existing `devices` rows survive 0002: the migration only adds a nullable
   column and a new table. Worth adding if a later migration rewrites `devices`.
 - Revoke is not behind the general per-actor write rate limit of Check order step 5; no general
   limiter is mounted in the app yet, and the ticket asked only for approve's.
+
+**Review fixes** (round 1)
+1. Anonymous `/api/device/code` growth: per client address token buckets, before the body parser,
+   answering 429 `{"error":"rate_limited"}` with `Retry-After` (`/code`: burst 60, then 1 per 15 s;
+   `/token`: burst 60, then 1 per second, a client polls every 5 s). `app.set("trust proxy", 1)` in
+   `app.ts` so `req.ip` is the client behind Render's proxy and a caller cannot pick its bucket with
+   its own `X-Forwarded-For`. Each `/code` deletes never-approved codes 900 s after they expired,
+   which also frees their user codes (the pending index no longer holds them forever). Approved rows
+   are kept (they link a device). Tests: 61st code / poll from one address 429 while another goes on;
+   purge at exactly expiry + 900 s, approved row kept, purged code polls `invalid_grant`.
+2. Approve limit is now a fixed 15-minute window per person (`devices/window-limiter.ts`; it returns
+   the same `TakeResult` as `createRateLimiter`). Test: 5 approves, the 6th at minute 3 is 429 with
+   `Retry-After: 720`, still 429 at 14:59, allowed at 15:00.
+3. Poll locks the device row (`FOR UPDATE`, the same lock revoke takes) and answers `invalid_grant`
+   when `revoked_at` is set; no hash is stored. Test: approve, revoke, poll -> `invalid_grant`,
+   `secret_hash` null.
+4. An approved code still issues its token up to 60 s (`ISSUE_GRACE_SECONDS`) after expiry; a
+   pending code still expires at 900 s. Tests: approved at 899 s, polled at 901 s -> token; approved,
+   first polled at 960 s -> `expired_token`.
+5. Partly fixed. The scheme now comes from `X-Forwarded-Proto` through `trust proxy` (test:
+   `https` behind the proxy). The host is still the request's `Host`: a configured public base URL
+   has to be read in `config.ts` and passed by `server.ts`, both outside this ticket's Touches. The
+   value only goes back to the same anonymous caller that sent the Host header and the response is
+   a POST answer (not cached), so it cannot steer another person. Proposed for R2-01, which adds the
+   page at that URL and so needs the base URL anyway.
 
 **For later tickets**
 - 02: hash a presented `sbd_` token with `hashSecretToken` and look up `devices.secret_hash` (unique);

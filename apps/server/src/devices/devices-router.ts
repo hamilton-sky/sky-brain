@@ -11,16 +11,16 @@ import { requireHuman } from "../actor/require-human.ts";
 import { writeAudit } from "../db/audit.ts";
 import type { Db } from "../db/client.ts";
 import { deviceCodes, devices } from "../db/schema.ts";
-import { createRateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
 import { normalizeUserCode } from "./user-code.ts";
+import { createWindowLimiter } from "./window-limiter.ts";
 
 // Devices belong to a person, not a workspace, but audit_log.workspace_id is NOT NULL: device
 // audit rows use the nil uuid as their workspace (the column has no foreign key).
 const NO_WORKSPACE = "00000000-0000-0000-0000-000000000000";
 
-/** Approve: 5 per 15 minutes per person (spec.md Check order step 5). */
+/** Approve: 5 per 15 minutes per person (spec.md Check order step 5), a fixed window. */
 const APPROVES = 5;
 const APPROVE_WINDOW_SECONDS = 15 * 60;
 
@@ -47,9 +47,9 @@ const notFound = () =>
 export function devicesRouter(options: DevicesRouterOptions): Router {
   const { db, now } = options;
   const router = express.Router();
-  const limiter = createRateLimiter({
-    capacity: APPROVES,
-    refillPerSecond: APPROVES / APPROVE_WINDOW_SECONDS,
+  const limiter = createWindowLimiter({
+    limit: APPROVES,
+    windowMs: APPROVE_WINDOW_SECONDS * 1000,
     now: () => now().getTime(),
   });
 

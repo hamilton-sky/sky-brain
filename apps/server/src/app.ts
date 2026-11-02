@@ -28,6 +28,9 @@ export function createApp(options: AppOptions): express.Express {
   // Every time comparison in a route uses this clock, so tests can move time.
   const now = options.now ?? (() => new Date());
   const app = express();
+  // Render runs one proxy in front of the app: take the client address and scheme from the last
+  // hop it adds to X-Forwarded-For / X-Forwarded-Proto, never from earlier, caller-sent hops.
+  app.set("trust proxy", 1);
 
   app.get("/healthz", (_req, res) => {
     res.status(200).json({ ok: true });
