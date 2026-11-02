@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -94,8 +94,9 @@ $ pnpm typecheck
 
 ## Answer
 
-Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests committed alone as `8703472`
-(they failed on the missing `actor/run-context.ts`, `run-tokens/*` modules).
+Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`. Round 2: `e0ce4b9` restores every path
+outside the plan folder to that base; `42ffc8b` adds the test files alone (they fail on the missing
+`actor/run-context.ts` and `run-tokens/*` modules); the next commit restores the code.
 
 **Built**
 - New: `packages/shared/src/run-tokens.ts` (`VERBS`, `Verb`, `verbSchema`, `RUN_TOKEN_ROLES`,
@@ -104,7 +105,7 @@ Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests commit
   `mint-router.ts`, `run-scope.ts`; migration `apps/server/drizzle/0004_run-tokens.sql`
   (+ `meta/0004_snapshot.json`, `_journal.json`, from `drizzle-kit generate --name run-tokens`).
 - Tests: `apps/server/src/run-tokens/run-tokens.test.ts` (mint, resolver), `verbs.test.ts` (verb
-  table, verbs over HTTP, project binding, effective role), `test-fixture.ts` (shared setup and the
+  table, verbs over HTTP, project binding, effective role), `tests/fixture.ts` (shared setup and the
   test-only app/router), `apps/server/src/actor/run-context.test.ts`.
 - Changed: `apps/server/src/db/auth-schema.ts` (`runTokens`), `apps/server/src/app.ts` (resolver
   chain, `verbMiddleware()` after `express.json`, `/api/v1/run-tokens` mount),
@@ -122,7 +123,7 @@ Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests commit
   token on everything but mint 403; `POST /api/v1/entries` with an all-verbs run token 403; token
   for project A 404 from `assertRunScope` for project B (same workspace) and C (other workspace);
   `effectiveRole` lower of token and member role; harness bearer tokens still resolve.
-- `pnpm test`: shared 2 files / 15 tests, server 22 files / 318 tests, exit 0.
+- `pnpm test`: shared 2 files / 15 tests, server 22 files / 318 tests, exit 0 (re-run in round 2).
 - `pnpm lint` exit 0; `pnpm typecheck` exit 0.
 - Not required: acceptance `run-tokens` 22 of 31 with `device-login` pass; the 9 failures all
   stop at creating a goal (404, tickets 04-07).
@@ -148,6 +149,17 @@ Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests commit
 - Mint audit details: `on_behalf_of`, `device_id`, `project_id`, `verbs`, `role`, `ttl_seconds`.
 - The resolver does not touch `last_seen_at` on every request; only mint does (as the ticket says).
 
+**Review fixes**
+- Round 1, test first ("no commit between base and HEAD changes only test files"): the old test
+  commit `8703472` held `run-tokens/test-fixture.ts`, which the guard's test-file pattern does not
+  match. Recovered without rewriting history: `e0ce4b9` backs out the build (tree equals `b1dfe0f`
+  outside `plans/`), `42ffc8b` commits only `run-context.test.ts`, `run-tokens.test.ts`,
+  `verbs.test.ts` and the fixture moved to `run-tokens/tests/fixture.ts` (a `tests/` folder matches
+  the pattern; Vitest does not collect it since it is not `*.test.ts`); at `42ffc8b` the focused
+  run fails 3 files on `Cannot find module '../../actor/run-context.ts'`. The code commit then
+  restores the production files from `0d99995` unchanged. Re-proved: focused run 4 files / 24 tests
+  passed; `pnpm test` (15 + 318), `pnpm lint`, `pnpm typecheck` exit 0.
+
 **Shortcuts taken**
 - No general per-actor rate limit on mint (Check order step 5): no general limiter is mounted in
   the app yet (as in ticket 01). A device can mint as fast as it can call; each mint is one row.
@@ -163,7 +175,7 @@ Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests commit
   Routes; mount routers after `verbMiddleware()` (which is in the `/api/v1` chain in `app.ts`).
   `GET /api/v1/tasks/ready` with a run token may omit `project_id`: take it from
   `runContextOf(req).projectId`.
-- Tests can reuse `run-tokens/test-fixture.ts` (`useRunTokenFixture`, `world`, `device`) and
+- Tests can reuse `run-tokens/tests/fixture.ts` (`useRunTokenFixture`, `world`, `device`) and
   `mintRunToken` from `testing/task-seeds.ts`.
 - `db/schema.test.ts` still lists 9 tables (outside this ticket's Touches); `run_tokens` exists
   but is not in that list.
