@@ -1,7 +1,7 @@
 # Add device login: the device flow, approve, list and revoke
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: —
 Test first: yes
 Level: 3
@@ -232,5 +232,65 @@ SPEC
 - acceptance tests for this ticket: I ran `pnpm exec vitest run --root plans/cloud-task-board/acceptance device-login`: 1 file and 15 tests passed. The acceptance failures the conductor reported are in the files for later tickets: goals, run tokens, claim, report, isolation and the happy path.
 - scope: OK. Every changed file is in the ticket's Touches list (the devices files, secret-token and its test, auth-schema, schema and its test, the drizzle migration and meta files, app.ts, the one-word `testClient` export in harness.ts, task-seeds and shared devices.ts), plus the flow's own map.md and learnings.md lines. `apps/server/src/devices/user-code.ts` sits inside the `apps/server/src/devices/` folder the ticket names. `app.test.ts` is listed in Touches but is unchanged, which is allowed. Nothing in the diff falls under `Not in this ticket`: there are no run tokens, no resolver, no pages and no deny route.
 - test first: OK. Commit c1f47f4 adds the three test files and no production code. The conductor saw them fail at that commit, and without the production change they would fail because the routes and modules they import do not exist yet.
+
+REVIEW: PASS
+
+## Review findings (round 2, pair review)
+
+Range reviewed: 43c4e4e3c46cacaefb296829f2ddfe985c08ce1b..8f05bbc. That is HEAD, so no later commits were left out. I read the ticket as it stood at the base commit, plus the round 1 review findings (lines 196 onward of the working copy). The `## Answer` section never reached me. I re-ran `vitest run src/devices src/run-tokens/secret-token.test.ts`: 4 files and 40 tests passed. My commands left no files behind, and git status is clean.
+
+Inputs I probed as a hostile caller:
+- **Device code request:** `client_name`.
+- **Token poll:** `grant_type` and `device_code`.
+- **Approve:** `user_code` and `name`.
+- **Revoke:** the `:id` path parameter.
+- **Headers:** the actor and Authorization headers, `Host`, `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host`.
+- **Body:** size and content type.
+- **App clock:** expiry and the grace period.
+- **Races:** concurrent approve, revoke and poll.
+
+These are closed and need no change:
+- **Identity:** it comes from the actor, and the strict schemas refuse a caller-sent device id or user id.
+- **Locking:** the poll locks device_codes, then devices. Revoke locks devices only, so the two cannot deadlock.
+- **One token per code:** the token is issued once, guarded by `issuedAt` under a lock.
+- **Revoked before first poll:** this gets `invalid_grant`.
+- **Hashes only:** only hashes are stored, and `secretHash` is never sent back.
+- **Another person's device:** revoking it gives 404.
+- **Approve limit:** it is now a true fixed window of 5 per 15 minutes, and it runs after `requireHuman`.
+- **Async errors:** Express 5.3 passes errors thrown in async handlers to the error handler.
+
+QUALITY
+1. major apps/server/src/app.ts: `app.set("trust proxy", 1)` is set for every environment, and that reopens the DNS-rebinding hole that D15 closed. With trust proxy on, Express 5 takes `req.hostname` from the caller's `X-Forwarded-Host` header (express/lib/request.js:418-430, which trusts the first hop). The dev-actor guard in apps/server/src/actor/middleware.ts:61 checks `req.hostname`. A page on a rebinding domain is same-origin to the browser, so it can send `X-Dev-Actor` together with `X-Forwarded-Host: localhost`, pass the guard, and act as any actor, a human included, against `pnpm dev`. I confirmed that Express with trust proxy 1 returns `hostname=localhost` for a request with `Host: evil.example` and `X-Forwarded-Host: localhost`. No test covers this. Two fixes:
+   - Set `trust proxy` only in production, or make it an option of `createApp`.
+   - Make the dev-actor guard read the raw `Host` header (`req.get("host")`, port stripped) instead of `req.hostname`.
+   Add a refused-case test: `X-Dev-Actor` with `X-Forwarded-Host: localhost` and a non-loopback `Host` must get 401 `dev_actor_disabled`.
+2. minor apps/server/src/app.ts / apps/server/src/devices/device-flow.ts: the per-address limits on `/api/device/*` only work if exactly one proxy hop sits in front of the app.
+   - Without a proxy (dev, or any non-Render host), a caller can set `X-Forwarded-For` to any value and get a fresh bucket on every request.
+   - Nobody has checked that Render adds exactly one hop. If Cloudflare sits in front of it too, `req.ip` becomes a shared edge address and many real clients share one budget of 60.
+   Check Render's real `X-Forwarded-For` chain, and record the hop count in a decision.
+3. minor apps/server/src/devices/device-flow.ts: the limiter keys on the full `req.ip`. A caller with an IPv6 /64 has about 2^64 keys, so `/code` inserts are still effectively unlimited for them. The purge only bounds the table to about 30 minutes of that rate. Key IPv6 addresses by their /64 prefix.
+4. minor apps/server/src/devices/device-flow.ts: `verification_uri` is still built from the request's host. With trust proxy on, that host can now come from `X-Forwarded-Host` as well as `Host`, and the caller sets both. Today this only affects the caller's own response, but the approval page in R2-01 will rely on this value. Build it from a configured public base URL.
+5. minor apps/server/src/devices/device-flow.ts and apps/server/src/db/auth-schema.ts: every `POST /api/device/code` runs a DELETE filtered on `expires_at`, and that column has no index, so each anonymous request scans the whole table. Add an index on `expires_at` (or a partial index where `device_id IS NULL`), or purge on a timer.
+
+REVIEW: FAIL
+
+I reviewed round 2 of cloud-task-board ticket 01 (device login), range 43c4e4e3c46cacaefb296829f2ddfe985c08ce1b..8f05bbc. END is HEAD, so no later commits were left out. I read the ticket as it stood at the base commit, plus the round 1 review findings section, which I read on its own. I kept the tickets folder out of the diff, so the author's `## Answer` never reached me. The ticket's Status changed from open to resolved. I ran only read-only commands and the device-login acceptance file. git status is clean and nothing was left behind.
+
+Round 1 findings, as they stand in the code:
+- **Unlimited anonymous /code calls:** each client address now has a limit on `/code` and on `/token`, with `trust proxy` set to 1 in app.ts. Never-approved codes are deleted on `/code` 900 s after they expire.
+- **Approve limit too loose:** approve now uses a fixed 15-minute window (`window-limiter.ts`). A new test sends the 6th approve at minute 3 and expects 429 with Retry-After 720.
+- **Device revoked before its first poll:** the poll now returns `invalid_grant`, and the device row is locked during that check.
+- **Code approved in its last second:** an approved code gets a 60 s grace period after it expires.
+- **`verification_uri` scheme and host:** the scheme now comes from the proxy because of `trust proxy`. The host is still taken from the request. That is for the quality pass to judge, not this spec pass.
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/devices` passes, covering every case listed under Tests: MET (conductor). The test names cover every listed case: each poll error, the token handed out once, an agent approving gets 403 humans_only, wrong and expired user codes get 404, the sixth approve in 15 minutes gets 429, the list shows only the caller's own devices, revoking another person's device gets 404, and revoking one's own gets 200 with revoked_at set.
+- `pnpm --filter @sky-brain/server exec vitest run src/run-tokens/secret-token.test.ts` passes (two tokens differ, each carries its prefix, the stored hash never equals the token): MET (conductor). The test asserts all three.
+- All existing tests pass (`pnpm test`): MET (conductor)
+- `pnpm lint` exits 0: MET (conductor)
+- `pnpm typecheck` exits 0: MET (conductor)
+- acceptance tests for this ticket: I ran `pnpm exec vitest run --root plans/cloud-task-board/acceptance device-login` and 1 file with 15 tests passed. The failures the conductor reported come from files for later tickets, for example `createGoal` in run-tokens.test.ts.
+- scope: OK. Every changed file is in Touches: the devices folder (now also `window-limiter.ts` and `device-flow-guards.test.ts`), secret-token and its test, auth-schema, schema and its test, the drizzle migration and meta files, app.ts (now also `trust proxy`, added for a round 1 finding), the one-word `testClient` export in harness.ts, task-seeds and shared devices.ts. The only other changes are the flow's own map.md and learnings.md lines. Nothing in the diff falls under `Not in this ticket`: no run tokens, no resolver, no pages and no deny route.
+- test first: OK. c1f47f4 (round 1) and 83ba066 (round 2) add tests only, and the code follows in later commits. The conductor saw c1f47f4 fail. The round 2 tests check the new limiter, the purge, the grace period, the revoked-device case and the proxy scheme, and they would fail against the round 1 code. For example, the old token bucket would let the minute-3 approve through.
 
 REVIEW: PASS
