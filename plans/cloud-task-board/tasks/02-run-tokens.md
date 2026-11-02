@@ -1,7 +1,7 @@
 # Mint run tokens with verbs, and resolve them to an agent actor with a device
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 01
 Test first: yes
 Level: 3
@@ -168,3 +168,7 @@ Work started at `b1dfe0f9a8eff3baf1381e04873316339181a9fd`; failing tests commit
 - `db/schema.test.ts` still lists 9 tables (outside this ticket's Touches); `run_tokens` exists
   but is not in that list.
 
+
+## Review findings (round 1, test first)
+
+no commit between base and HEAD changes only test files. Commit the failing test alone first, then the code. A test commit does not count when earlier commits already changed production files. If the test and the code are in one commit (or the test commit sits on top of code that is already there), recover: revert that commit, commit the test files alone, then restore the production files in a later commit (git checkout <the old commit> -- <paths>). Do not rewrite history.
