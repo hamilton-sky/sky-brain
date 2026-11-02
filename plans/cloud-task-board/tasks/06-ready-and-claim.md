@@ -1,7 +1,7 @@
 # Add the ready list and the claim: eligibility filter, lease, fencing number and file overlap
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 05
 Test first: yes
 Level: 3
@@ -164,3 +164,41 @@ module; `/tasks/ready` answered 400 through `GET /:id`; claim 404 "No such API r
   after approval ..."). Claim and ready already refuse such a task. A fix: recompute `text_hash`
   in approve (or reuse the SQL hash in `eligibility.ts`) and in the wire mapping; a ticket that
   owns `goals-service.ts` and `wire.ts` should take it (13, or a follow-up).
+
+## Review findings (round 1, pair review)
+
+Reviewed c49a668cb05ccf8045f8fbc00722ebece4881b09..fb4b8a2 (END is HEAD, so there are no later commits). I read the ticket as it was at the base commit and did not see the Answer.
+
+Hostile-caller inputs I probed:
+- ready: `project_id`, `goal_id`, `limit`, and a run token's project.
+- claim: path `:id` and body.
+- headers: actor and device from the token, and the verb table for `/tasks/ready` and `/tasks/:id/claim`.
+- concurrency: the advisory lock, the `FOR UPDATE` eligibility select and the conditional update.
+- files: overlap with null or `[]` lists.
+- lease: the boundary at `lte`/`gt` on expiry.
+
+These held. Another workspace or project gets 404 (`resolveScope` plus `assertRunScope`). A device token or a token without the verb gets 403. A viewer gets 403. A body naming an actor or device is refused by the strict schema. Holder and device come only from the token. A refused claim writes nothing.
+
+I ran the acceptance suite (`claim.test.ts`, `goals.test.ts`). Most failures are 404 on renew, done or release, which are ticket 07 routes. The `goals.test.ts` pinned-text failure is the problem in finding 1.
+
+QUALITY
+1. major apps/server/src/tasks/eligibility.ts: Eligibility now re-hashes the row's text in SQL (`approved_hash = <textHashSql>`). Nothing else uses that recomputed hash:
+   - approve (`goals-service.ts` `approveGoal`) only re-pins rows where `approved_hash is distinct from text_hash`, and copies the stored `text_hash`.
+   - the wire `pinned` flag (`wire.ts:96`) compares the stored columns.
+   So a task whose text was changed directly in the database is stuck. GET reports it as `pinned: true`, while ready and claim refuse it as `not_ready`. Approving the goal again changes nothing, because the stale `text_hash` still equals `approved_hash`. The task can never be claimed again. The acceptance test `goals.test.ts` "a task whose text changed after approval ... until approved again" fails on this (`pinned` reads true at line 263, and the re-approve-then-claim step at 266-267 would also fail).
+   Fix: make approve and the `pinned` flag use the same recomputed hash. For example, approve sets `text_hash` and `approved_hash` from `textHashSql` for every task of the goal, and `pinned` is computed from that same expression or written back. Add a test that edits the title in the database, approves again and claims.
+2. minor apps/server/src/tasks/eligibility.ts: The canonical text hash is now defined twice, in `task-text.ts` (JSON.stringify) and in `textHashSql` (to_json). They have to stay byte-identical, or every pinned task becomes unclaimable. It also runs SHA-256 over every candidate row on every ready and claim. Keep a single definition, or add a test that checks both against each other on a wide sample of strings (the current test covers one string).
+3. minor apps/server/src/tasks/ready.ts: The ready list still includes tasks whose files overlap a running live lease. A worker will keep pulling tasks that it then gets 409 `files_busy` on. Consider filtering them out, or document this in the spec.
+
+REVIEW: FAIL
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/tasks/ready-claim.test.ts src/tasks/file-overlap.test.ts src/tasks/claim-isolation.test.ts` passes, covering every case listed under Tests: MET (conductor) for the run itself. I compared the tests with the Tests list and every case is covered. ready-claim.test.ts: ten `Promise.all` claims give one 200 and nine 409 already_claimed (bar 1). An unmet dependency is not ready and its claim is 409 not_ready (bar 2). Draft goals, cancelled goals, held goals, held tasks, unpinned tasks and a title changed in the DB after approval are never ready and their claim is 409 not_ready. P's device never gets Q's goal unless P is the assignee (bar 6). After 601 s the task reads pending and is ready again, the next claim has claim_seq 2 with events claimed/reclaimed/claimed, and attempts is 0. The test checks each event's actor, device and on_behalf_of against the token (bar 7). file-overlap.test.ts: a table of rule cases checked both ways (equal paths, folder prefix, backslash, trailing slash, null, [], and a prefix that is not a folder), plus a test that two overlapping tasks cannot both be in progress and the second claim is 409 files_busy (bar 5). claim-isolation.test.ts: workspace B (human, agent, run token) and run tokens of another project or workspace get 404 on ready and on claim (bar 4). A token without `claim` gets 403 verb_not_allowed.
+- All existing tests still pass, and `pnpm lint` and `pnpm typecheck` exit 0: MET (conductor) for `pnpm test`, `pnpm lint` and `pnpm typecheck`.
+- Acceptance (I ran it for claim.test.ts, run-tokens.test.ts and isolation.test.ts): 6 failed, 30 passed. All 6 failures are on ticket 07 routes. `/done` and `/release` return 404 "No such API route"; `/renew` returns 404 where 403 is expected. In claim.test.ts the 4 failures come after a successful claim, at the done or release call; the lease-expiry test fails where it expects 409 lease_lost from done. None of the failures is in ready or claim.
+- scope: OK. The changed files are the 8 that `Touches` lists, plus plans/cloud-task-board/map.md (+1 row) and learnings.md (+1 entry, 06), which is the flow's own bookkeeping. Nothing touches renew, release, done or fail. END = fb4b8a2 = HEAD, so no later commits were left out.
+- test first: OK. The test commit f714868 comes before the code commit fb4b8a2, and the conductor saw it fail. The new tests call routes that do not exist without the change (`/tasks/ready` would hit `/:id` and give 400), so they fail without the production code.
+
+Notes: I did not read the `## Answer`; I read the ticket at c49a668. The ticket's Status changed from open to resolved. The level 3 the conductor gave is right for this change, so I am not raising it. The acceptance run may have left files behind (vitest cache); I have not looked for any.
+
+REVIEW: PASS
