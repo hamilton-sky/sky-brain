@@ -12,6 +12,19 @@ export interface AppOptions {
   resolveActor?: ActorResolver;
   /** Honour `X-Dev-Actor`. Default false; see `devActorHeaderEnabled`. */
   devActorHeader?: boolean;
+  /**
+   * How many proxies in front of the app to trust for the client address and scheme
+   * (X-Forwarded-For / X-Forwarded-Proto / X-Forwarded-Host). Default: 1 (the one Render
+   * proxy hop assumed in ticket 01's Answer), or 0 when `devActorHeader` is on: `pnpm dev`
+   * listens on 127.0.0.1 with no proxy, and a trusted X-Forwarded-Host would let a rebinding
+   * page pass the dev actor's localhost check (D15). Must be 0 while `devActorHeader` is on.
+   */
+  trustProxyHops?: number;
+  /**
+   * The public origin people reach the app at, such as `https://brain.example`. When set,
+   * `verification_uri` is built from it instead of the request's Host.
+   */
+  publicBaseUrl?: string;
   /** The clock routes use. Default: `() => new Date()`. */
   now?: () => Date;
   /** Folder holding the web build. Default: apps/web/dist. */
@@ -22,22 +35,67 @@ const defaultWebDist = fileURLToPath(
   new URL("../../web/dist", import.meta.url),
 );
 
+function trustProxyHopsOf(options: AppOptions): number {
+  const devActorHeader = options.devActorHeader ?? false;
+  const hops = options.trustProxyHops ?? (devActorHeader ? 0 : 1);
+  if (!Number.isInteger(hops) || hops < 0) {
+    throw new Error(
+      `createApp: trustProxyHops must be a whole number of at least 0, got ${hops}`,
+    );
+  }
+  if (devActorHeader && hops > 0) {
+    throw new Error(
+      "createApp: trustProxyHops must be 0 while devActorHeader is on (D15)",
+    );
+  }
+  return hops;
+}
+
+/** The origin of `raw` without a trailing slash; throws unless it is a bare http(s) origin. */
+function publicBaseUrlOf(raw: string): string {
+  let url: URL | undefined;
+  try {
+    url = new URL(raw);
+  } catch {
+    url = undefined;
+  }
+  if (
+    !url ||
+    (url.protocol !== "https:" && url.protocol !== "http:") ||
+    url.pathname !== "/" ||
+    url.search !== "" ||
+    url.hash !== "" ||
+    url.username !== "" ||
+    url.password !== ""
+  ) {
+    throw new Error(
+      `createApp: publicBaseUrl must be a bare http(s) origin such as https://brain.example, got "${raw}"`,
+    );
+  }
+  return url.origin;
+}
+
 export function createApp(options: AppOptions): express.Express {
   const webDist = options.webDist ?? defaultWebDist;
   const db = options.db;
   // Every time comparison in a route uses this clock, so tests can move time.
   const now = options.now ?? (() => new Date());
+  const hops = trustProxyHopsOf(options);
+  const publicBaseUrl =
+    options.publicBaseUrl === undefined
+      ? undefined
+      : publicBaseUrlOf(options.publicBaseUrl);
   const app = express();
-  // Render runs one proxy in front of the app: take the client address and scheme from the last
-  // hop it adds to X-Forwarded-For / X-Forwarded-Proto, never from earlier, caller-sent hops.
-  app.set("trust proxy", 1);
+  // Take the client address and scheme from the last `hops` entries the proxies in front add to
+  // X-Forwarded-For / X-Forwarded-Proto, never from earlier, caller-sent ones. 0 trusts none.
+  app.set("trust proxy", hops === 0 ? false : hops);
 
   app.get("/healthz", (_req, res) => {
     res.status(200).json({ ok: true });
   });
 
   // The anonymous device flow: before the actor middleware, with its own body parser.
-  app.use("/api/device", deviceFlowRouter({ db, now }));
+  app.use("/api/device", deviceFlowRouter({ db, now, publicBaseUrl }));
 
   // Check order steps 1 and 2: the actor before the body, so an anonymous body is never read.
   app.use(

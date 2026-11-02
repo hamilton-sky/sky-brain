@@ -152,6 +152,7 @@ Its own map links back here. Rows, not yet tickets:
   `vitest/dist/config.d.ts` and `defaults` chunk, `defaultExclude`).
 - 01 — Device flow at /api/device (flat RFC 8628 errors, own body-error handler), human devices routes at /api/v1/devices; device code and `sbd_` token stored as SHA-256 only; user code unique while `device_id IS NULL`; device audit rows use the nil workspace uuid.
 - 01 — Review round 1: per-address limits on /api/device (`trust proxy` 1 in app.ts), expired unapproved codes purged on /code, approve is a fixed 15-minute window, a revoked or 60 s-late approved code is handled at poll.
+- 01 — Review round 2: `createApp({ trustProxyHops })` (default 1, forced 0 with the dev actor header, D15), device-flow limits key IPv6 by /64, optional `publicBaseUrl` for `verification_uri`, partial index on pending `expires_at`; Render's real hop count is unverified.
 
 ## Open questions
 

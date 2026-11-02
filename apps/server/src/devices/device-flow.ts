@@ -18,6 +18,7 @@ import type { Db } from "../db/client.ts";
 import { deviceCodes, devices } from "../db/schema.ts";
 import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
 import { hashSecretToken, newSecretToken } from "../run-tokens/secret-token.ts";
+import { addressKey } from "./address-key.ts";
 import { formatUserCode, newUserCode } from "./user-code.ts";
 
 export const DEVICE_CODE_TTL_SECONDS = 900;
@@ -45,6 +46,11 @@ const POLL_LIMIT = { capacity: 60, refillPerSecond: 1 };
 export interface DeviceFlowOptions {
   db: Db;
   now: () => Date;
+  /**
+   * The public origin (`https://host`, no trailing slash) `verification_uri` is built from. When
+   * unset, the request's scheme and Host header are used.
+   */
+  publicBaseUrl?: string;
 }
 
 type FlowError =
@@ -86,10 +92,13 @@ const flowBodyErrors: ErrorRequestHandler = (err, _req, res, next) => {
   next(err);
 };
 
-/** 429 `rate_limited` with `Retry-After`, keyed by the client address (`trust proxy` in app.ts). */
+/**
+ * 429 `rate_limited` with `Retry-After`, keyed by the client address (`trust proxy` in app.ts),
+ * an IPv6 address by its /64.
+ */
 function perAddress(limiter: RateLimiter): RequestHandler {
   return (req, res, next) => {
-    const taken = limiter.take(req.ip ?? "unknown");
+    const taken = limiter.take(addressKey(req.ip ?? "unknown"));
     if (taken.ok) return next();
     res.set("Retry-After", String(taken.retryAfterSeconds));
     flowError(res, "rate_limited", 429);
@@ -97,7 +106,7 @@ function perAddress(limiter: RateLimiter): RequestHandler {
 }
 
 export function deviceFlowRouter(options: DeviceFlowOptions): Router {
-  const { db, now } = options;
+  const { db, now, publicBaseUrl } = options;
   const clock = () => now().getTime();
   const router = express.Router();
   // Before the body parser, so a refused caller's body is never read.
@@ -149,7 +158,7 @@ export function deviceFlowRouter(options: DeviceFlowOptions): Router {
         res.status(200).json({
           device_code: deviceCode,
           user_code: formatUserCode(userCode),
-          verification_uri: `${req.protocol}://${req.get("host")}${VERIFICATION_PATH}`,
+          verification_uri: `${publicBaseUrl ?? `${req.protocol}://${req.get("host")}`}${VERIFICATION_PATH}`,
           expires_in: DEVICE_CODE_TTL_SECONDS,
           interval: POLL_INTERVAL_SECONDS,
         });

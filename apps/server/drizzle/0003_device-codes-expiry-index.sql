@@ -1,0 +1,1 @@
+CREATE INDEX "device_codes_pending_expires_at_idx" ON "device_codes" USING btree ("expires_at") WHERE "device_codes"."device_id" is null;

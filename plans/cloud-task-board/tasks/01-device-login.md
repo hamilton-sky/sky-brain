@@ -1,7 +1,7 @@
 # Add device login: the device flow, approve, list and revoke
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: yes
 Level: 3
@@ -86,6 +86,7 @@ $ pnpm typecheck
 
 Work started at `43c4e4e3c46cacaefb296829f2ddfe985c08ce1b`; failing tests committed alone as `c1f47f4`.
 Review round 1 fixes started at `35b2689`; their failing tests committed alone as `83ba066`.
+Review round 2 fixes started at `2d900d7`; their failing tests committed alone as `1b03bdd`.
 
 **Built**
 - New: `apps/server/src/run-tokens/secret-token.ts`, `apps/server/src/db/auth-schema.ts`,
@@ -102,6 +103,13 @@ Review round 1 fixes started at `35b2689`; their failing tests committed alone a
   wrapped the line), `db/schema.test.ts` (table count 8 -> 9 with `device_codes`).
 
 **Proof**
+- After the round 2 fixes (all run fresh after the last edit): `vitest run src/devices` 4 files /
+  46 tests passed; secret-token 1 file / 2 tests passed; `pnpm test` exit 0 (shared 2 files / 15
+  tests, server 19 files / 296 tests); `pnpm lint` exit 0; `pnpm typecheck` exit 0; acceptance
+  `device-login` 15/15 passed; `node tools/dev-smoke.mjs` printed `healthz 200`. At `1b03bdd` the 8
+  new tests failed for the right reasons (404 instead of 401 for the rebinding request; 200 instead
+  of 429 for the spoofed X-Forwarded-For and the IPv6 /64; createApp did not throw; verification_uri
+  `http://evil.example/...`; no index; `address-key.ts` missing).
 - After the round 1 fixes: `vitest run src/devices` 3 files / 38 tests passed; secret-token 1 file / 2
   tests passed; `pnpm test` shared 15 passed, server 18 files / 279 tests passed, exit 0; `pnpm lint`
   exit 0; `pnpm typecheck` exit 0; acceptance `device-login.test.ts` 15/15 passed (the other files
@@ -186,12 +194,62 @@ Review round 1 fixes started at `35b2689`; their failing tests committed alone a
    a POST answer (not cached), so it cannot steer another person. Proposed for R2-01, which adds the
    page at that URL and so needs the base URL anyway.
 
+**Review fixes** (round 2)
+1. Fixed in `app.ts`. `createApp` has a new `trustProxyHops` option. It defaults to 1, or to 0 when
+   `devActorHeader` is on, and `createApp` throws if it is above 0 while `devActorHeader` is on.
+   `pnpm dev` therefore trusts no `X-Forwarded-*` header, so `req.hostname` is the raw `Host` again
+   and D15's localhost check holds. `server.ts` needed no change, because it already passes
+   `devActorHeader`. I left the guard in `actor/middleware.ts` (outside Touches) alone: the
+   createApp invariant closes the hole for every caller of `createApp`.
+   Tests in `app.test.ts`:
+   - Refused case: `Host: rebound.example` with `X-Forwarded-Host: localhost` and `X-Dev-Actor`
+     gets 401 `dev_actor_disabled`.
+   - Allowed case: `Host: localhost:<port>` still reaches the route.
+   - `createApp` throws for `devActorHeader` with `trustProxyHops: 1`, and for -1 and 1.5.
+2. Dev half fixed by 1. With the dev actor header on, 60 requests with different `X-Forwarded-For`
+   values share one bucket and the 61st gets 429 (test). The hop count is now an option
+   (`trustProxyHops`, with a test that 2 hops picks the second entry from the right).
+   Render's real chain is **not verified**: I have no Render deploy here. What I found:
+   - On https://community.render.com/t/what-number-of-proxies-sit-in-front-of-an-express-app-deployed-on-render/35981
+     one user found that 3 hops gave the client address.
+   - On https://community.render.com/t/accessing-client-ips-in-a-node-express-app/36282 another
+     user took the second-to-last entry and noted that Render passes caller-sent entries through.
+   - Neither thread has a staff answer, and Render's docs say nothing on this.
+   The default stays 1 because it fails closed. If Render really adds more hops, every client
+   shares one bucket per edge address, which is coarse but not spoofable. Too high a number would
+   instead let a caller pick its own bucket. Recording the hop count in `docs/DECISIONS.md` is
+   outside Touches (ticket 10 owns the decisions). Before launch, someone must read the real
+   `X-Forwarded-For` of one request on the Render service and set the hop count. Setting it from
+   the environment needs `config.ts`/`server.ts`, which are also outside Touches.
+3. Fixed. The new `devices/address-key.ts` keys an IPv6 address by its /64 (`a:b:c:d::/64`), an
+   IPv4-mapped one as its IPv4 address, and leaves IPv4 unchanged. `perAddress` in `device-flow.ts`
+   uses it.
+   - Unit tests in `address-key.test.ts` cover compressed and expanded forms, an embedded IPv4 tail,
+     a zone, and a non-address.
+   - Route test: 60 codes from 60 addresses of one /64 make the 61st 429, while another /64 goes on.
+4. Partly fixed. `createApp` has a new `publicBaseUrl` option, checked to be a bare http(s) origin
+   (it throws otherwise). When it is set, `verification_uri` is built from it whatever the `Host`,
+   `X-Forwarded-Host` or `X-Forwarded-Proto` say (tests). When it is unset, the old behaviour
+   stays. That fallback uses `req.get("host")`, the raw `Host` header, never `X-Forwarded-Host`,
+   so the finding's "can now come from X-Forwarded-Host" does not apply to this line. `server.ts`
+   does not pass the option yet, because reading `PUBLIC_BASE_URL` belongs in `config.ts` and
+   `server.ts` (outside Touches). R2-01, which serves the page at that URI, should wire it up.
+5. Fixed. A partial index `device_codes_pending_expires_at_idx` on `expires_at WHERE device_id IS
+   NULL` (`auth-schema.ts`, migration `0003_device-codes-expiry-index.sql`, generated by drizzle-kit)
+   matches the purge's filter. The test in `db/schema.test.ts` reads the index from `pg_indexes`.
+   The migration only adds an index, so it loses no data.
+
 **For later tickets**
 - 02: hash a presented `sbd_` token with `hashSecretToken` and look up `devices.secret_hash` (unique);
   reject when `revoked_at` is set. A device whose token was never issued has `secret_hash` null.
   `createApp` now has a local `now` and `db`; pass `now` to new routers. `withToken` and
   `loginDevice` are in `testing/task-seeds.ts` (loginDevice uses `client_name: "test"`).
 - Device audit rows use workspace `00000000-0000-0000-0000-000000000000`.
+- `createApp` now takes `trustProxyHops` (default 1, 0 with `devActorHeader`) and `publicBaseUrl`.
+  Whoever wires config (R2-01 or a deploy ticket) should read `PUBLIC_BASE_URL` and the verified
+  Render hop count in `config.ts` and pass both from `server.ts`. Ticket 10 may record the hop count
+  in `docs/DECISIONS.md` once it is checked on Render.
+- Migrations now go to 0003; whoever merges brain-core renumbers after it.
 
 ## Review findings (round 1, pair review)
 

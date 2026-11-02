@@ -3,6 +3,7 @@
 // `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
 import { sql } from "drizzle-orm";
 import {
+  index,
   integer,
   pgTable,
   text,
@@ -38,6 +39,10 @@ export const deviceCodes = pgTable(
   (t) => [
     uniqueIndex("device_codes_pending_user_code_idx")
       .on(t.userCode)
+      .where(sql`${t.deviceId} is null`),
+    // The purge on every /api/device/code deletes pending codes by expiry; no full scan.
+    index("device_codes_pending_expires_at_idx")
+      .on(t.expiresAt)
       .where(sql`${t.deviceId} is null`),
   ],
 );
