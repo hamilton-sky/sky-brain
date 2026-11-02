@@ -219,3 +219,4 @@ export const devices = pgTable("devices", {
 });
 
 export * from "./auth-schema.ts";
+export * from "./tasks-schema.ts";

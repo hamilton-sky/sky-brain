@@ -36,6 +36,20 @@
       "when": 1793618927911,
       "tag": "0004_run-tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793620363527,
+      "tag": "0005_board-tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793620364441,
+      "tag": "0006_task-events-append-only",
+      "breakpoints": true
     }
   ]
 }

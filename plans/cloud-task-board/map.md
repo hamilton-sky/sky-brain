@@ -155,6 +155,7 @@ Its own map links back here. Rows, not yet tickets:
 - 01 — Review round 2: `createApp({ trustProxyHops })` (default 1, forced 0 with the dev actor header, D15), device-flow limits key IPv6 by /64, optional `publicBaseUrl` for `verification_uri`, partial index on pending `expires_at`; Render's real hop count is unverified.
 - 02 — Run tokens `sbr_` (hash only, `run_tokens.role` text+check since schema.ts enums are undefined in auth-schema at load), resolver chained before `options.resolveActor`, full verb table in `run-tokens/verbs.ts` mounted after `express.json`; a person calling mint gets 403 `verb_not_allowed`; `assertRunScope`/`effectiveRole` in `run-tokens/run-scope.ts` for 04-07.
 - 02 — Review round 2: mint is rate-limited per actor and device (default limiter) and purges the device's expired run tokens; the bearer scheme is case-insensitive; HEAD needs the GET verb.
+- 03 — Board tables in `db/tasks-schema.ts` (author_kind text+check, new enums local); tasks have composite FKs to `goals (id, project_id)` and `projects (id, workspace_id)`; `task_events` has no FKs and a trigger (0006); `taskTextHash` = SHA-256 of JSON `[title, body, files, context_refs]`; shared `tooLargeField` tells 413 from 400.
 
 ## Open questions
 

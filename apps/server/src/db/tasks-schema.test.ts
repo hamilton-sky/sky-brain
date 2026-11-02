@@ -59,7 +59,10 @@ function rawTask(v: {
 describe("goals and tasks", () => {
   it("stores a goal and a task with the defaults", async () => {
     const w = await world("defaults");
-    const g = await seedGoal(db, w);
+    const g = await seedGoal(db, {
+      workspaceId: w.workspaceId,
+      projectId: w.projectId,
+    });
     const t = await seedTask(db, { goalId: g.id });
     const [goal] = await db.select().from(goals).where(eq(goals.id, g.id));
     expect(goal).toMatchObject({
