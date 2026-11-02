@@ -1,5 +1,5 @@
-// `/api/v1/tasks` (cloud-task-board spec.md Routes): get one task, and the human-only
-// release-text. Ready and claim join it in ticket 06, renew and report in 07. Check order: actor,
+// `/api/v1/tasks` (cloud-task-board spec.md Routes): the ready list, get one task, the claim, and
+// the human-only release-text. Renew and report join it in ticket 07. Check order: actor,
 // body and verb (app); humans only (release-text); the board-write rate limit (every POST); the
 // path id; target and membership (404, also for an agent on a held task or a task of a held
 // goal); role (403); state (409).
@@ -17,8 +17,10 @@ import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { memberRole } from "../scope/member-role.ts";
+import { claimHandler } from "./claim.ts";
 import { assertWriter, boardWriteLimit, pathId } from "./goals-router.ts";
 import { goalNotFound } from "./goals-service.ts";
+import { readyHandler } from "./ready.ts";
 import { toWireTask, type TaskRow } from "./wire.ts";
 
 export interface TasksRouterOptions {
@@ -70,6 +72,9 @@ export function tasksRouter(options: TasksRouterOptions): Router {
   const router = express.Router();
   const limit = boardWriteLimit(options.limiter);
 
+  // Before `/:id`, which would read `ready` as a task id.
+  router.get("/ready", readyHandler({ db, now }));
+
   router.get("/:id", async (req, res) => {
     const id = pathId(req);
     const { task } = await findTask(db, actorOf(req), id);
@@ -78,6 +83,8 @@ export function tasksRouter(options: TasksRouterOptions): Router {
       .status(200)
       .json({ task: toWireTask(task, await dependsOn(db, task.id), now()) });
   });
+
+  router.post("/:id/claim", limit, claimHandler({ db, now }));
 
   router.post("/:id/release-text", requireHuman, limit, async (req, res) => {
     const id = pathId(req);

@@ -182,6 +182,31 @@ describe("ready and claim", () => {
     expect((await claim(ed, second.id)).status).toBe(200);
   });
 
+  it("a pinned task with quotes, backslashes, control characters and non-ASCII text stays ready", async () => {
+    const w = await world(ctx.db);
+    const g = await goal(w);
+    const odd = [
+      {
+        title: 'say "hi" \\ there',
+        body: "line\nnext\ttab\r\b\f\u0001\u001f\u007f",
+        files: [],
+      },
+      {
+        title: "ünïcødé ✓ 漢字 😀",
+        body: "  </script>",
+        files: ["a\\b", "c/"],
+      },
+      { title: "null files", body: "", files: null },
+    ];
+    const ids: string[] = [];
+    for (const t of odd) {
+      ids.push((await seedTask(ctx.db, { goalId: g.id, ...t })).id);
+    }
+    expect(await readyIds(as(w.editor), `?project_id=${w.projectA}`)).toEqual(
+      ids,
+    );
+  });
+
   it("draft or cancelled goals, held tasks or goals, and unpinned tasks are never ready nor claimable", async () => {
     const w = await world(ctx.db);
     const base = {
