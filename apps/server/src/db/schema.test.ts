@@ -62,6 +62,15 @@ describe("migrations", () => {
       'device_codes')`);
     expect(rows[0]?.n).toBe(9);
   });
+
+  it("index the expiry of pending device codes, which every /api/device/code purges by", async () => {
+    const rows = await db
+      .select({ def: sql<string>`indexdef` })
+      .from(sql`pg_indexes`).where(sql`tablename = 'device_codes'
+        and indexname = 'device_codes_pending_expires_at_idx'`);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.def).toMatch(/\(expires_at\) WHERE \(device_id IS NULL\)/);
+  });
 });
 
 describe("harness seeds", () => {

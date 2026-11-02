@@ -105,6 +105,29 @@ describe("rate limits per client address", () => {
     expect(other.status).toBe(200);
   });
 
+  it("counts every address of one IPv6 /64 against one budget", async () => {
+    for (let i = 1; i <= 60; i += 1) {
+      const res = await postFrom(
+        `2001:db8:aa:bb::${i.toString(16)}`,
+        "/api/device/code",
+        { client_name: "pathly" },
+      );
+      expect(res.status).toBe(200);
+    }
+    const over = await postFrom("2001:db8:aa:bb:1:2:3:4", "/api/device/code", {
+      client_name: "pathly",
+    });
+    flowError(over, "rate_limited", 429);
+    const otherPrefix = await postFrom(
+      "2001:db8:aa:bc::1",
+      "/api/device/code",
+      {
+        client_name: "pathly",
+      },
+    );
+    expect(otherPrefix.status).toBe(200);
+  });
+
   it("answers the 61st poll from one address at once with 429", async () => {
     const body = { grant_type: GRANT, device_code: "not-a-device-code" };
     for (let i = 0; i < 60; i += 1) {
