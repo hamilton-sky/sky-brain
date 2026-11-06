@@ -19,3 +19,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # RepNix: dead code (Knip) and duplication (jscpd) on top of the checks above.
+      # Fails only on findings not in .repnix-baseline.json.
+      - run: pnpm health

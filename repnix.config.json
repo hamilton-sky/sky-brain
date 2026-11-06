@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "scopes": {
+    ".": {
+      "categories": {
+        "types": {
+          "mode": "off"
+        }
+      }
+    }
+  },
+  "categories": {
+    "types": {
+      "mode": "required"
+    },
+    "lint": {
+      "mode": "optional"
+    },
+    "format": {
+      "mode": "optional"
+    },
+    "tests": {
+      "mode": "optional"
+    },
+    "dead-code": {
+      "mode": "required"
+    },
+    "duplication": {
+      "mode": "required"
+    }
+  },
+  "severityThreshold": "warning",
+  "execution": {
+    "jobs": 2,
+    "timeoutSeconds": 600
+  },
+  "baseline": {
+    "path": ".repnix-baseline.json",
+    "failOn": "new"
+  }
+}

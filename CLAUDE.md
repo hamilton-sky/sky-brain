@@ -51,6 +51,8 @@ pnpm install --frozen-lockfile   install exactly what pnpm-lock.yaml pins
 pnpm lint                        ESLint and prettier --check
 pnpm typecheck                   tsc --noEmit in every package
 pnpm test                        Vitest in every package
+pnpm health                      RepNix: typecheck, lint, tests, dead code, duplication
+                                 (new findings only; existing ones are in .repnix-baseline.json)
 pnpm build                       build the web shell (apps/web/dist)
 pnpm dev                         build the web shell, then run the server on one port
 node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it

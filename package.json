@@ -11,14 +11,18 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
-    "dev": "pnpm --filter @sky-brain/web build && pnpm --filter @sky-brain/server dev"
+    "dev": "pnpm --filter @sky-brain/web build && pnpm --filter @sky-brain/server dev",
+    "health": "repnix check"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
     "eslint": "10.14.0",
     "globals": "17.14.0",
+    "jscpd": "5.4.2",
+    "knip": "6.44.1",
     "prettier": "3.9.10",
+    "repnix": "1.1.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.72.1",
     "vitest": "5.0.5"
