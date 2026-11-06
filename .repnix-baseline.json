@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-06T08:29:51.276Z",
+  "entries": [
+    {
+      "fingerprint": "29bdcfeee595b10c3220603f",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": "tools/dev-smoke.mjs"
+    },
+    {
+      "fingerprint": "1a8ae54719598e0aef5bbb6e",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/editor.js"
+    },
+    {
+      "fingerprint": "cf10b09f0a1a1e76f3e307c0",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/live.js"
+    },
+    {
+      "fingerprint": "2f5db4e3d32d3440c951c8e1",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/steps.js"
+    },
+    {
+      "fingerprint": "ef8df9436883a5b58489581d",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": "apps/server/src/db/migrate-cli.ts"
+    },
+    {
+      "fingerprint": "1112d946493305ca448c9fe8",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/db/entries-view.ts",
+      "line": 12
+    },
+    {
+      "fingerprint": "f96fe4e47bdfaf16188a67f9",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/testing/harness.ts",
+      "line": 146
+    },
+    {
+      "fingerprint": "c95fa4f2335bc20fb8f76625",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/testing/harness.ts",
+      "line": 154
+    },
+    {
+      "fingerprint": "09d0d31f2a4c09feec5195c8",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/guards/ratelimit.ts",
+      "line": 4
+    },
+    {
+      "fingerprint": "c0babb7e95679b6fe38e92c4",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "actor/actor.test.ts",
+      "line": 230
+    },
+    {
+      "fingerprint": "3680d893577f630437c4ac21",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "app.test.ts",
+      "line": 36
+    },
+    {
+      "fingerprint": "6768948911993442f97d752a",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "guards/ratelimit.test.ts",
+      "line": 49
+    },
+    {
+      "fingerprint": "1844fdcda66069fa5c29cb20",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "guards/secrets.test.ts",
+      "line": 10
+    },
+    {
+      "fingerprint": "48634819baee3c3dd79ca8c0",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "guards/secrets.test.ts",
+      "line": 58
+    }
+  ]
+}
