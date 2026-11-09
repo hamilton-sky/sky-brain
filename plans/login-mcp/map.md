@@ -3,20 +3,22 @@
 ## Destination
 
 sky-brain has real sign-in: Better Auth 1.7.15 runs inside the Express app on the existing Drizzle
-database, people sign in with Google (only `ALLOWED_EMAILS` and the bootstrap owner get in;
-everyone else sees "No access"), each person gets their own workspace at first sign-in and pending
+database, people sign in with Perminister (anyone Perminister signs in with access to the
+`sky-brain` product gets in; everyone else sees "No access"), each person gets their own workspace at first sign-in and pending
 invites are accepted at every sign-in, `/api/v1` knows the caller from the session cookie, and sky-brain is its
 own OAuth 2.1 authorization server with CIMD, PKCE and JWT access tokens bound to
 `<PUBLIC_URL>/mcp`. `/mcp` serves MCP over streamable HTTP with one tool, `whoami`, acting for the
-person the token names and listing every workspace they belong to. `render.yaml` carries the auth settings, `docs/CONNECT.md` says how to
-connect claude.ai, the phone app and Claude Code, and the Render plan is decided.
+person the token names and listing every workspace they belong to. The same app runs as the
+Vercel function at `https://sky-brain.vercel.app` on Nanogres Postgres (D16), the environment
+variables it needs are listed for shammai to set in Vercel, and `docs/CONNECT.md` says how to
+register the Perminister app client and connect claude.ai, the phone app and Claude Code.
 
 **The bar.** `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test` exits 0,
 and `pnpm --filter @sky-brain/server exec vitest run src/mcp/claude-flow.test.ts --reporter=verbose`
-prints `claude.ai flow: CIMD client signs in with Google and whoami returns the email` among the
+prints `claude.ai flow: CIMD client signs in with Perminister and whoami returns the email` among the
 tests that cover the 401 challenge, the discovery documents, PKCE to
 `https://claude.ai/api/mcp/auth_callback` and a loopback redirect on any port. Then, after deploy
-with shammai's Google client, claude.ai's `whoami` returns shammai's email (manual, recorded in
+to Vercel with shammai's Perminister app client, claude.ai's `whoami` returns shammai's email (manual, recorded in
 `docs/CONNECT.md` as the line `- claude.ai whoami: returned <email> on <YYYY-MM-DD>`). The
 acceptance ticket (07) runs both.
 
@@ -176,10 +178,11 @@ acceptance ticket (07) runs both.
   routes, only the table. `docs/PLAN.md` section 9 still says "Only invited emails get into a
   workspace"; ticket 03 updates it.
 - plan — Decision numbers (coordinator, round 3): login-mcp owns D16 to D18 in
-  `docs/DECISIONS.md`, another feature takes D19 and up. D16 one workspace per person and the
-  allowlist (ticket 03), D17 the Render plan (ticket 06), D18 the T0 result with the auth setup it
-  tested (ticket 07). Tickets 02 and 05 add no decision. Device login and run tokens (T7) are
-  another feature's.
+  `docs/DECISIONS.md`. **Superseded by the repair (2026-11-09):** D16 is taken by "Host everything
+  on Vercel, with Postgres on Nanogres" (PR #3). login-mcp adds two decisions, each with the next
+  free number when it is written: "One workspace per person, and Perminister sign-in" (ticket 03)
+  and "T0 result" (ticket 07). There is no Render decision (D16 is it). Checks grep for the
+  title, never a number.
 - plan — `docs/DECISIONS.md` ends at D15 (D13 is TypeScript 6.0), so new decisions take the next
   free number at the time they are written; `LOGIN-MCP-PLAN.md`'s "D13" for the free tier is stale.
 - plan — `docs/layer-1/LOGIN-MCP-PLAN.md`'s free-tier `render.yaml` sketch conflicts with the
@@ -194,10 +197,89 @@ acceptance ticket (07) runs both.
   shammai picks that option instead, only `mayEnter` (`auth/access.ts`, ticket 03) changes: it
   also allows an email with a pending invite, and the "invite only" refusal cases flip.
 
+- repair — 2026-11-09, shammai's decisions since the plan was approved (relayed by the session):
+  sign-in is "Sign in with Perminister", not Google; Perminister's invitations replace
+  `ALLOWED_EMAILS` and `BOOTSTRAP_OWNER_EMAIL`; Better Auth stays as the OAuth 2.1 server with
+  `mcp()`, `cimd()` and `jwt()`; hosting is Vercel + Nanogres (D16, answers ticket 01); ticket 06
+  shrinks to the env var list and `docs/CONNECT.md`; nothing in process memory is relied on across
+  requests. Every Google, allowlist and Render line above is superseded where it differs.
+- repair — Perminister API (consumer side). The backend sends the browser to
+  `<base>/oauth/authorize` with `client_id`, `redirect_uri`, random `state` and an S256 PKCE
+  challenge; the callback path is fixed at `/auth/perminister/callback` on the registered app
+  origin ("A portless `http://localhost` app origin accepts callbacks from any localhost port;
+  specifying a port restricts callbacks to that origin. Other origins match exactly"; HTTPS
+  otherwise); the backend checks `state` and exchanges the code at `POST /api/auth/consumer/token`
+  with headers `X-Perminister-Client-Id` and `X-Perminister-Client-Secret`, `grant_type`
+  `authorization_code`, the code and the PKCE verifier; "Codes expire after five minutes, are
+  bound to the app client, and can be exchanged once"; the answer has `sessionToken`,
+  `account.subjectId` ("stable subject ID"), nullable `account.email`, `firstName`, `lastName`,
+  `session.expiresAt` and `organizations[]` ("the organization contexts associated with the
+  account for this product", each with `productId`); no id_token, no discovery; "Public
+  self-registration is disabled by default"; JSON bodies need `Content-Type: application/json`;
+  keep the secret out of browser code, URLs, source control and logs. docs:
+  https://raw.githubusercontent.com/zakaihamilton/perminister/main/docs/api.md (copy read
+  2026-11-09). The request body field names `grant_type`, `code`, `code_verifier` (JSON) and the
+  authorize parameters `response_type=code`, `code_challenge_method=S256` were confirmed by reading
+  (not copying; it has no licence) https://github.com/zakaihamilton/visitoring
+  `src/lib/perminister.ts` on 2026-11-09.
+- repair — Known values (not secrets, shammai): Perminister organization
+  `e3541747-bfab-4fd0-b900-809aa29a099c` (slug `hamilton-sky`), product id `sky-brain`, local-dev
+  app client id `10e163a2-1cfe-408d-a6f5-968aa7f46923` (origin `http://localhost`, 30-day
+  sessions). The production client (origin `https://sky-brain.vercel.app`) is registered by
+  shammai (ticket 06 writes the steps).
+- repair — Spike (`scratchpad/spike-perm/flow.mjs`, better-auth 1.7.15, memory adapter, `jwt()` +
+  `genericOAuth()` + `mcp()` + `cimd()`, a fake Perminister behind an injected `fetch`):
+  `genericOAuth({ config: [{ providerId: "perminister", clientId, clientSecret, authorizationUrl:
+  <base>/oauth/authorize, redirectURI: <origin>/auth/perminister/callback, pkce: true,
+  accountSubject: ({ profile }) => profile.subjectId, getToken, getUserInfo }] })`. Generic
+  providers are added to Better Auth's social providers (`generic-oauth/index.mjs`, `init`), so
+  `POST /api/auth/sign-in/social` with `provider: "perminister"` and the signed `oauth_query`
+  answered `{url}` =
+  `<base>/oauth/authorize?response_type=code&client_id=..&state=..&redirect_uri=<origin>/auth/perminister/callback&code_challenge_method=S256&code_challenge=..`
+  (no secret, no scope) and stored the state in `verification` (only a `better-auth.state`
+  cookie in the browser). An Express `GET /auth/perminister/callback` answering 302 to
+  `/api/auth/callback/perminister?<same query>` then ran `getToken` (it received `code` and
+  `codeVerifier`; our fake checked the S256 match and the client headers), `getUserInfo`,
+  `user.validateUserInfo` (`source.method` `oauth`, `source.oauth.providerId` `perminister`,
+  `source.oauth.profile.organizations` present) and `databaseHooks.session.create.after`, and
+  answered 302 to `/consent?...` (the `mcp()` resume works for a generic provider). Results: the
+  user row had the lower-cased email and one `account` row `providerId` `perminister`,
+  `accountId` = `subjectId`; a second sign-in reused the user; an account with `email: null` →
+  `/sign-in?error=email_not_found`, no user; `validateUserInfo` returning `{ error: "no_access" }`
+  for an account without a `sky-brain` organization → `/sign-in?error=no_access`, no user;
+  a forged `state` → `/api/auth/error?error=state_mismatch`, no session; a refused exchange
+  (`getToken` threw) → `/sign-in?error=invalid_code`, no session. The callback path for social
+  and generic providers is `/api/auth/callback/<id>`, not `/api/auth/oauth2/callback/<id>` (that
+  answered 404).
+- repair — Better Auth options (1.7.15, `@better-auth/core/dist/types/init-options.d.mts`):
+  `account.encryptOAuthTokens` (default false) encrypts stored provider tokens;
+  `account.storeStateStrategy` defaults to `"database"` when a database is configured; the
+  `OAuth2Tokens` returned by `getToken` may carry `raw` ("Preserves provider-specific fields"),
+  which `getUserInfo` reads; `ValidateUserInfoSource.oauth.profile` is "The raw provider profile
+  ..., unmapped". `genericOAuth` config options `getToken`, `getUserInfo`, `accountSubject`,
+  `redirectURI`, `pkce` (default true): `better-auth/dist/plugins/generic-oauth/types.d.mts`.
+- repair — `@better-auth/mcp` 1.7.15 accepts an HTTP `resource` only on `localhost`, `[::1]` or
+  `127.x.x.x` (`isLoopbackHost` in `dist/index.mjs`), so `http://localhost:<PORT>` is a valid dev
+  `PUBLIC_URL`.
+- repair — Bundling spike: esbuild (0.25.12 in the scratch folder; the repo pins 0.28.2) bundled an
+  entry importing `better-auth`, `better-auth/plugins` (`jwt`, `genericOAuth`),
+  `better-auth/adapters/drizzle`, `better-auth/node`, `@better-auth/mcp`, `@better-auth/cimd`,
+  `@better-auth/cimd/node` and `@modelcontextprotocol/server` with the `build:vercel` flags and
+  externals (`express`, `pg`, `drizzle-orm`, `@electric-sql/pglite`, `@vercel/functions`) into one
+  3.4 MB file that loaded and built an auth instance with all four plugins. So `build:vercel` needs
+  no new externals. Loose files next to the source are not in the bundle, hence pages as TS
+  modules (spec.md Decisions).
+- repair — Hosting facts (read from the base branch, e4e400a): `vercel.json` rewrites `/healthz`,
+  `/api/*`, `/mcp`, `/.well-known/*`, `/sign-in`, `/consent`, `/auth-pages/*` and `/auth/*` to the
+  function `api/index.mjs` (`maxDuration` 60), which re-exports `apps/server/dist/vercel.mjs`,
+  built from `apps/server/src/vercel.ts` (today `createApp({ db, devActorHeader: false })` on
+  `createPostgresDb(DATABASE_URL, { max: 3, onPool: attachDatabasePool })`); migrations run in the
+  Vercel build (`pnpm --filter @sky-brain/server migrate`) for production deploys only, as
+  `MIGRATION_DATABASE_URL` with `SET ROLE` to `MIGRATION_DATABASE_ROLE`. Any new top-level route
+  must be reported to the deploy thread; this plan adds none.
+
 ## Open questions
 
-- user: Render plan — stay on the paid plan in `render.yaml` (recommended), or use a free web
-  service and free Postgres for a throwaway T0 spike? Ticket 01.
 - Whether claude.ai and the phone app already speak MCP 2026-07-28 or 2025-era: the default
   `legacy: "stateless"` serves both, so this only matters if we later want `"reject"`.
 - claude.ai's real CIMD URL and the scopes it requests are not known offline; tests use fixture

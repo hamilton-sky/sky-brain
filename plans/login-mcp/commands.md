@@ -24,8 +24,8 @@ packages need the registry, which the builder and CI reach.
 
 `Sensitive:` keeps brain-core's list: everything under `apps/server/src/` is reachable by a hostile
 caller and holds identity, sessions, tokens and membership filters; the migrations, the shared
-schemas, `render.yaml` (production settings and secrets) and the flow's own folders are always
-level 3. `Shared:` adds the server's `package.json`, which every ticket that adds a dependency
+schemas, `vercel.json` and `api/` (the production deploy, D16; `render.yaml` is gone) and the
+flow's own folders are always level 3. `Shared:` adds the server's `package.json`, which every ticket that adds a dependency
 changes.
 
 Build: `pnpm install --frozen-lockfile && pnpm build`
@@ -36,7 +36,7 @@ Smoke: `pnpm install --frozen-lockfile && pnpm typecheck`
 Run: `pnpm dev`
 Shared: `apps/server/src/app.ts, apps/server/package.json, pnpm-lock.yaml, docs/DECISIONS.md, docs/PLAN.md, CLAUDE.md`
 Setup: `pnpm install --frozen-lockfile`
-Sensitive: `apps/server/src/, apps/server/drizzle/, packages/shared/src/, render.yaml, .github/workflows/, scripts/, .feature-flow/, .claude/`
+Sensitive: `apps/server/src/, apps/server/drizzle/, packages/shared/src/, vercel.json, api/, .github/workflows/, scripts/, .feature-flow/, .claude/`
 Profile: `standard`
 Lanes: `auto`
 Acceptance: `pnpm exec vitest run --root plans/login-mcp/acceptance`

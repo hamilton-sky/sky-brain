@@ -8,9 +8,9 @@ Level: 3
 Touches: apps/server/src/mcp/, apps/server/src/app.ts, docs/PLAN.md
 
 LOGIN-MCP-PLAN step 5, and the bar's end-to-end test. Blocked by 04 because the end-to-end test
-drives the consent step that ticket adds, and by 03 because only its access rules let a second
-person in and only its sign-in hook gives each person the own workspace and accepted invites that
-`whoami` lists.
+drives the consent step that ticket adds, and by 03 because only its sign-in hook gives each
+person the own workspace and accepted invites that `whoami` lists. People sign in through the
+harness's fake Perminister (`setPerministerAccount`, `approve`; spec.md Interfaces).
 
 **Route** (`mcp/route.ts`, new): `mountMcp(app, { auth, db, publicUrl })` mounts
 `app.all("/mcp", toNodeHandler(requireMcpAuth(auth, handler, { resource: publicUrl + "/mcp",
@@ -45,7 +45,7 @@ same factory; describe `whoami` so an agent knows it is the connection check.
 **Docs.** `docs/PLAN.md` sections 8 and 9 say in one line each: MCP callers are agents
 `mcp/<client host>` acting for the token's subject, across all of that person's workspaces;
 `legacy: "stateless"`; scopes advertised but not required until write tools land. No decision
-here: these go into D18 (ticket 07), since login-mcp owns only D16 to D18.
+here: these go into the "T0 result" decision (ticket 07).
 
 Tests (`mcp/mcp.test.ts` and `mcp/claude-flow.test.ts`, new, through `startAuthTestServer`; tokens
 for refusal cases from `signJwt`, real ones from the flow):
@@ -57,19 +57,20 @@ for refusal cases from `signJwt`, real ones from the flow):
 - "mcp: a token in the query string is refused" — `?access_token=<good token>` → 401.
 - "mcp: whoami ignores arguments that name someone else" — `arguments: { email: "x@evil.test" }`
   still returns the token's person.
-- "mcp: whoami lists every workspace of the caller and no other" — the harness's bootstrap owner,
-  a second allowed person invited as `editor` to the owner's workspace, and a third allowed person;
-  each signs in through the flow. The second person's `whoami` lists two workspaces (their own as
+- "mcp: whoami lists every workspace of the caller and no other" — three Perminister accounts
+  with `sky-brain` access (an owner, a second person invited as `editor` to the owner's workspace,
+  and a third person); each signs in through the flow. The second person's `whoami` lists two workspaces (their own as
   `owner`, the owner's as `editor`); the owner's and the third person's list only their own
   (hard rule 4).
 - "mcp: an MCP caller is an agent and requireHuman refuses it" — `actorFromMcpClaims` gives an
   agent "mcp/claude.ai" acting for `sub`; on a small Express app with `actorMiddleware` and
   `requireHuman`, that actor gets 403 `humans_only` and a human actor passes (allowed and refused).
-- "claude.ai flow: CIMD client signs in with Google and whoami returns the email" — one test that
+- "claude.ai flow: CIMD client signs in with Perminister and whoami returns the email" — one test that
   walks spec.md Happy path 1 to 8 like claude.ai: the 401 challenge, both discovery documents
   (resource, issuer, `S256`, `none`, CIMD flag), authorize → sign-in → consent → token with PKCE
-  to `https://claude.ai/api/mcp/auth_callback`, then `initialize` and `whoami` returning the
-  bootstrap owner's email.
+  to `https://claude.ai/api/mcp/auth_callback` (the sign-in step going through
+  `/auth/perminister/callback`), then `initialize` and `whoami` returning the signed-in
+  Perminister account's email.
 - "claude.ai flow: a Claude Code client on any loopback port gets whoami" — the same with
   `http://localhost:53682/callback`.
 
@@ -98,7 +99,7 @@ prints mcp: a token in the query string is refused
 prints mcp: whoami ignores arguments that name someone else
 prints mcp: whoami lists every workspace of the caller and no other
 prints mcp: an MCP caller is an agent and requireHuman refuses it
-prints claude.ai flow: CIMD client signs in with Google and whoami returns the email
+prints claude.ai flow: CIMD client signs in with Perminister and whoami returns the email
 prints claude.ai flow: a Claude Code client on any loopback port gets whoami
 $ pnpm lint && pnpm typecheck && pnpm test
 exit 0
