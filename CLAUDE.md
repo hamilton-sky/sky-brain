@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-sky-brain is a shared, typed knowledge store for people and AI agents, hosted on Render.
+sky-brain is a shared, typed knowledge store for people and AI agents, hosted on Vercel (docs/DECISIONS.md D16).
 People sign in with Google. Agents connect over MCP or REST. Read [docs/PLAN.md](docs/PLAN.md)
 before you change anything; it is the contract for the current design.
 
@@ -39,7 +39,7 @@ apps/server      API (/api/v1), MCP (/mcp), auth (/api/auth), serves the web bui
 apps/web         React app
 packages/shared  entry types and zod schemas
 docs/            plan, roadmap, decisions, tickets
-render.yaml      Render Blueprint
+vercel.json      Vercel project (build, function, rewrites)
 ```
 
 ## Commands

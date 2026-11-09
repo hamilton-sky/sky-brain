@@ -7,11 +7,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "dev": "tsx watch src/dev.ts",
-    "start": "tsx src/main.ts"
+    "start": "tsx src/main.ts",
+    "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@vercel/functions --outfile=dist/vercel.mjs",
+    "migrate": "tsx src/db/migrate-cli.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.14",
     "@sky-brain/shared": "workspace:*",
+    "@vercel/functions": "3.10.4",
     "drizzle-orm": "0.45.4",
     "express": "5.3.0",
     "pg": "8.23.1",
@@ -21,6 +24,7 @@
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/pg": "8.23.1",
-    "drizzle-kit": "0.31.11"
+    "drizzle-kit": "0.31.11",
+    "esbuild": "0.28.2"
   }
 }
