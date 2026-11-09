@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import type { Request } from "express";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -5,6 +6,7 @@ import {
   type AuthTestServer,
   type Browser,
 } from "../testing/auth-harness.ts";
+import { session } from "../db/schema.ts";
 import { closeTestDb, createTestDb, type Db } from "../testing/harness.ts";
 import type { Auth } from "./auth.ts";
 import { sessionActorResolver } from "./session-resolver.ts";
@@ -76,6 +78,37 @@ describe("session", () => {
     });
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("dev_actor_disabled");
+  });
+
+  it("session: a session ends at its first expiry, however often it is used", async () => {
+    const b = await signedIn("subject-expiry", "expiry@example.com");
+    const me = await b.request("/api/auth/get-session");
+    const userId = me.body.user.id as string;
+    const expiresAt = async () => {
+      const [row] = await db
+        .select({ expiresAt: session.expiresAt })
+        .from(session)
+        .where(eq(session.userId, userId));
+      return row!.expiresAt.getTime();
+    };
+    // Allowed: an hour left, old enough that a rolling session would be extended, and the
+    // call leaves the expiry where it was.
+    const soon = new Date(Date.now() + 60 * 60 * 1000);
+    await db
+      .update(session)
+      .set({ expiresAt: soon })
+      .where(eq(session.userId, userId));
+    const allowed = await b.request("/api/v1/no-such-route");
+    expect(allowed.status).toBe(404);
+    expect(await expiresAt()).toBe(soon.getTime());
+    // Refused: once the expiry has passed, the same cookie gets 401.
+    await db
+      .update(session)
+      .set({ expiresAt: new Date(Date.now() - 60 * 1000) })
+      .where(eq(session.userId, userId));
+    const refused = await b.request("/api/v1/no-such-route");
+    expect(refused.status).toBe(401);
+    expect(refused.body.error.code).toBe("unauthenticated");
   });
 
   it("session: the resolver gives a human for a session and nothing otherwise", async () => {

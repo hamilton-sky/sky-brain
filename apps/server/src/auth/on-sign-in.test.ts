@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { invites, members, workspaces } from "../db/schema.ts";
 import { resolveScope } from "../scope/resolve-scope.ts";
 import { memberRole } from "../scope/member-role.ts";
@@ -14,7 +14,7 @@ import {
   seedWorkspace,
   type Db,
 } from "../testing/harness.ts";
-import { onSignIn } from "./on-sign-in.ts";
+import { onSessionCreated, onSignIn } from "./on-sign-in.ts";
 
 let db: Db;
 let server: AuthTestServer;
@@ -222,5 +222,26 @@ describe("onSignIn", () => {
         and(eq(members.userId, "removed-user"), eq(members.role, "owner")),
       );
     expect(rows).toHaveLength(1);
+  });
+
+  it("onSignIn: a failed sign-in grant is logged with the user id, not the email", async () => {
+    await db.execute(
+      sql`insert into "user" (id, name, email, email_verified) values ('failing-user', 'F', 'failing@example.com', true)`,
+    );
+    // The same database, except that every transaction fails.
+    const broken = Object.assign(Object.create(db) as Db, {
+      transaction: () => Promise.reject(new Error("database down")),
+    });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await expect(
+        onSessionCreated(broken)({ userId: "failing-user" }),
+      ).rejects.toThrow("database down");
+      const logged = JSON.stringify(log.mock.calls);
+      expect(logged).toContain("failing-user");
+      expect(logged).not.toContain("failing@example.com");
+    } finally {
+      log.mockRestore();
+    }
   });
 });
