@@ -15,10 +15,24 @@ if (!url) {
   process.exit(1);
 }
 
+// Who and where, never the password, so a failed build log says what was tried.
+const target = new URL(url);
+const where = `${decodeURIComponent(target.username)}@${target.hostname}:${target.port || "5432"}${target.pathname}`;
+console.log(`migrate: connecting as ${where}`);
+
 const db = createPostgresDb(url);
 try {
   await migrateDb(db);
   console.log("migrate: done");
+} catch (err) {
+  const cause =
+    err instanceof Error && err.cause instanceof Error ? err.cause : err;
+  const code = (cause as { code?: unknown }).code;
+  console.error(
+    `migrate: FAILED as ${where}: ${cause instanceof Error ? cause.message : String(cause)}` +
+      (typeof code === "string" ? ` (code ${code})` : ""),
+  );
+  process.exitCode = 1;
 } finally {
   await closeDb(db);
 }
