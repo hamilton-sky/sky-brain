@@ -1,7 +1,7 @@
 # Add Better Auth with Perminister sign-in, its tables, settings and discovery routes, the Vercel wiring and the auth test harness
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: yes
 Level: 3
@@ -283,9 +283,9 @@ reasons (a session cookie for the second subject; `Failed to decrypt private key
   `testing/auth-harness.ts` (cookie removal on a past `Expires` or `Max-Age<=0`),
   `auth/discovery.test.ts` (new test), `auth/from-config.test.ts` (new), `CLAUDE.md`
   (`BETTER_AUTH_SECRET` line), `learnings.md` (one line).
-- Extra file: `apps/server/src/auth/from-config.test.ts` - finding 2 asks for a test that two
-  `authFromConfig` instances over one persistent dev database both sign a JWT; it is the unit
-  test of `from-config.ts` and fits no listed test file.
+
+Extra file: apps/server/src/auth/from-config.test.ts - round 1 finding 2 asks for a test that two `authFromConfig` instances over one persistent dev database both sign a JWT; it is the unit test of `from-config.ts` (in Touches), needs its own module graph per start (`vi.resetModules`), and fits no listed test file.
+
 - **Proof** (all run after the last edit):
   - focused vitest run: 5 files, 29 tests passed, every `prints` line present, plus
     "perminister: a second subject with the same email does not enter the first person's account"
@@ -324,6 +324,26 @@ reasons (a session cookie for the second subject; `Failed to decrypt private key
   - Not this ticket (spec reviewer's note): the acceptance suite is still Google-era
     (`setGoogleUser`) and expects 404 for `POST /api/auth/oauth2/register` where Better Auth
     answers 403; the ticket's bar is "not 2xx". Needs the tester or a human.
+- **Shortcuts taken**: none.
+
+### Round 2 fixes
+
+Work started at `cf25a4b`. No code changed.
+
+- **Review fixes**:
+  1. Footprint check: `apps/server/src/auth/from-config.test.ts` is still the only path outside
+     Touches (checked with `git diff --name-only 7ac098c..HEAD`). Round 1 did name it, but as a
+     `- Extra file:` bullet, and the conductor reads only a line that starts with `Extra file:`
+     (the `EXTRA` regex in `buildchecks.py` is anchored at the start of the line), so it found
+     nothing. That line now stands alone at the start of a line in Round 1 fixes, and the same regex
+     run over this Answer returns that path. The test stays where it is: it is round 1's proof
+     for finding 2, it re-imports `from-config.ts` in fresh module graphs (`vi.resetModules`),
+     and moving it into `discovery.test.ts` would put that reset into a file that shares
+     one server across its tests.
+- **Proof** (run after the edit): focused vitest run 5 files, 29 tests passed, every `prints`
+  line present; `drizzle-kit generate` `No schema changes, nothing to migrate`; `build:vercel`
+  `dist/vercel.mjs  2.9mb`; `node tools/dev-smoke.mjs` `healthz 200`, exit 0;
+  `pnpm lint && pnpm typecheck && pnpm test` exit 0 (shared 15, server 260 tests).
 - **Shortcuts taken**: none.
 
 ## Review findings (round 1, pair review)
