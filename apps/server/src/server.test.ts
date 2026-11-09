@@ -9,6 +9,14 @@ function close(server: Server): Promise<void> {
   });
 }
 
+const noAuth = {
+  publicUrl: undefined,
+  betterAuthSecret: undefined,
+  perministerBaseUrl: undefined,
+  perministerClientId: undefined,
+  perministerClientSecret: undefined,
+};
+
 describe("start", () => {
   it("refuses to start in production without DATABASE_URL", async () => {
     await expect(
@@ -17,6 +25,7 @@ describe("start", () => {
         databaseUrl: undefined,
         pgliteDataDir: "memory://",
         nodeEnv: "production",
+        ...noAuth,
       }),
     ).rejects.toThrow(/DATABASE_URL/);
   });
@@ -27,6 +36,7 @@ describe("start", () => {
       databaseUrl: undefined,
       pgliteDataDir: "memory://",
       nodeEnv: "test",
+      ...noAuth,
     });
     try {
       const { port } = server.address() as AddressInfo;
