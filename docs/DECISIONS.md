@@ -187,3 +187,28 @@ own and open-source use. Pick a distinct product name before any commercial laun
 **Rejected:**
 - Refusing the header only when `NODE_ENV=production`: an unset `NODE_ENV` would trust it.
 - Ignoring the header when it is off: a client could believe it was acting as someone it was not.
+
+### D16. Host everything on Vercel, with Postgres on Nanogres
+**Chosen:**
+- One Vercel project serves the whole app. The Vite build is the static output. The Express
+  app is one Vercel function (`api/index.mjs`), and `vercel.json` rewrites `/healthz`,
+  `/api/*`, `/mcp`, `/.well-known/*`, `/sign-in`, `/consent`, `/auth-pages/*` and `/auth/*`
+  to it. Every other path falls back to `index.html`. One origin, as D6 asks.
+- For the function only, the server is bundled with esbuild (`build:vercel`):
+  `packages/shared` is bundled in, other packages stay external and Vercel traces them.
+  `pnpm start` still runs from source with tsx (D13).
+- Postgres is Zakai's Nanogres over TLS PgBouncer: `DATABASE_URL` for the app role,
+  `MIGRATION_DATABASE_URL` for the migrate role, which runs `SET ROLE` to
+  `MIGRATION_DATABASE_ROLE` (the database owner) before the migrations. Migrations run in the Vercel build, and only
+  for production deploys.
+- No Next.js: the Express server, Better Auth and MCP code stay as they are.
+**Why:** shammai asked for everything on Vercel instead of Render (2026-11-09). Express runs
+there unchanged, so login-mcp needs no rewrite.
+**Watch:**
+- The write rate limiter is in memory per instance, so on Vercel it limits per instance only.
+  It needs a shared store (Postgres) before real use.
+- Layer 2's websocket route (D6, D11) cannot run on Vercel functions. It needs a small
+  separate service when Layer 2 starts.
+- claude.ai waits at most 10 s for discovery and token calls, so cold start plus the first
+  Nanogres connect must stay well under that.
+**Supersedes:** Render hosting in D5 and D6 and `render.yaml`, which is removed.

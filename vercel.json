@@ -1,0 +1,50 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build && pnpm --filter @sky-brain/server build:vercel && pnpm --filter @sky-brain/server migrate",
+  "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/healthz",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api(/.*)?",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/mcp(/.*)?",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/\\.well-known(/.*)?",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/sign-in",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/consent",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/auth-pages(/.*)?",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/auth(/.*)?",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
