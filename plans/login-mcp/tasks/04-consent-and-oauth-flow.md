@@ -1,7 +1,7 @@
 # Add the consent page and prove the CIMD authorize → token flow with PKCE
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -86,3 +86,76 @@ exit 0
 - `apps/server/src/testing/auth-harness.ts` (new in ticket 02).
 
 ## Answer
+
+Work started at `4ed4758bd2fd96fe631c704467348fd69eb50230`; failing test committed alone first.
+
+**Built**
+
+- `apps/server/src/auth/pages/consent.ts`: the consent page HTML (ids `client-name`, `email`,
+  `redirect-host`, `scopes`, buttons `allow`, `deny`, one `<script src="/auth-pages/consent.js"
+  defer>`, no inline script) and its ES5 script: reads `client_id`, `redirect_uri`, `scope` from
+  `location.search`; `#redirect-host` = `new URL(redirect_uri).host` (Allow disabled when it does
+  not parse); `#scopes` = the requested `brain:*` scopes without the prefix ("read, write");
+  client name from `GET /api/auth/oauth2/public-client?client_id=`, email from
+  `GET /api/auth/get-session`; every field through `textContent`. Allow/Deny post
+  `{accept, oauth_query: location.search.slice(1)}` to `/api/auth/oauth2/consent` and go to the
+  returned `url`. No route change: `routes.ts` already serves it.
+- `apps/server/src/auth/oauth-flow.test.ts` (new, 397 lines): the nine named tests plus
+  "oauth: a forged or altered oauth_query is refused" (followups.md, 03 item 1).
+
+**Proof**
+
+- `pnpm --filter @sky-brain/server exec vitest run src/auth/oauth-flow.test.ts --reporter=verbose`:
+  exit 0, `Tests 10 passed (10)`; the output lists all nine `prints` lines (plus the forged
+  oauth_query test). At the test-only commit the same command failed only "pages: the consent
+  page cannot be framed" (`expected 404 to be 200`), 9 passed: Better Auth already does the
+  protocol; the page was the missing piece.
+- `pnpm lint && pnpm typecheck && pnpm test`: exit 0; shared 15 passed, server 21 files, 288 passed.
+- The consent script was also run once by hand against a stub DOM (scratch, not committed): it
+  showed `redirect-host` `claude.ai`, `scopes` `read, write`, a client name `<b>Claude</b>` as
+  literal text, and Deny posted `{"accept": false, "oauth_query": <the page query unchanged>}`
+  then assigned the returned `url`.
+
+**Decisions**
+
+- What Better Auth 1.7.15 answered (now pinned by the tests): claude.ai flow: code at
+  `https://claude.ai/api/mcp/auth_callback` with the same `state` and `iss=<url>/api/auth`; token
+  `aud` includes `<url>/mcp`, `iss` `<url>/api/auth`, `azp` the client id. Loopback
+  `localhost:53682` and `127.0.0.1:3118` accepted for a client registered without a port.
+  Unlisted redirect URI (another host, or the claude.ai path with a suffix) ends at
+  `/api/auth/error?error=invalid_redirect`, no code. Token without `code_verifier`: 400
+  `invalid_request` ("Either code_verifier or client_secret is required"), not `invalid_grant`;
+  wrong verifier: 400 `invalid_grant`. Reused code: 400 `invalid_grant`. Refresh: rotates (new
+  refresh token); made-up one: 400 `invalid_grant`; one revoked through
+  `POST /api/auth/oauth2/revoke` (form, `token_type_hint=refresh_token`, `client_id`; 200): 400
+  `invalid_grant`. Unknown CIMD client (fake fetch 404): authorize answers 400
+  `{"error":"invalid_client"}` directly, no redirect. Deny: `<redirect_uri>?error=access_denied`
+  with the same `state`, no code. An unsigned `oauth_query` on `sign-in/social`, or a signed
+  consent query with `redirect_uri` swapped on `oauth2/consent`: 400 `{"error":"invalid_signature"}`,
+  no Perminister URL, no redirect. So the 03 follow-up holds: sign-in.js forwarding any query is
+  safe; nothing to change there.
+- Deny and the forged-consent test use `prompt=consent` on authorize, so they reach the consent
+  page even after this person allowed the client earlier in the file (consent is remembered).
+- Scopes shown as the `brain:*` names from the page's own query; with none, "your sign-in only".
+- JWT claims are read by base64url-decoding the payload in the test (no signature check):
+  `jose` is not a direct dependency of `apps/server` and `package.json` is outside Touches.
+
+**Shortcuts taken**
+
+- The consent script is proven by string checks and one hand run against a stub DOM, not a
+  browser test (the repo has no DOM test setup). It stops being enough if the page grows logic;
+  then add a jsdom/happy-dom test.
+- The test decodes the access token without verifying it; ticket 05 verifies tokens at `/mcp`.
+
+**For later tickets**
+
+- 05: after the Perminister callback (`/api/auth/callback/perminister`), the response is 302
+  `Location: /` with a body `{"redirect": true, "url": "/consent?..."}`; the harness's `next`
+  prefers `Location`, so follow `body.url` first (see `authorizeAndSignIn` in
+  `oauth-flow.test.ts`; spec.md step 3 reads as if `next` were already the consent URL).
+- A second flow for the same person and client skips consent and lands on the client redirect;
+  pass `prompt=consent` to force the page.
+- A missing verifier answers `invalid_request`, not `invalid_grant`; spec.md's edge case says only
+  "Token endpoint refuses" and `acceptance/hostile.test.ts` accepts any error string, so nothing
+  conflicts.
+

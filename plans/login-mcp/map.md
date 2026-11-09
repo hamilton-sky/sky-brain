@@ -282,6 +282,7 @@ acceptance ticket (07) runs both.
 - 02 (round 1) — Account linking off (`accountLinking.enabled: false`): an account is keyed by (perminister, subjectId) only. Dev `BETTER_AUTH_SECRET` default lives in `<PGLITE_DATA_DIR>/sky-brain-auth-secret` (per process only for memory:// or DATABASE_URL); spec.md Settings and the createAuth option list need a human edit to match.
 - 03 — `mayEnter` (Perminister lists product `sky-brain`, email required) as `user.validateUserInfo`; `onSignIn` as `session.create.after` (own workspace when no `members` row, invites by lower-cased email every sign-in); `/api/v1` resolves the session from the cookie header only; sign-in page shows "No access" for any `error`; D17.
 - 03 (round 1) — Sessions do not roll (`disableSessionRefresh`): they end 7 days after sign-in; `onSignIn` serialises a person's sign-ins with `pg_advisory_xact_lock` (transaction-scoped, PgBouncer-safe); a failed grant logs the user id and error code, never the email.
+- 04 — Consent page filled (textContent only, host from its own `redirect_uri`, posts the page query unchanged); `oauth-flow.test.ts` pins Better Auth 1.7.15: missing verifier is `invalid_request`, unknown CIMD client 400 `invalid_client`, forged/altered `oauth_query` 400 `invalid_signature`.
 
 ## Open questions
 
