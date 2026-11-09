@@ -103,7 +103,14 @@ function browserFor(url: string): Browser {
         const at = pair.indexOf("=");
         const name = pair.slice(0, at).trim();
         const value = pair.slice(at + 1).trim();
-        const expired = attrs.some((a) => /^\s*max-age=0\s*$/i.test(a));
+        const expired = attrs.some((a) => {
+          const [key = "", ...rest] = a.split("=");
+          const attr = key.trim().toLowerCase();
+          const val = rest.join("=").trim();
+          if (attr === "max-age") return Number(val) <= 0;
+          if (attr === "expires") return Date.parse(val) <= Date.now();
+          return false;
+        });
         if (!value || expired) jar.delete(name);
         else jar.set(name, value);
       }

@@ -74,8 +74,10 @@ Environment:
 - `PUBLIC_URL`: the origin people and MCP clients reach (`https://sky-brain.vercel.app`); required
   in production, `https://` with no path or trailing slash. Default `http://localhost:<PORT>`,
   which matches the local-dev Perminister client (origin `http://localhost`, any port).
-- `BETTER_AUTH_SECRET`: required in production, at least 32 characters. Default: a random value
-  per process, so dev sessions end on restart.
+- `BETTER_AUTH_SECRET`: required in production, at least 32 characters. Default with a dev
+  PGlite folder: a random value kept in `sky-brain-auth-secret` inside that folder, so it lasts as
+  long as the dev database (the jwt() keys are encrypted with it). With `memory://` or
+  `DATABASE_URL` outside production: a random value per process; set it yourself there.
 - `PERMINISTER_BASE_URL`, `PERMINISTER_CLIENT_ID`, `PERMINISTER_CLIENT_SECRET`: the Perminister
   app client; required in production. Without all three there is no Perminister sign-in. Never
   write the client secret into the repo, a test or a log.

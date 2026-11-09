@@ -1,7 +1,7 @@
 # Add Better Auth with Perminister sign-in, its tables, settings and discovery routes, the Vercel wiring and the auth test harness
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: yes
 Level: 3
@@ -271,6 +271,60 @@ first (`test(login-mcp): 02 failing test`).
     update them (not this ticket).
   - `CLAUDE.md` line 6 and `docs/PLAN.md` still say "People sign in with Google"; not in this
     ticket's Touches.
+
+### Round 1 fixes
+
+Work on the findings started at `0a0707915ca6771622b5714ada7167af8302aada`; the two new tests were
+committed alone first (`1ae44f9 test(login-mcp): 02 failing test`) and failed for the right
+reasons (a session cookie for the second subject; `Failed to decrypt private key` on the restart).
+
+- **Built**: `auth/auth.ts` (`account.accountLinking: { enabled: false }`; `cli-config.ts` follows
+  because it calls `createAuth`), `auth/from-config.ts` (dev secret kept with the PGlite folder),
+  `testing/auth-harness.ts` (cookie removal on a past `Expires` or `Max-Age<=0`),
+  `auth/discovery.test.ts` (new test), `auth/from-config.test.ts` (new), `CLAUDE.md`
+  (`BETTER_AUTH_SECRET` line), `learnings.md` (one line).
+- Extra file: `apps/server/src/auth/from-config.test.ts` - finding 2 asks for a test that two
+  `authFromConfig` instances over one persistent dev database both sign a JWT; it is the unit
+  test of `from-config.ts` and fits no listed test file.
+- **Proof** (all run after the last edit):
+  - focused vitest run: 5 files, 29 tests passed, every `prints` line present, plus
+    "perminister: a second subject with the same email does not enter the first person's account"
+    and "keeps signing JWTs after a dev restart on the same database".
+  - `drizzle-kit generate`: `No schema changes, nothing to migrate` (linking is not a schema change).
+  - `build:vercel`: `dist/vercel.mjs  2.9mb`.
+  - `node tools/dev-smoke.mjs`: `healthz 200`, exit 0.
+  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0 (shared 15, server 260 tests).
+- **Review fixes**:
+  1. Account linking: `accountLinking: { enabled: false }` rather than only
+     `disableImplicitLinking`, because `enabled: false` also refuses `/api/auth/link-social`
+     (`better-auth/dist/api/routes/account.mjs` line 207) as well as the implicit link in the
+     callback (`oauth2/link-account.mjs` line 141). Test: subject B with A's email gets no session
+     cookie, `get-session` has no user, A's user still has only A's account row; A signing in
+     again gets A's user id. Better Auth answers B with `error=account_not_linked` to the error
+     URL. The option is not in spec.md's `createAuth` option list; I may not edit the spec, so a
+     human should add `accountLinking: { enabled: false }` to spec.md Interfaces and ticket 03's
+     copy of the call.
+  2. Dev secret: with no `BETTER_AUTH_SECRET` outside production and a persistent PGlite folder,
+     `authFromConfig` creates `<PGLITE_DATA_DIR>/sky-brain-auth-secret` once (32 random bytes,
+     base64url, `wx`, mode 0600) and reads it on every start, so it lives and dies with the dev
+     database and sits in the git-ignored `.pglite/`; under 32 characters it refuses naming the
+     file. `memory://` (tests, dev-smoke) and `DATABASE_URL` outside production keep a random
+     value per process. Test: two fresh module graphs (`vi.resetModules`) open the same PGlite
+     folder in turn and both sign a JWT. A dev `.pglite` made before this fix still holds a `jwks`
+     row under the old random secret: delete the folder once. spec.md Interfaces → Settings
+     ("a random value per process") needs the same correction; I may not edit it.
+  3. `auth-schema.ts` (401 lines) is CLI output that must not be hand-edited; recorded in
+     learnings.md that generated files are exempt from the 400-line rule.
+  4. `GET /api/auth/token`: left on (map.md already says ticket 05 must refuse it on `/mcp` and
+     test it). Ticket 05: the bearer check must require `aud` to contain exactly
+     `<publicUrl>/mcp` and `iss` `<publicUrl>/api/auth`; a session JWT from `/api/auth/token`
+     has `aud` `<publicUrl>` and must get 401.
+  5. Harness cookie jar: a `Set-Cookie` with `Max-Age` <= 0 or an `Expires` in the past now
+     removes the cookie, as does an empty value.
+  - Not this ticket (spec reviewer's note): the acceptance suite is still Google-era
+    (`setGoogleUser`) and expects 404 for `POST /api/auth/oauth2/register` where Better Auth
+    answers 403; the ticket's bar is "not 2xx". Needs the tester or a human.
+- **Shortcuts taken**: none.
 
 ## Review findings (round 1, pair review)
 

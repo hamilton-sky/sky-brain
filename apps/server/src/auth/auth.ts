@@ -43,7 +43,9 @@ export function createAuth(options: CreateAuthOptions) {
     basePath: "/api/auth",
     secret: options.secret,
     database: drizzleAdapter(options.db, { provider: "pg", schema }),
-    account: { encryptOAuthTokens: true },
+    // No linking by email: an account is keyed by (provider, subjectId) only, so a second
+    // Perminister subject with the same email cannot enter an existing person's user.
+    account: { encryptOAuthTokens: true, accountLinking: { enabled: false } },
     rateLimit: { storage: "database" },
     plugins: [
       jwt(),
