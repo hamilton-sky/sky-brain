@@ -212,3 +212,29 @@ there unchanged, so login-mcp needs no rewrite.
 - claude.ai waits at most 10 s for discovery and token calls, so cold start plus the first
   Nanogres connect must stay well under that.
 **Supersedes:** Render hosting in D5 and D6 and `render.yaml`, which is removed.
+
+### D17. One workspace per person, and Perminister sign-in
+**Chosen:**
+- Perminister is the only sign-in. Better Auth's `genericOAuth()` plugin holds it as the
+  `perminister` provider, and the user is keyed by Perminister's `subjectId` (the `account` row),
+  with account linking by email off.
+- `mayEnter` (`apps/server/src/auth/access.ts`) is the whole access rule: a person may enter when
+  Perminister signs them in with an email and its token exchange lists an organization for the
+  product `sky-brain`. An account with no email is refused. It runs as Better Auth's
+  `user.validateUserInfo`, before the user is created and on every later sign-in, so access
+  taken away in Perminister refuses the next sign-in (`/sign-in?error=no_access`). shammai chose
+  this on 2026-11-09: Perminister is invite-only for this product, so its invitations are the
+  gate.
+- Each person gets one workspace of their own, as `owner`, at their first sign-in (no `members`
+  row at all). Pending sky-brain invites for their email, in any case, are accepted on every
+  sign-in, so an invite to someone who already has an account works at their next sign-in. A
+  sky-brain invite alone lets nobody in.
+- Workspaces are walled off by membership (hard rule 4): `/api/v1` takes the caller from the
+  session cookie, and every scope check joins `members`.
+**Why:** Perminister already holds who may use the product, so a second list in sky-brain would
+drift. One rule in one function keeps a later gate (an allowlist, a Perminister role) a
+one-function change. A board per person needs no schema change.
+**Rejected:**
+- The `ALLOWED_EMAILS` allowlist with `BOOTSTRAP_OWNER_EMAIL`: a second list of people to keep
+  in step with Perminister.
+- Google sign-in: shammai replaced it with Perminister.

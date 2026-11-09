@@ -3,12 +3,13 @@ import { fileURLToPath } from "node:url";
 import { actorMiddleware, type ActorResolver } from "./actor/middleware.ts";
 import type { Auth } from "./auth/auth.ts";
 import { mountAuth } from "./auth/routes.ts";
+import { sessionActorResolver } from "./auth/session-resolver.ts";
 import type { Db } from "./db/client.ts";
 import { errorHandler } from "./http/error-handler.ts";
 
 export interface AppOptions {
   db: Db;
-  /** Finds the actor of a request. Default: none, until the auth feature adds one. */
+  /** Finds the actor of a request. Default: the session cookie when `auth` is given, else none. */
   resolveActor?: ActorResolver;
   /** Honour `X-Dev-Actor`. Default false; see `devActorHeaderEnabled`. */
   devActorHeader?: boolean;
@@ -40,7 +41,11 @@ export function createApp(options: AppOptions): express.Express {
   app.use(
     "/api/v1",
     actorMiddleware({
-      resolveActor: options.resolveActor ?? (() => undefined),
+      resolveActor:
+        options.resolveActor ??
+        (options.auth
+          ? sessionActorResolver(options.auth.instance)
+          : () => undefined),
       devActorHeader: options.devActorHeader ?? false,
     }),
     express.json({ limit: "64kb" }),

@@ -1,7 +1,7 @@
 # Let Perminister-approved people in, give each person their own workspace, accept invites on every sign-in, add the sign-in page and the session resolver
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -184,3 +184,64 @@ exit 0
   `members`, `invites`), `apps/server/src/testing/harness.ts` (`seedWorkspace`).
 
 ## Answer
+
+Work started at `371cfb25752d337375ae725c365c8598d97223c3`; the failing tests were committed alone
+first (`9cdd415 test(login-mcp): 03 failing test`) and failed because `access.ts`,
+`on-sign-in.ts` and `session-resolver.ts` did not exist.
+
+- **Built**:
+  - `apps/server/src/auth/access.ts` (new): `PERMINISTER_PRODUCT_ID`, `mayEnter`, and
+    `productIdsOf` (narrows `source.oauth.profile.organizations[].productId`, an untyped profile).
+  - `apps/server/src/auth/on-sign-in.ts` (new): `onSignIn(db, { userId, email })` (own workspace
+    when the person has no `members` row, then every pending invite for the lower-cased email,
+    one transaction) and `onSessionCreated(db)`, the `session.create.after` hook that reads the
+    email from the `user` row of the session's `userId`.
+  - `apps/server/src/auth/session-resolver.ts` (new): `sessionActorResolver(auth)`.
+  - `apps/server/src/auth/auth.ts`: `user.validateUserInfo` (refuses with `{ error: "no_access" }`
+    when `mayEnter` is false) and `databaseHooks.session.create.after`; `accountLinking` stays off.
+  - `apps/server/src/app.ts`: the default `resolveActor` is `sessionActorResolver(auth.instance)`
+    when `auth` is given and `resolveActor` is not.
+  - `apps/server/src/auth/pages/sign-in.ts`: the page HTML and script.
+  - Tests: `access.test.ts`, `on-sign-in.test.ts`, `session-resolver.test.ts` (new).
+  - Docs: `docs/PLAN.md` (sections 2, 3, 9, 11), `CLAUDE.md` line 6, `README.md`, and
+    `docs/DECISIONS.md` D17 "One workspace per person, and Perminister sign-in" (D16 was the last).
+- **Proof** (all run after the last code edit):
+  - `pnpm --filter @sky-brain/server exec vitest run src/auth --reporter=verbose`: exit 0, 6 files,
+    29 tests passed; each of the 13 `prints` lines was found in the output with `grep -F`.
+  - `grep -ci google docs/PLAN.md CLAUDE.md README.md | grep -v ':0$' || echo docs-ok`: `docs-ok`.
+  - `grep -cE '^### D[0-9]+\. One workspace per person, and Perminister sign-in' docs/DECISIONS.md`: `1`.
+  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0 (shared 15 tests, server 276 tests in 20 files).
+  - Extra: `pnpm --filter @sky-brain/server build:vercel` still writes `dist/vercel.mjs 2.9mb`.
+- **Decisions**:
+  - The resolver hands Better Auth only the `cookie` header (`fromNodeHeaders({ cookie })`), and
+    answers undefined at once with no cookie, so a bearer token or anything else in the request
+    can never become a session, whatever plugins are added later. A unit test with a fake `Auth`
+    proves `authorization` does not reach `getSession`.
+  - `validateUserInfo` refuses any source that is not a Perminister profile listing `sky-brain`
+    (`productIdsOf` of a missing profile is `[]`), so a future non-OAuth sign-in method is closed
+    until `mayEnter` says otherwise.
+  - Invites match with `lower(invites.email) = <lower-cased email>`, so an invite stored in mixed
+    case matches. An invite for a workspace where the person already has a row keeps the existing
+    role (`onConflictDoNothing`) and is still marked accepted.
+  - The page script reacts to any `error` parameter (not a fixed list), so `account_not_linked`
+    (follow-ups 02 item 3) also lands on "No access". "Try another account" drops `error` and
+    `error_description`, which Better Auth adds next to it. `oauth_query` is sent only when the
+    page has a query, so a plain sign-in does not post an empty one. On the error view the whole
+    `#sign-in` section (the "Sign in to continue" line and `#perminister`) is hidden.
+  - Tests are split: refusals and the page in `access.test.ts`, what a sign-in gives in
+    `on-sign-in.test.ts`, the `/api/v1` session in `session-resolver.test.ts`; each file has its
+    own server and database and uses its own subjects and emails.
+- **Shortcuts taken**:
+  - Two first sign-ins of the same person at the same moment could each see no `members` row and
+    make two own workspaces (no lock). Harmless (two boards they own); worth a fix (an advisory
+    transaction lock on the user id, or a marker column) if it is ever seen.
+  - The page has no styles: the CSP `default-src 'self'` blocks inline styles, and a stylesheet
+    route is not in Touches. A plain page until T8's web app or a CSS route.
+- **For later tickets**:
+  - 04: the consent page follows the same pattern (strings in `pages/consent.ts`, no inline
+    script). A sign-in started from `/sign-in?<signed query>` posts that query as `oauth_query`.
+  - 05: `whoami` can list workspaces from `members` joined to `workspaces` by `personOf(actor)`;
+    every signed-in person has at least their own.
+  - Every sign-in in tests now creates a workspace and an `owner` row, so a test that counts
+    `workspaces` or `members` across the whole database must filter by user.
+

@@ -9,6 +9,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, jwt } from "better-auth/plugins";
 import type { Db } from "../db/client.ts";
 import * as schema from "../db/schema.ts";
+import { mayEnter, productIdsOf } from "./access.ts";
+import { onSessionCreated } from "./on-sign-in.ts";
 import { perministerProvider } from "./perminister.ts";
 
 export interface CreateAuthOptions {
@@ -47,6 +49,21 @@ export function createAuth(options: CreateAuthOptions) {
     // Perminister subject with the same email cannot enter an existing person's user.
     account: { encryptOAuthTokens: true, accountLinking: { enabled: false } },
     rateLimit: { storage: "database" },
+    // Runs before the user is created and on every later sign-in with the fresh Perminister
+    // profile, so access taken away in Perminister refuses the next sign-in (spec.md Decisions).
+    user: {
+      validateUserInfo: ({ user, source }) =>
+        mayEnter({
+          email: user.email,
+          productIds: productIdsOf(source.oauth?.profile),
+        })
+          ? undefined
+          : { error: "no_access" },
+    },
+    // Every sign-in: an own workspace when the person has none, then pending invites.
+    databaseHooks: {
+      session: { create: { after: onSessionCreated(options.db) } },
+    },
     plugins: [
       jwt(),
       ...(perminister

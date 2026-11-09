@@ -3,7 +3,7 @@
 ## What this repo is
 
 sky-brain is a shared, typed knowledge store for people and AI agents, hosted on Vercel (docs/DECISIONS.md D16).
-People sign in with Google. Agents connect over MCP or REST. Read [docs/PLAN.md](docs/PLAN.md)
+People sign in with Perminister. Agents connect over MCP or REST. Read [docs/PLAN.md](docs/PLAN.md)
 before you change anything; it is the contract for the current design.
 
 ## Hard rules

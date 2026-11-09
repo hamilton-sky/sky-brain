@@ -22,7 +22,7 @@ and to write back what they learned after.
 
 | Who | How |
 |---|---|
-| You and your team, on web or phone | Sign in with Google |
+| You and your team, on web or phone | Sign in with Perminister |
 | claude.ai, Claude desktop, Claude phone app | Add sky-brain as a custom connector |
 | Claude Code and Codex CLIs | Add the MCP server |
 | Pathly | Its fragments read and write sky-brain |

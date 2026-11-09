@@ -25,7 +25,7 @@ device can reach it.
 
 | Who | Where | How they get in |
 |---|---|---|
-| You and your team | Browser, phone | Sign in with Google |
+| You and your team | Browser, phone | Sign in with Perminister |
 | claude.ai (web, desktop, phone app) | Anthropic's servers | Custom connector, OAuth 2.1 |
 | Claude Code, Codex CLI (interactive) | Laptop or cloud session | MCP over HTTPS, OAuth or device token |
 | Headless agents (Pathly runs, `claude -p`, `codex exec`) | Wherever the code is | Short-lived run token |
@@ -34,12 +34,12 @@ device can reach it.
 ## 3. Architecture
 
 ```
- Browser / phone ───── Google sign-in (cookie) ───────┐
+ Browser / phone ───── Perminister sign-in (cookie) ──┐
  claude.ai connector ─ OAuth 2.1 (CIMD + PKCE) ───────┤
  Claude Code / Codex ─ MCP + OAuth or device token ───┼──▶  sky-brain on Vercel (one origin, D16)
  Pathly runs ───────── REST + run token ──────────────┘       ├─ /api/v1     REST API
                                                               ├─ /mcp        MCP (streamable HTTP)
-                                                              ├─ /api/auth   Better Auth (Google, OAuth server)
+                                                              ├─ /api/auth   Better Auth (Perminister, OAuth server)
                                                               ├─ /           web app (React build)
                                                               └─▶ Nanogres Postgres
 ```
@@ -179,12 +179,14 @@ reject, release, answer, invite, export and delete.
 
 Better Auth runs inside the server.
 
-- **People** sign in with Google. Only invited emails get into a workspace. Anyone else sees
-  "no access". The first owner is set by the `BOOTSTRAP_OWNER_EMAIL` setting.
+- **People** sign in with Perminister, which is invite-only for this product. Anyone it signs in
+  with access to the `sky-brain` product may enter (`mayEnter`, D17). Each person gets their own
+  workspace, as `owner`, at their first sign-in. A sky-brain invite adds such a person to another
+  owner's workspace and is accepted at their next sign-in. Everyone else sees "No access".
 - **MCP clients** (claude.ai, Claude Code, Codex): Better Auth's `mcp()` plugin makes the server
   an OAuth 2.1 authorization server. claude.ai registers with a Client ID Metadata Document
   (`cimd()` plugin), uses PKCE, and returns to `https://claude.ai/api/mcp/auth_callback`. The
-  login page is the same Google sign-in. Access tokens are JWTs whose audience is
+  login page is the same Perminister sign-in. Access tokens are JWTs whose audience is
   `https://<host>/mcp`, checked against the server's own keys. Dynamic client registration
   stays off unless a client we need cannot use CIMD (checked in ticket T0).
 - **Headless agents**: a person logs a machine in once, with the OAuth device flow. Pathly then
@@ -192,9 +194,9 @@ Better Auth runs inside the server.
   most 30 minutes and is bound to one workspace, one project, one role and a list of verbs.
 - **Fallback**: if Better Auth's MCP support fails the T0 test, WorkOS AuthKit becomes the OAuth
   server and the rest of the design stays the same.
-- **Until then** (D15): `pnpm dev` takes the caller from an `X-Dev-Actor` header, only when
-  `NODE_ENV=development` and on 127.0.0.1; otherwise the header is refused with 401. This
-  section's sign-in replaces it.
+- **Dev header** (D15): sign-in is the real path; `/api/v1` knows the caller from the session
+  cookie. The `X-Dev-Actor` header stays for `pnpm dev` only, when `NODE_ENV=development` and on
+  127.0.0.1; otherwise the header is refused with 401, even next to a valid session.
 
 ## 10. Security bar
 
@@ -216,7 +218,7 @@ All of this is in place before real project data goes in:
 
 - **Language:** TypeScript everywhere, Node 22 LTS, pnpm workspaces.
 - **Server:** Express 5, the MCP TypeScript SDK (streamable HTTP), Better Auth (`mcp`, `cimd`,
-  `jwt`, device authorization, Google sign-in), Drizzle ORM with drizzle-kit migrations, zod.
+  `jwt`, device authorization, generic OAuth for Perminister sign-in), Drizzle ORM with drizzle-kit migrations, zod.
 - **Database:** Postgres on Nanogres (D16). Full-text search with `tsvector` now; pgvector
   later.
 - **Web:** React and Vite, TanStack Query. Components from Pathly Studio are copied in where

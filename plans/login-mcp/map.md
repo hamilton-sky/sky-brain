@@ -280,6 +280,7 @@ acceptance ticket (07) runs both.
 - 01 — Hosting settled as Vercel + Nanogres (D16, shammai: "everything on Vercel"); Render paid and Render free rejected; migrations skip non-production deploys in `migrate-cli.ts`, not in `vercel.json`.
 - 02 — Better Auth 1.7.15 (jwt + genericOAuth "perminister" + mcp + cimd) on Drizzle with migration 0002_auth; `authFromConfig` builds it for start, Vercel and the harness; `@better-auth/oauth-provider` pinned to 1.7.15 to silence peer warnings; page modules are empty stubs served 404.
 - 02 (round 1) — Account linking off (`accountLinking.enabled: false`): an account is keyed by (perminister, subjectId) only. Dev `BETTER_AUTH_SECRET` default lives in `<PGLITE_DATA_DIR>/sky-brain-auth-secret` (per process only for memory:// or DATABASE_URL); spec.md Settings and the createAuth option list need a human edit to match.
+- 03 — `mayEnter` (Perminister lists product `sky-brain`, email required) as `user.validateUserInfo`; `onSignIn` as `session.create.after` (own workspace when no `members` row, invites by lower-cased email every sign-in); `/api/v1` resolves the session from the cookie header only; sign-in page shows "No access" for any `error`; D17.
 
 ## Open questions
 
