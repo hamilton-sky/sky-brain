@@ -50,6 +50,8 @@ export interface PostgresOptions {
   max?: number;
   /** Called with the new pool, e.g. so Vercel can close idle clients. */
   onPool?: (pool: pg.Pool) => void;
+  /** Role every connection switches to first (`SET ROLE`), e.g. Nanogres's owner role for DDL. */
+  role?: string;
 }
 
 /** Postgres through node-postgres. */
@@ -61,6 +63,16 @@ export function createPostgresDb(
     connectionString: url,
     ...(options.max === undefined ? {} : { max: options.max }),
   });
+  const role = options.role;
+  if (role) {
+    // Queued on the new client before any other query, so it always runs first.
+    const setRole = `SET ROLE "${role.replaceAll('"', '""')}"`;
+    pool.on("connect", (client) => {
+      client.query(setRole).catch((err: unknown) => {
+        console.error("SET ROLE failed", err);
+      });
+    });
+  }
   options.onPool?.(pool);
   const db = drizzleNodePg({ client: pool, schema });
   drivers.set(db, {

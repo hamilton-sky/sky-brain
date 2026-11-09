@@ -1,4 +1,6 @@
 // Migrates Postgres: MIGRATION_DATABASE_URL (the migrate role) when set, else DATABASE_URL.
+// MIGRATION_DATABASE_ROLE, when set, is the role to SET ROLE to before any DDL (Nanogres's
+// migration roles must act as the database owner role shown in their connect snippet).
 // On Vercel it runs in the build, and only for production deploys: previews never migrate.
 import { closeDb, createPostgresDb, migrateDb } from "./client.ts";
 
@@ -18,9 +20,12 @@ if (!url) {
 // Who and where, never the password, so a failed build log says what was tried.
 const target = new URL(url);
 const where = `${decodeURIComponent(target.username)}@${target.hostname}:${target.port || "5432"}${target.pathname}`;
-console.log(`migrate: connecting as ${where}`);
+console.log(
+  `migrate: connecting as ${where}${process.env.MIGRATION_DATABASE_ROLE ? `, then SET ROLE ${process.env.MIGRATION_DATABASE_ROLE}` : ""}`,
+);
 
-const db = createPostgresDb(url);
+const role = process.env.MIGRATION_DATABASE_ROLE || undefined;
+const db = createPostgresDb(url, { max: 1, ...(role ? { role } : {}) });
 try {
   await migrateDb(db);
   console.log("migrate: done");

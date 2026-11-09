@@ -198,7 +198,8 @@ own and open-source use. Pick a distinct product name before any commercial laun
   `packages/shared` is bundled in, other packages stay external and Vercel traces them.
   `pnpm start` still runs from source with tsx (D13).
 - Postgres is Zakai's Nanogres over TLS PgBouncer: `DATABASE_URL` for the app role,
-  `MIGRATION_DATABASE_URL` for the migrate role. Migrations run in the Vercel build, and only
+  `MIGRATION_DATABASE_URL` for the migrate role, which runs `SET ROLE` to
+  `MIGRATION_DATABASE_ROLE` (the database owner) before the migrations. Migrations run in the Vercel build, and only
   for production deploys.
 - No Next.js: the Express server, Better Auth and MCP code stay as they are.
 **Why:** shammai asked for everything on Vercel instead of Render (2026-11-09). Express runs
