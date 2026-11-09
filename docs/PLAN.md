@@ -36,12 +36,12 @@ device can reach it.
 ```
  Browser / phone ───── Google sign-in (cookie) ───────┐
  claude.ai connector ─ OAuth 2.1 (CIMD + PKCE) ───────┤
- Claude Code / Codex ─ MCP + OAuth or device token ───┼──▶  sky-brain server (one Render web service)
+ Claude Code / Codex ─ MCP + OAuth or device token ───┼──▶  sky-brain on Vercel (one origin, D16)
  Pathly runs ───────── REST + run token ──────────────┘       ├─ /api/v1     REST API
                                                               ├─ /mcp        MCP (streamable HTTP)
                                                               ├─ /api/auth   Better Auth (Google, OAuth server)
                                                               ├─ /           web app (React build)
-                                                              └─▶ Render Postgres
+                                                              └─▶ Nanogres Postgres
 ```
 
 One Node service serves the API, the MCP endpoint, the auth routes and the web app from one
@@ -217,8 +217,8 @@ All of this is in place before real project data goes in:
 - **Language:** TypeScript everywhere, Node 22 LTS, pnpm workspaces.
 - **Server:** Express 5, the MCP TypeScript SDK (streamable HTTP), Better Auth (`mcp`, `cimd`,
   `jwt`, device authorization, Google sign-in), Drizzle ORM with drizzle-kit migrations, zod.
-- **Database:** Render Postgres. Full-text search with `tsvector` now; pgvector later (Render
-  supports it).
+- **Database:** Postgres on Nanogres (D16). Full-text search with `tsvector` now; pgvector
+  later.
 - **Web:** React and Vite, TanStack Query. Components from Pathly Studio are copied in where
   they fit, not imported.
 - **Tests:** Vitest. PGlite (Postgres running inside the test process) so tests need no Docker.
@@ -233,22 +233,24 @@ apps/server      API, MCP, auth; serves the web build
 apps/web         React app
 packages/shared  entry types and zod schemas, used by the server, the web app and Pathly
 docs/            plan, roadmap, decisions, tickets
-render.yaml      Render Blueprint: web service + Postgres
+vercel.json      Vercel project: build, function, rewrites (D16)
+api/index.mjs    the Vercel function: the Express app
 ```
 
-## 12. Deploy on Render
+## 12. Deploy on Vercel
 
-- `render.yaml` Blueprint: one web service and one Render Postgres. Setup is New → Blueprint →
-  pick this repo.
-- Use a paid instance. Free instances sleep when idle, and the connector would time out
-  waiting for the service to wake.
-- Settings:
-  - `DATABASE_URL` comes from the database.
-  - `BETTER_AUTH_SECRET` is generated.
-  - `PUBLIC_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `BOOTSTRAP_OWNER_EMAIL` are
-    set by hand.
-- Deploys on every push to `main`. Health check at `/healthz`. Migrations run in the pre-deploy
-  command.
+- `vercel.json` sets everything: install, build (web, server bundle, migrations), the
+  function and the rewrites (D16). Setup is Add New → Project → import this repo, with the
+  default settings.
+- Environment variables, set in the Vercel project by hand:
+  - `DATABASE_URL`: Nanogres app role (PgBouncer port 6432).
+  - `MIGRATION_DATABASE_URL`: Nanogres migrate role (port 6433). Used only by the build.
+  - `MIGRATION_DATABASE_ROLE`: the owner role from the migrate role's Nanogres snippet; the
+    build runs `SET ROLE` to it before the migrations.
+  - The auth settings from login-mcp: `PUBLIC_URL`, `BETTER_AUTH_SECRET` and the sign-in
+    client's id and secret.
+- Production deploys from `main`. Other branches get preview URLs; previews never migrate.
+- Health check at `/healthz`.
 - Backups: test a restore before any real use.
 
 ## 13. Pathly integration

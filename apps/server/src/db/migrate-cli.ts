@@ -1,16 +1,43 @@
-// Render's preDeployCommand: migrates the Postgres database in DATABASE_URL.
+// Migrates Postgres: MIGRATION_DATABASE_URL (the migrate role) when set, else DATABASE_URL.
+// MIGRATION_DATABASE_ROLE, when set, is the role to SET ROLE to before any DDL (Nanogres's
+// migration roles must act as the database owner role shown in their connect snippet).
+// On Vercel it runs in the build, and only for production deploys: previews never migrate.
 import { closeDb, createPostgresDb, migrateDb } from "./client.ts";
 
-const url = process.env.DATABASE_URL;
+if (process.env.VERCEL && process.env.VERCEL_ENV !== "production") {
+  console.log(`migrate: skipped for VERCEL_ENV=${process.env.VERCEL_ENV}`);
+  process.exit(0);
+}
+
+const url = process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL;
 if (!url) {
-  console.error("migrate: DATABASE_URL is not set");
+  console.error(
+    "migrate: neither MIGRATION_DATABASE_URL nor DATABASE_URL is set",
+  );
   process.exit(1);
 }
 
-const db = createPostgresDb(url);
+// Who and where, never the password, so a failed build log says what was tried.
+const target = new URL(url);
+const where = `${decodeURIComponent(target.username)}@${target.hostname}:${target.port || "5432"}${target.pathname}`;
+console.log(
+  `migrate: connecting as ${where}${process.env.MIGRATION_DATABASE_ROLE ? `, then SET ROLE ${process.env.MIGRATION_DATABASE_ROLE}` : ""}`,
+);
+
+const role = process.env.MIGRATION_DATABASE_ROLE || undefined;
+const db = createPostgresDb(url, { max: 1, ...(role ? { role } : {}) });
 try {
   await migrateDb(db);
   console.log("migrate: done");
+} catch (err) {
+  const cause =
+    err instanceof Error && err.cause instanceof Error ? err.cause : err;
+  const code = (cause as { code?: unknown }).code;
+  console.error(
+    `migrate: FAILED as ${where}: ${cause instanceof Error ? cause.message : String(cause)}` +
+      (typeof code === "string" ? ` (code ${code})` : ""),
+  );
+  process.exitCode = 1;
 } finally {
   await closeDb(db);
 }
