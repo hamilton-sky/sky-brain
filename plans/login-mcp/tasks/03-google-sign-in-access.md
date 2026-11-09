@@ -1,7 +1,7 @@
 # Let Perminister-approved people in, give each person their own workspace, accept invites on every sign-in, add the sign-in page and the session resolver
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -245,3 +245,32 @@ first (`9cdd415 test(login-mcp): 03 failing test`) and failed because `access.ts
   - Every sign-in in tests now creates a workspace and an `owner` row, so a test that counts
     `workspaces` or `members` across the whole database must filter by user.
 
+
+## Review findings (round 1, pair review)
+
+QUALITY
+1. major apps/server/src/auth/auth.ts (with apps/server/src/auth/session-resolver.ts): access taken away in Perminister never ends an existing session. createAuth sets no `session` options, so Better Auth 1.7.15 uses rolling sessions (expiresIn 7 days, updateAge 1 day), and `auth.api.getSession` in sessionActorResolver extends the session row's expiresAt in the database (api/routes/session.mjs, needsRefresh -> updateSession) whenever it is more than a day old. A person removed from the `sky-brain` product who keeps the cookie value (e.g. curl, ignoring the cookie Max-Age) and calls /api/v1 at least once a week keeps access forever, and never meets validateUserInfo again. spec.md Edge cases says existing sessions "run out on their own expiry", and ticket 03 makes "take away their sky-brain access in Perminister" the only way to remove someone. - Set `session: { disableSessionRefresh: true }` (or a fixed absolute lifetime) in createAuth so sessions end at their first expiresAt, and add an allowed/refused test: a session whose expiresAt has passed gets 401 on /api/v1, and a call through the resolver does not move expiresAt.
+2. minor apps/server/src/auth/on-sign-in.ts: two first sign-ins of the same new person running at once (two tabs, two callbacks) both see no members row inside their READ COMMITTED transactions and each create an own workspace. - Take a per-user lock first (e.g. `select pg_advisory_xact_lock(hashtext(userId))` in the transaction) or lock the user row with `for update`, so the second run sees the first one's membership.
+3. minor apps/server/src/auth/on-sign-in.ts: onSessionCreated runs after the session row is written; if onSignIn throws, the callback fails but the session row stays and the person has no workspace until a later sign-in. - Acceptable, but log the failure with the user id (no email) so a missing own workspace can be traced.
+
+Probed as a hostile caller (level 3): the Perminister profile fields email, organizations[].productId and subjectId (validateUserInfo runs on create and on every sign-in, confirmed in better-auth dist oauth2/link-account.mjs; a non-array or malformed organizations gives no productIds, so refusal); the session cookie on /api/v1 (only the cookie reaches getSession, bearer and body ignored, user id parsed with ActorSchema); X-Dev-Actor with a cookie (still 401 dev_actor_disabled, order unchanged); invites matched by email (lower-cased, the email comes from the user row, which Perminister vouches for via emailVerified); the `error`/oauth_query page parameters (text only through textContent, no inline script, CSP unchanged); forged state and reused code (tests pass). The only way through found is finding 1.
+
+Notes: all four Done when commands re-run here and pass (13 named tests print; DECISIONS count 1; docs-ok; lint, typecheck and test exit 0). END is HEAD (32687be), so no later commits were excluded. The acceptance suite (plans/login-mcp/acceptance/helpers.ts, from 12caedc) still calls server.setGoogleUser, which the Perminister harness no longer has, so every acceptance test fails before reaching this ticket's code; that file is not in this ticket's diff, but every later ticket will trip over it until the acceptance helpers are moved to setPerministerAccount. The ticket's Answer was not read. The gate run left /tmp/sb-gates.log.
+
+REVIEW: FAIL
+Reviewed ticket 03 (plans/login-mcp/tasks/03-google-sign-in-access.md) over 371cfb2..32687be. I read the ticket as it was at 371cfb2 (empty Answer), not its Answer. END is 32687be, which is HEAD, so there are no later commits left out.
+
+SPEC
+- `pnpm --filter @sky-brain/server exec vitest run src/auth --reporter=verbose` passes and prints the 13 named lines: MET (conductor)
+- `grep -ci google docs/PLAN.md CLAUDE.md README.md | grep -v ':0$' || echo docs-ok` prints docs-ok: MET (conductor). The diff matches: every Google mention in PLAN.md sections 2, 3, 9 and 11, CLAUDE.md and README.md now says Perminister.
+- `grep -cE '^### D[0-9]+\. One workspace per person, and Perminister sign-in' docs/DECISIONS.md` prints 1: MET (conductor). D17 is appended after D16, and no older entry is edited.
+- `pnpm lint && pnpm typecheck && pnpm test` exits 0: MET (conductor)
+- scope: OK. Every changed file is in Touches, apart from plans/login-mcp/map.md and plans/login-mcp/learnings.md. Each of those gains one appended line for 03, which is the flow's own bookkeeping. Nothing in "Not in this ticket" is touched: no consent page, no whoami, no invite routes, no bearer tokens.
+- test first: OK. Commit 9cdd415 adds only access.test.ts, on-sign-in.test.ts and session-resolver.test.ts. The conductor saw it fail before the code. The tests import access.ts and session-resolver.ts, which did not exist yet, so they cannot pass without the production change.
+
+Notes:
+- Acceptance tests (`plans/login-mcp/acceptance`, 50 failing): every failure seen is `TypeError: server.setGoogleUser is not a function` in acceptance/helpers.ts:202. That suite was committed in 12caedc, before the switch from Google to Perminister. It calls a Google method that the ticket 02 harness no longer offers, so it fails at sign-in for every ticket. Ticket 03 does not list it in Touches, and its Done when does not include it. That makes it stale acceptance code, not a failure in what 03 delivers. The suite needs repair before ticket 07, the acceptance ticket.
+- Spot-check of the diff against the ticket body: mayEnter/PERMINISTER_PRODUCT_ID are wired only as user.validateUserInfo returning { error: "no_access" }, with no user.create.before. onSignIn runs in one transaction as session.create.after, and matches invites on the lower-cased email. sessionActorResolver passes only the cookie header to getSession and parses the result with ActorSchema. createApp uses it as the default only when auth is given and resolveActor is not, and the middleware order is unchanged. The sign-in page has #perminister and a hidden #no-access with "No access" and "Try another account", an external deferred script, and text set only through textContent.
+- Level is already 3. I did not raise it.
+
+REVIEW: PASS
