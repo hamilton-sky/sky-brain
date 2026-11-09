@@ -49,6 +49,9 @@ export function createAuth(options: CreateAuthOptions) {
     // Perminister subject with the same email cannot enter an existing person's user.
     account: { encryptOAuthTokens: true, accountLinking: { enabled: false } },
     rateLimit: { storage: "database" },
+    // Sessions end at their first expiry (7 days): no rolling refresh, so a person whose
+    // sky-brain access was taken away in Perminister cannot keep a session alive by using it.
+    session: { disableSessionRefresh: true },
     // Runs before the user is created and on every later sign-in with the fresh Perminister
     // profile, so access taken away in Perminister refuses the next sign-in (spec.md Decisions).
     user: {

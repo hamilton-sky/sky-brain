@@ -12,6 +12,11 @@ export async function onSignIn(
 ): Promise<void> {
   const email = who.email.toLowerCase();
   await db.transaction(async (tx) => {
+    // One sign-in of a person at a time (two tabs, two callbacks), so the second sees the
+    // first one's own workspace. Transaction-scoped: safe behind PgBouncer in transaction mode.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${"on-sign-in:" + who.userId}))`,
+    );
     const [member] = await tx
       .select({ workspaceId: members.workspaceId })
       .from(members)
@@ -65,6 +70,28 @@ export function onSessionCreated(db: Db) {
       .select({ email: user.email })
       .from(user)
       .where(eq(user.id, session.userId));
-    if (row) await onSignIn(db, { userId: session.userId, email: row.email });
+    if (!row) return;
+    try {
+      await onSignIn(db, { userId: session.userId, email: row.email });
+    } catch (err) {
+      // The session row is already written, so the person may be left without an own
+      // workspace until a later sign-in: log who and the error code only, since a query
+      // error's message carries its parameters (the email among them).
+      console.error(
+        `sign-in grant failed for user ${session.userId}: ${errorCode(err)}`,
+      );
+      throw err;
+    }
   };
+}
+
+/** The Postgres error code of a (Drizzle-wrapped) query error, or the error's name. */
+function errorCode(err: unknown): string {
+  const e = err as {
+    code?: unknown;
+    cause?: { code?: unknown };
+    name?: unknown;
+  };
+  const code = e?.cause?.code ?? e?.code ?? e?.name;
+  return typeof code === "string" ? code : "unknown";
 }

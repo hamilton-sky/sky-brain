@@ -1,7 +1,7 @@
 # Let Perminister-approved people in, give each person their own workspace, accept invites on every sign-in, add the sign-in page and the session resolver
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02
 Test first: yes
 Level: 3
@@ -205,13 +205,12 @@ first (`9cdd415 test(login-mcp): 03 failing test`) and failed because `access.ts
   - Tests: `access.test.ts`, `on-sign-in.test.ts`, `session-resolver.test.ts` (new).
   - Docs: `docs/PLAN.md` (sections 2, 3, 9, 11), `CLAUDE.md` line 6, `README.md`, and
     `docs/DECISIONS.md` D17 "One workspace per person, and Perminister sign-in" (D16 was the last).
-- **Proof** (all run after the last code edit):
+- **Proof** (all run again after the round 1 fixes, after the last code edit):
   - `pnpm --filter @sky-brain/server exec vitest run src/auth --reporter=verbose`: exit 0, 6 files,
-    29 tests passed; each of the 13 `prints` lines was found in the output with `grep -F`.
+    31 tests passed; each of the 13 `prints` lines was found in the output with `grep -F`.
   - `grep -ci google docs/PLAN.md CLAUDE.md README.md | grep -v ':0$' || echo docs-ok`: `docs-ok`.
   - `grep -cE '^### D[0-9]+\. One workspace per person, and Perminister sign-in' docs/DECISIONS.md`: `1`.
-  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0 (shared 15 tests, server 276 tests in 20 files).
-  - Extra: `pnpm --filter @sky-brain/server build:vercel` still writes `dist/vercel.mjs 2.9mb`.
+  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0 (shared 15 tests, server 278 tests in 20 files).
 - **Decisions**:
   - The resolver hands Better Auth only the `cookie` header (`fromNodeHeaders({ cookie })`), and
     answers undefined at once with no cookie, so a bearer token or anything else in the request
@@ -232,11 +231,28 @@ first (`9cdd415 test(login-mcp): 03 failing test`) and failed because `access.ts
     `on-sign-in.test.ts`, the `/api/v1` session in `session-resolver.test.ts`; each file has its
     own server and database and uses its own subjects and emails.
 - **Shortcuts taken**:
-  - Two first sign-ins of the same person at the same moment could each see no `members` row and
-    make two own workspaces (no lock). Harmless (two boards they own); worth a fix (an advisory
-    transaction lock on the user id, or a marker column) if it is ever seen.
   - The page has no styles: the CSP `default-src 'self'` blocks inline styles, and a stylesheet
     route is not in Touches. A plain page until T8's web app or a CSS route.
+- **Review fixes** (round 1; the tests for them were committed alone first, `1fa746f
+  test(login-mcp): 03 failing test`, and failed for the right reasons: the expiry moved from
+  +1 h to +7 days, and nothing was logged):
+  - Finding 1 (sessions refreshed forever): `createAuth` sets `session: { disableSessionRefresh:
+    true }`, the option Better Auth 1.7.15's `getSession` reads (`api/routes/session.mjs`), so a
+    session ends 7 days after sign-in however often it is used. New test "session: a session ends
+    at its first expiry, however often it is used" (`session-resolver.test.ts`): with an hour left,
+    `/api/v1` answers 404 and `expires_at` does not move (allowed); after the expiry the same
+    cookie gets 401 `unauthenticated` (refused). `docs/PLAN.md` section 9 says so.
+  - Finding 2 (two first sign-ins at once): `onSignIn` takes `pg_advisory_xact_lock(hashtext(
+    'on-sign-in:' || userId))` first in its transaction. Transaction-scoped, so it is released at
+    commit and works behind PgBouncer in transaction mode (no session-level lock). PGlite runs one
+    transaction at a time, so no unit test can show the race; proved by hand on a throwaway
+    Postgres 16.15 with a pool of 10 and 20 rounds of 8 concurrent `onSignIn` calls for a new
+    user: at most 1 own workspace with the lock, 8 without it (the code at `1fa746f`).
+  - Finding 3 (a failed grant leaves no trace): `onSessionCreated` catches the failure, logs
+    `sign-in grant failed for user <id>: <Postgres error code>` with `console.error`, and rethrows
+    (the callback still fails as before). Only the code is logged, not the error, because a
+    Drizzle query error's message carries its parameters (the email). New test "onSignIn: a failed
+    sign-in grant is logged with the user id, not the email".
 - **For later tickets**:
   - 04: the consent page follows the same pattern (strings in `pages/consent.ts`, no inline
     script). A sign-in started from `/sign-in?<signed query>` posts that query as `oauth_query`.

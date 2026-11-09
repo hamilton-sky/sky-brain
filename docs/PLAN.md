@@ -183,6 +183,8 @@ Better Auth runs inside the server.
   with access to the `sky-brain` product may enter (`mayEnter`, D17). Each person gets their own
   workspace, as `owner`, at their first sign-in. A sky-brain invite adds such a person to another
   owner's workspace and is accepted at their next sign-in. Everyone else sees "No access".
+  A session lasts 7 days from sign-in and is never extended by use, so access taken away in
+  Perminister ends at the latest when the session runs out.
 - **MCP clients** (claude.ai, Claude Code, Codex): Better Auth's `mcp()` plugin makes the server
   an OAuth 2.1 authorization server. claude.ai registers with a Client ID Metadata Document
   (`cimd()` plugin), uses PKCE, and returns to `https://claude.ai/api/mcp/auth_callback`. The

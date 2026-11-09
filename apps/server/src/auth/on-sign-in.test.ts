@@ -230,15 +230,25 @@ describe("onSignIn", () => {
     );
     // The same database, except that every transaction fails.
     const broken = Object.assign(Object.create(db) as Db, {
-      transaction: () => Promise.reject(new Error("database down")),
+      // A Drizzle query error carries the query's parameters, the email among them.
+      transaction: () =>
+        Promise.reject(
+          Object.assign(
+            new Error("Failed query, params: failing@example.com"),
+            {
+              cause: { code: "57P01" },
+            },
+          ),
+        ),
     });
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       await expect(
         onSessionCreated(broken)({ userId: "failing-user" }),
-      ).rejects.toThrow("database down");
-      const logged = JSON.stringify(log.mock.calls);
+      ).rejects.toThrow("Failed query");
+      const logged = log.mock.calls.flat().map(String).join(" ");
       expect(logged).toContain("failing-user");
+      expect(logged).toContain("57P01");
       expect(logged).not.toContain("failing@example.com");
     } finally {
       log.mockRestore();
