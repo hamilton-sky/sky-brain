@@ -1,7 +1,7 @@
 # Add Better Auth with Perminister sign-in, its tables, settings and discovery routes, the Vercel wiring and the auth test harness
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: —
 Test first: yes
 Level: 3
@@ -355,3 +355,7 @@ SPEC
 - test first: OK. 46e5892 adds discovery.test.ts, perminister.test.ts and the new config/server cases before any production code. They import modules that did not exist yet (auth-harness, perminister, the new Config fields), so they fail without the change, and the conductor saw them fail. All ticket-named test names are present.
 
 REVIEW: PASS
+
+## Review findings (round 2, footprint check)
+
+the build changed paths outside the ticket's `Touches:` line (apps/server/package.json pnpm-lock.yaml apps/server/src/auth/auth.ts apps/server/src/auth/perminister.ts (new) apps/server/src/auth/perminister.test.ts (new) apps/server/src/auth/from-config.ts (new) apps/server/src/auth/routes.ts apps/server/src/auth/cli-config.ts apps/server/src/auth/discovery.test.ts apps/server/src/db/auth-schema.ts apps/server/src/db/schema.ts apps/server/drizzle/ apps/server/src/config.ts apps/server/src/config.test.ts apps/server/src/server.ts apps/server/src/server.test.ts apps/server/src/vercel.ts apps/server/src/app.ts apps/server/src/testing/auth-harness.ts (new) apps/server/src/testing/fake-perminister.ts (new) apps/server/src/auth/pages/sign-in.ts (new) apps/server/src/auth/pages/consent.ts (new) CLAUDE.md): apps/server/src/auth/from-config.test.ts. tickets run side by side because their Touches do not overlap, so change only what Touches names. if the ticket cannot be done inside it, say so in the Answer and stop: the plan has to change, not the footprint. one file the ticket truly needs (a test that pins the old behaviour, a generator) may be named in the Answer as `Extra file: <path> - <why>`, when it is the only one
