@@ -153,3 +153,58 @@ describe("perminister", () => {
     );
   });
 });
+
+async function signInWithPerminister(b: ReturnType<AuthTestServer["browser"]>) {
+  const start = await b.request("/api/auth/sign-in/social", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      provider: "perminister",
+      callbackURL: "/",
+      errorCallbackURL: "/sign-in",
+    }),
+  });
+  const back = await b.request(server.approve(start.body.url as string));
+  return b.request(back.next!);
+}
+
+describe("account linking", () => {
+  it("perminister: a second subject with the same email does not enter the first person's account", async () => {
+    server.setPerministerAccount({
+      subjectId: "subject-bea",
+      email: "bea@example.com",
+    });
+    const first = server.browser();
+    await signInWithPerminister(first);
+    const bea = await first.request("/api/auth/get-session");
+    expect(bea.body.user.email).toBe("bea@example.com");
+
+    // Refused: another Perminister subject that carries the same email.
+    server.setPerministerAccount({
+      subjectId: "subject-impostor",
+      email: "bea@example.com",
+    });
+    const other = server.browser();
+    const done = await signInWithPerminister(other);
+    expect(done.headers.getSetCookie().join("\n")).not.toMatch(
+      /session_token=[^;]/,
+    );
+    const none = await other.request("/api/auth/get-session");
+    expect(none.body?.user).toBeUndefined();
+    const linked = await db
+      .select({ accountId: sql<string>`account_id` })
+      .from(sql`"account"`)
+      .where(sql`user_id = ${bea.body.user.id}`);
+    expect(linked.map((a) => a.accountId)).toEqual(["subject-bea"]);
+
+    // Allowed: the first subject still signs in as itself.
+    server.setPerministerAccount({
+      subjectId: "subject-bea",
+      email: "bea@example.com",
+    });
+    const again = server.browser();
+    await signInWithPerminister(again);
+    const back = await again.request("/api/auth/get-session");
+    expect(back.body.user.id).toBe(bea.body.user.id);
+  });
+});
