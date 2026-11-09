@@ -1,7 +1,7 @@
 # Add Better Auth with Perminister sign-in, its tables, settings and discovery routes, the Vercel wiring and the auth test harness
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: yes
 Level: 3
@@ -202,3 +202,72 @@ exit 0
   `docs/layer-1/LOGIN-MCP-PLAN.md`, `docs/DECISIONS.md` D16.
 
 ## Answer
+
+Work started at `7ac098c6f9936abbb4fb12068fadfdc37e3303b5`; the failing tests were committed alone
+first (`test(login-mcp): 02 failing test`).
+
+- **Built**:
+  - `apps/server/package.json`, `pnpm-lock.yaml`: `better-auth`, `@better-auth/mcp`,
+    `@better-auth/cimd`, `@better-auth/oauth-provider` 1.7.15 and `@modelcontextprotocol/server`
+    2.4.0 as dependencies, `auth` 1.7.15 as a dev dependency, all exact.
+  - `apps/server/src/auth/`: `auth.ts` (`createAuth`, `Auth`, `MCP_SCOPES`), `perminister.ts`
+    (`perministerProvider`), `from-config.ts` (`authFromConfig`, `AuthOverrides`, `AppAuth`),
+    `routes.ts` (`mountAuth`), `cli-config.ts`, `pages/sign-in.ts` and `pages/consent.ts` (stubs
+    exporting empty `html` and `script`), tests `perminister.test.ts` and `discovery.test.ts`.
+  - `apps/server/src/db/auth-schema.ts` (CLI output plus a header comment naming the command),
+    `schema.ts` re-exports it, `drizzle/0002_auth.sql` + `meta/0002_snapshot.json` +
+    `meta/_journal.json` from `drizzle-kit generate --name auth` (13 new tables, no existing table
+    changed, not hand-edited).
+  - `config.ts` (+ the five settings and the production checks), `config.test.ts`,
+    `server.ts`, `server.test.ts`, `vercel.ts`, `app.ts` (optional `auth`, mounted right after
+    `/healthz`).
+  - `apps/server/src/testing/auth-harness.ts` (`startAuthTestServer`, `Browser`,
+    `TEST_PERMINISTER_CLIENT_ID`/`_SECRET`/`_URL`) and `testing/fake-perminister.ts`.
+  - `CLAUDE.md`: the five environment variables, the `auth generate` command and the pinned versions.
+- **Proof**:
+  - `pnpm --filter @sky-brain/server exec vitest run src/auth src/config src/server --reporter=verbose`:
+    4 files, 27 tests passed; every `prints` line of the check block is in the output (the five
+    `discovery:` lines, the three `perminister:` lines, and the `refuses ...` lines, plus
+    "refuses production without BETTER_AUTH_SECRET" and "reads the auth settings").
+  - `pnpm --filter @sky-brain/server exec drizzle-kit generate`: `No schema changes, nothing to migrate`.
+  - `pnpm --filter @sky-brain/server build:vercel`: `dist/vercel.mjs  2.9mb`, `Done`. Extra check:
+    importing the bundle with `NODE_ENV=production` and placeholder auth settings loaded the app;
+    without them it refused with `PUBLIC_URL must be set when NODE_ENV is production`.
+  - `node tools/dev-smoke.mjs`: `healthz 200`, exit 0 (no auth settings set).
+  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0 (shared 15 tests, server 258 tests).
+  - `pnpm install --frozen-lockfile`: no peer dependency warning.
+- **Decisions**:
+  - `@better-auth/oauth-provider` 1.7.15 is a direct, exact dependency. Without it pnpm resolved
+    `@better-auth/mcp`'s `^1.7.15` to 1.7.18, whose peers (`better-auth ^1.7.18`,
+    `better-call 1.4.5`, `@better-auth/core ^1.7.18`) warned. With the pin, `better-call` 1.4.4 and
+    `@better-auth/core` 1.7.15 resolve with no warning, so they are not direct dependencies. It
+    also gives `auth.ts` and the harness the `ClientMetadataResourceFetch` type.
+  - `cli-config.ts` calls `createAuth` itself (with `drizzle.mock({ schema })` and placeholder
+    values) instead of repeating the `betterAuth({...})` options, so the CLI always sees exactly
+    the app's plugins.
+  - The three `/.well-known/*` routes are mounted on the same `toNodeHandler(auth)`: the
+    oauth-provider and `mcp()` plugins answer those absolute paths in Better Auth's own handler.
+  - `readConfig` checks an https origin as `new URL(v).protocol === "https:" && url.origin === v`,
+    which refuses a path, query, trailing slash or credentials in one rule; the
+    `BETTER_AUTH_SECRET` error never echoes the value.
+  - `getToken` also throws (naming status 200) when a 200 answer lacks `account.subjectId` or
+    `sessionToken`, and on a non-200 cancels the body unread. `getUserInfo`'s `name` falls back to
+    the email, then the `subjectId` (Better Auth needs a name; an email-less account is refused
+    by Better Auth anyway).
+  - `start` closes the database if building the app throws.
+  - The harness listens on a bare `http.Server` first, then builds the app with that URL and
+    attaches it as the request listener. `TestResponse` is reused from `harness.ts`; the 8-line
+    `toTestResponse` is copied because `harness.ts` is outside Touches.
+- **Shortcuts taken**: none.
+- **For later tickets**:
+  - 03/04: fill `src/auth/pages/sign-in.ts` and `consent.ts`; `routes.ts` already serves them with
+    the CSP and `no-store` and answers 404 while a string is empty. Add `mayEnter` and the hooks to
+    the `betterAuth({...})` in `auth.ts`; `cli-config.ts` follows automatically.
+  - The fake's `sessionToken` is `perminister-session-<subjectId>-<random>`; the discovery test
+    relies on that prefix to prove the stored `access_token` is encrypted.
+  - `plans/login-mcp/acceptance/helpers.ts` still calls `setGoogleUser` and passes
+    `bootstrapOwnerEmail`/`allowedEmails`; the harness follows spec.md (`setPerministerAccount`).
+    Those acceptance files are stale against the repaired spec; a human or the tester must
+    update them (not this ticket).
+  - `CLAUDE.md` line 6 and `docs/PLAN.md` still say "People sign in with Google"; not in this
+    ticket's Touches.

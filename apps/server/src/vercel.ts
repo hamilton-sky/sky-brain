@@ -3,6 +3,7 @@
 // api/index.mjs at the repo root re-exports. One pool per function instance.
 import { attachDatabasePool } from "@vercel/functions";
 import { createApp } from "./app.ts";
+import { authFromConfig } from "./auth/from-config.ts";
 import { readConfig } from "./config.ts";
 import { createPostgresDb } from "./db/client.ts";
 
@@ -20,4 +21,9 @@ const db = createPostgresDb(config.databaseUrl, {
 
 // The dev actor header stays off: it is for NODE_ENV=development on 127.0.0.1 only (D15).
 // The web build is served by Vercel's CDN; the app's own static fallback is unused here.
-export default createApp({ db, devActorHeader: false });
+// readConfig has already refused a production start without the auth settings.
+export default createApp({
+  db,
+  devActorHeader: false,
+  auth: authFromConfig(config, db),
+});

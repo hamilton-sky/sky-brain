@@ -215,3 +215,6 @@ export const devices = pgTable("devices", {
   lastSeenAt: at("last_seen_at"),
   revokedAt: at("revoked_at"),
 });
+
+// Better Auth's tables (login-mcp), so the Db type and drizzle-kit see them.
+export * from "./auth-schema.ts";

@@ -23,7 +23,7 @@ function stubFetch(answer: () => Response): {
     calls.push({ url, init });
     return Promise.resolve(answer());
   };
-  return { fetch: fetchStub as typeof fetch, calls };
+  return { fetch: fetchStub, calls };
 }
 
 function provider(fetchImpl: typeof fetch) {

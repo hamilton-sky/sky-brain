@@ -1,6 +1,8 @@
 import express from "express";
 import { fileURLToPath } from "node:url";
 import { actorMiddleware, type ActorResolver } from "./actor/middleware.ts";
+import type { Auth } from "./auth/auth.ts";
+import { mountAuth } from "./auth/routes.ts";
 import type { Db } from "./db/client.ts";
 import { errorHandler } from "./http/error-handler.ts";
 
@@ -14,6 +16,8 @@ export interface AppOptions {
   now?: () => Date;
   /** Folder holding the web build. Default: apps/web/dist. */
   webDist?: string;
+  /** Better Auth and the origin it serves (`authFromConfig`). Default: no auth routes. */
+  auth?: { instance: Auth; publicUrl: string };
 }
 
 const defaultWebDist = fileURLToPath(
@@ -28,6 +32,9 @@ export function createApp(options: AppOptions): express.Express {
   app.get("/healthz", (_req, res) => {
     res.status(200).json({ ok: true });
   });
+
+  // Before /api/v1, the /api 404, express.static and the catch-all, which would shadow it.
+  if (options.auth) mountAuth(app, options.auth.instance);
 
   // Check order steps 1 and 2: the actor before the body, so an anonymous body is never read.
   app.use(

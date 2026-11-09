@@ -1,5 +1,6 @@
 import type { Server } from "node:http";
 import { createApp } from "./app.ts";
+import { authFromConfig } from "./auth/from-config.ts";
 import { devActorHeaderEnabled, type Config } from "./config.ts";
 import {
   closeDb,
@@ -32,7 +33,13 @@ export async function start(config: Config): Promise<Server> {
   let closing: Promise<void> | undefined;
   const closeOnce = () => (closing ??= closeDb(db));
   const devActorHeader = devActorHeaderEnabled({ NODE_ENV: config.nodeEnv });
-  const app = createApp({ db, devActorHeader });
+  let app;
+  try {
+    app = createApp({ db, devActorHeader, auth: authFromConfig(config, db) });
+  } catch (err) {
+    await closeOnce();
+    throw err;
+  }
   return new Promise((resolve, reject) => {
     const onListen = (err?: Error) => {
       if (err) {

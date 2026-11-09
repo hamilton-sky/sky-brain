@@ -56,7 +56,14 @@ pnpm dev                         build the web shell, then run the server on one
 node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it
 pnpm --filter @sky-brain/server exec drizzle-kit generate
                                  write a migration after changing apps/server/src/db/schema.ts
+pnpm --filter @sky-brain/server exec auth generate --config src/auth/cli-config.ts --adapter drizzle --dialect postgresql --output src/db/auth-schema.ts -y
+                                 regenerate Better Auth's tables after changing its plugins
+                                 (keep cli-config.ts in step with auth.ts), then drizzle-kit generate
 ```
+
+Auth versions are pinned exactly (their MCP pieces move fast): `better-auth`, `@better-auth/mcp`,
+`@better-auth/cimd`, `@better-auth/oauth-provider` and the CLI `auth` at 1.7.15, and
+`@modelcontextprotocol/server` at 2.4.0. Upgrade them together and regenerate the schema.
 
 Environment:
 
@@ -64,6 +71,14 @@ Environment:
 - `DATABASE_URL`: Postgres; required when `NODE_ENV=production`.
 - `PGLITE_DATA_DIR`: dev only; default `.pglite` under `apps/server`; `memory://` for in-memory.
 - `NODE_ENV`: `pnpm dev` sets `development` itself (in `apps/server/src/dev.ts`).
+- `PUBLIC_URL`: the origin people and MCP clients reach (`https://sky-brain.vercel.app`); required
+  in production, `https://` with no path or trailing slash. Default `http://localhost:<PORT>`,
+  which matches the local-dev Perminister client (origin `http://localhost`, any port).
+- `BETTER_AUTH_SECRET`: required in production, at least 32 characters. Default: a random value
+  per process, so dev sessions end on restart.
+- `PERMINISTER_BASE_URL`, `PERMINISTER_CLIENT_ID`, `PERMINISTER_CLIENT_SECRET`: the Perminister
+  app client; required in production. Without all three there is no Perminister sign-in. Never
+  write the client secret into the repo, a test or a log.
 
 ## Docs stay in sync
 
