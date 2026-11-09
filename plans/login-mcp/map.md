@@ -277,6 +277,7 @@ acceptance ticket (07) runs both.
   Vercel build (`pnpm --filter @sky-brain/server migrate`) for production deploys only, as
   `MIGRATION_DATABASE_URL` with `SET ROLE` to `MIGRATION_DATABASE_ROLE`. Any new top-level route
   must be reported to the deploy thread; this plan adds none.
+- 01 — Hosting settled as Vercel + Nanogres (D16, shammai: "everything on Vercel"); Render paid and Render free rejected; migrations skip non-production deploys in `migrate-cli.ts`, not in `vercel.json`.
 
 ## Open questions
 
