@@ -293,3 +293,4 @@ acceptance ticket (07) runs both.
   documents. The manual check in ticket 07 proves the real client.
 - Whether Codex CLI needs DCR (LOGIN-MCP-PLAN's T0 check list): recorded in `docs/CONNECT.md` by
   ticket 07 if tried; turning DCR on is out of scope.
+- 06 — `docs/CONNECT.md` written (Perminister client, eight Vercel variables, checks, clients, local dev, troubleshooting, `## Verified` placeholder); PLAN.md §12 names the five auth variables; LOGIN-MCP-PLAN.md has a superseded-in-part header. The server does not load `.env`: the doc exports it with `set -a; . ./.env; set +a`.

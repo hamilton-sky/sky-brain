@@ -1,7 +1,7 @@
 # List the Vercel environment variables and write docs/CONNECT.md
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01, 05
 Test first: no
 Level: 3
@@ -116,3 +116,47 @@ exit 0
   `docs/layer-1/LOGIN-MCP-PLAN.md`, `docs/layer-1/TICKETS.md` (T9).
 
 ## Answer
+
+Work started at `f8972969ad29ea03bfea518fc3be3f0fa9acc23b`.
+
+- **Built**:
+  - `docs/CONNECT.md` (new): Perminister app client (org, product, origin, fixed callback
+    `/auth/perminister/callback`, secret shown once), the eight Vercel variables table, redeploy
+    checks (`/healthz`, `/.well-known/oauth-protected-resource/mcp` `resource`), previews,
+    claude.ai / phone / Claude Code / cloud sessions / Codex CLI, local development, troubleshooting,
+    and `## Verified` with the placeholder line.
+  - `docs/PLAN.md` section 12: the auth bullet names the five auth variables and links CONNECT.md.
+  - `docs/layer-1/LOGIN-MCP-PLAN.md`: one italic line under the title (steps 3 to 8 built by
+    `plans/login-mcp`, Perminister not Google, Vercel + Nanogres D16 replacing Render and "D13",
+    resource metadata path form, both paths answer, link to CONNECT.md).
+- **Proof** (all run after the last edit):
+  - variable grep `| sort -u | wc -l` printed `8`.
+  - callback and origin grep printed `connect-ok`.
+  - `grep -c '^- claude.ai whoami: not yet verified$' docs/CONNECT.md` printed `1`.
+  - `grep -q 'PERMINISTER_CLIENT_SECRET' docs/PLAN.md && echo plan-ok` printed `plan-ok`.
+  - secret grep printed `0`.
+  - `pnpm lint && pnpm typecheck && pnpm test` exit 0: "All matched files use Prettier code
+    style!", tsc clean, server 23 files / 299 tests passed, shared 2 files / 15 tests passed.
+- **Decisions**:
+  - Every fact was checked against the code: variable names and the production refusal message
+    (`config.ts` `checkProductionAuth`), the `PUBLIC_URL` default `http://localhost:<PORT>`
+    (`auth/from-config.ts`), the routes (`auth/routes.ts`: both protected-resource paths and
+    `/auth/perminister/callback`), the 401 header text (`mcp/route.ts`), migrate variables read
+    only by `db/migrate-cli.ts` (so "used only by the build").
+  - The ticket says a local `.env` "works", but nothing in the server reads `.env` (no dotenv,
+    no `--env-file`; `dev.ts` reads `process.env` only). The doc therefore says so and shows
+    `set -a; . ./.env; set +a` before `pnpm dev`. The `.env` example uses empty values (not
+    `<placeholder>`) so it can be sourced as is; tested by sourcing the block in a scratch folder.
+  - "Each person gets their own workspace at first sign-in" sits in the intro, the invite note in
+    section 1, the "No access" cause in Troubleshooting, as the ticket lists them.
+- **Shortcuts taken**: none.
+- **For later tickets**:
+  - 07: fill `## Verified` in `docs/CONNECT.md` by replacing the line
+    `- claude.ai whoami: not yet verified`; the Codex CLI DCR result also belongs there.
+  - Still stale and out of every login-mcp ticket's Touches: `docs/ROADMAP.md` ("Deployed on
+    Render"), `docs/layer-1/TICKETS.md` (T0/T1/T9 Render and Blueprint), `docs/DECISIONS.md` D14
+    (`render.yaml`, a log: needs a new decision, not an edit) and the body of LOGIN-MCP-PLAN.md
+    (now flagged by its header line).
+  - If anyone wants `pnpm dev` to load `.env` itself (e.g. `node --env-file-if-exists`), that is a
+    code change in `apps/server/package.json`; then CONNECT.md's "does not read `.env`" paragraph
+    must change with it.

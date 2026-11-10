@@ -256,8 +256,9 @@ api/index.mjs    the Vercel function: the Express app
   - `MIGRATION_DATABASE_URL`: Nanogres migrate role (port 6433). Used only by the build.
   - `MIGRATION_DATABASE_ROLE`: the owner role from the migrate role's Nanogres snippet; the
     build runs `SET ROLE` to it before the migrations.
-  - The auth settings from login-mcp: `PUBLIC_URL`, `BETTER_AUTH_SECRET` and the sign-in
-    client's id and secret.
+  - The auth settings from login-mcp: `PUBLIC_URL`, `BETTER_AUTH_SECRET`,
+    `PERMINISTER_BASE_URL`, `PERMINISTER_CLIENT_ID` and `PERMINISTER_CLIENT_SECRET`. Values and
+    steps are in [CONNECT.md](CONNECT.md).
 - Production deploys from `main`. Other branches get preview URLs; previews never migrate.
 - Health check at `/healthz`.
 - Backups: test a restore before any real use.

@@ -1,5 +1,7 @@
 # sky-brain: Google sign-in and MCP connector plan
 
+_Superseded in part: steps 3 to 8 are built by `plans/login-mcp`. Sign-in is Perminister, not Google. Hosting is Vercel + Nanogres (D16), which replaces the Render sketch and "D13" below. The resource metadata URL is the path form `/.well-known/oauth-protected-resource/mcp` (both paths answer). Deploy and connect steps: [docs/CONNECT.md](../CONNECT.md)._
+
 _Written 2026-11-01. Awaiting review._
 
 ## Summary
