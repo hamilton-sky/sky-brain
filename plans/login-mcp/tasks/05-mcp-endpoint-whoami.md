@@ -1,7 +1,7 @@
 # Serve /mcp behind the bearer check, as an agent acting for the person, with whoami
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: 02, 03, 04
 Test first: yes
 Level: 3
@@ -166,3 +166,7 @@ to be 401` (no `/mcp` route; the SPA catch-all answered).
     a per-tool `scopeChallenge`.
   - 07: `pnpm --filter @sky-brain/server exec vitest run src/mcp/claude-flow.test.ts
     --reporter=verbose` prints the bar's line. `test-flow.ts` holds the reusable flow helpers.
+
+## Review findings (round 1, test first)
+
+no commit between base and HEAD changes only test files. Commit the failing test alone first, then the code. A test commit does not count when earlier commits already changed production files. If the test and the code are in one commit (or the test commit sits on top of code that is already there), recover: revert that commit, commit the test files alone, then restore the production files in a later commit (git checkout <the old commit> -- <paths>). Do not rewrite history.
