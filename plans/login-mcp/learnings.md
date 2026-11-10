@@ -10,3 +10,4 @@ ticket number. Never edit or delete another line. Keep it short; a human prunes 
 - (03) PGlite runs one transaction at a time, so a race between two connections cannot be shown in Vitest; `/usr/lib/postgresql/16/bin` has a real Postgres 16 (initdb/pg_ctl as user `postgres`) for a hand check.
 - (04) The Perminister callback answers 302 `Location: /` plus a body `{redirect: true, url: "/consent?..."}`; the harness `next` takes `Location`, so follow `body.url` first. Consent is remembered per person and client: add `prompt=consent` to authorize to see the page again.
 - (04) Vitest 5 hides `console.log` of passing tests; run with `--silent=false` to see it.
+- (05) A shared test helper outside `*.test.ts` and `src/testing/` gets the full type-checked lint (no `any`); cast `res.body` to a small interface. In an MCP tool callback the auth info is `ctx.http.authInfo`; in the `createMcpHandler` factory it is `ctx.authInfo`.

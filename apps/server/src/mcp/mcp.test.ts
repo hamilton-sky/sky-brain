@@ -252,6 +252,11 @@ describe("mcp", () => {
     ]) {
       expect(actorFromMcpClaims(bad)).toBeUndefined();
     }
+    // Over /mcp, a well-signed token whose claims give no actor gets the same 401.
+    for (const bad of [{ sub: undefined }, { azp: "http://claude.ai/x" }]) {
+      const signed = await server.signJwt(claims(bad));
+      expectChallenge(server, await mcpInitialize(server, signed));
+    }
 
     const human: Actor = { kind: "human", user_id: "user123" };
     const status = async (actor: Actor) => {

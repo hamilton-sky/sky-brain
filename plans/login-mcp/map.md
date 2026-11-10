@@ -283,6 +283,7 @@ acceptance ticket (07) runs both.
 - 03 — `mayEnter` (Perminister lists product `sky-brain`, email required) as `user.validateUserInfo`; `onSignIn` as `session.create.after` (own workspace when no `members` row, invites by lower-cased email every sign-in); `/api/v1` resolves the session from the cookie header only; sign-in page shows "No access" for any `error`; D17.
 - 03 (round 1) — Sessions do not roll (`disableSessionRefresh`): they end 7 days after sign-in; `onSignIn` serialises a person's sign-ins with `pg_advisory_xact_lock` (transaction-scoped, PgBouncer-safe); a failed grant logs the user id and error code, never the email.
 - 04 — Consent page filled (textContent only, host from its own `redirect_uri`, posts the page query unchanged); `oauth-flow.test.ts` pins Better Auth 1.7.15: missing verifier is `invalid_request`, unknown CIMD client 400 `invalid_client`, forged/altered `oauth_query` 400 `invalid_signature`.
+- 05 — `/mcp` = `requireMcpAuth` (sig, iss, aud `<url>/mcp`, exp; header only) → `actorFromMcpClaims` (agent `mcp/<azp host>` for `sub`, HTTPS `azp` only, else the same 401) → `createMcpHandler` (stateless legacy) with the actor in `authInfo.extra`, no raw token; `whoami` lists the person's memberships only.
 
 ## Open questions
 

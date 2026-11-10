@@ -48,7 +48,20 @@ export const CIMD_DOCUMENTS = {
 /** The JWT's claims, read without checking the signature. */
 export function decodeJwt(jwt: string): Record<string, unknown> {
   const payload = jwt.split(".")[1] ?? "";
-  return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  return JSON.parse(
+    Buffer.from(payload, "base64url").toString("utf8"),
+  ) as Record<string, unknown>;
+}
+
+/** Better Auth's `{redirect, url}` answer, or a token answer: the fields the flow reads. */
+interface FlowBody {
+  redirect?: unknown;
+  url?: unknown;
+  access_token?: unknown;
+}
+
+function bodyOf(res: BrowserResponse): FlowBody {
+  return (res.body ?? {}) as FlowBody;
 }
 
 function pkce() {
@@ -116,7 +129,7 @@ export async function signInAndGetToken(
     }),
   );
   expect(start.status).toBe(200);
-  const startUrl = start.body.url as string;
+  const startUrl = bodyOf(start).url as string;
   expect(startUrl.startsWith(`${server.perministerUrl}/oauth/authorize?`)).toBe(
     true,
   );
@@ -126,9 +139,10 @@ export async function signInAndGetToken(
   const done = await b.request(callback);
   // The callback answers 302 `Location: /` with a JSON body whose `url` is where the flow goes
   // on (learnings 04), so the body's `url` comes first.
+  const doneBody = bodyOf(done);
   const landed = pathOf(
-    done.body?.redirect === true && typeof done.body.url === "string"
-      ? (done.body.url as string)
+    doneBody.redirect === true && typeof doneBody.url === "string"
+      ? doneBody.url
       : done.next,
   );
 
@@ -158,24 +172,35 @@ export async function signInAndGetToken(
     }).toString(),
   });
   expect(token.status).toBe(200);
-  expect(typeof token.body.access_token).toBe("string");
+  const accessToken = bodyOf(token).access_token;
+  expect(typeof accessToken).toBe("string");
   return {
-    accessToken: token.body.access_token as string,
+    accessToken: accessToken as string,
     landed,
     browser: b,
   };
 }
 
+/** The parts of a JSON-RPC answer the tests read. */
+export interface RpcAnswer {
+  result: {
+    serverInfo?: { name: string };
+    isError?: boolean;
+    structuredContent?: unknown;
+    content?: { type: string; text: string }[];
+  };
+}
+
 /** A JSON-RPC answer from an SSE body (`event: message\ndata: {...}`) or a JSON one. */
-export function rpcResult(res: BrowserResponse): any {
-  if (res.body) return res.body;
+export function rpcResult(res: BrowserResponse): RpcAnswer {
+  if (res.body) return res.body as RpcAnswer;
   const data = res.text
     .split("\n")
     .filter((line) => line.startsWith("data:"))
     .map((line) => line.slice("data:".length).trim())
     .filter(Boolean);
   expect(data.length).toBeGreaterThan(0);
-  return JSON.parse(data[data.length - 1]!);
+  return JSON.parse(data[data.length - 1]!) as RpcAnswer;
 }
 
 let rpcId = 0;
@@ -223,7 +248,7 @@ export async function callWhoami(
 ): Promise<WhoamiResult> {
   const init = await mcpInitialize(server, token);
   expect(init.status).toBe(200);
-  expect(rpcResult(init).result.serverInfo.name).toBe("sky-brain");
+  expect(rpcResult(init).result.serverInfo?.name).toBe("sky-brain");
   const res = await mcpPost(server, token, "tools/call", {
     name: "whoami",
     arguments: args,
@@ -233,9 +258,10 @@ export async function callWhoami(
   expect(result.isError ?? false).toBe(false);
   const structured = result.structuredContent as WhoamiResult;
   // One text block holding the same JSON (spec.md Interfaces -> whoami).
-  expect(result.content).toHaveLength(1);
-  expect(result.content[0].type).toBe("text");
-  expect(JSON.parse(result.content[0].text)).toEqual(structured);
+  const content = result.content ?? [];
+  expect(content).toHaveLength(1);
+  expect(content[0]!.type).toBe("text");
+  expect(JSON.parse(content[0]!.text)).toEqual(structured);
   return structured;
 }
 

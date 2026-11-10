@@ -1,7 +1,7 @@
 # Serve /mcp behind the bearer check, as an agent acting for the person, with whoami
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02, 03, 04
 Test first: yes
 Level: 3
@@ -113,3 +113,56 @@ exit 0
   `packages/shared/src/actor.ts` (`AgentIdSchema` allows the agent id "mcp/claude.ai").
 
 ## Answer
+
+Work started at `192ebae3a05893808eed80da515c61362e8a09de`; the failing tests were committed alone
+first (`7316321 test(login-mcp): 05 failing test`). At that commit `mcp.test.ts` failed with
+`Cannot find module './actor.ts'` and both `claude-flow.test.ts` tests failed with `expected 404
+to be 401` (no `/mcp` route; the SPA catch-all answered).
+
+- **Built**:
+  - `apps/server/src/mcp/route.ts` (new): `mountMcp(app, { auth, db, publicUrl })`,
+    `app.all("/mcp", toNodeHandler(requireMcpAuth(auth, handler, { resource: <publicUrl>/mcp,
+    issuer: <publicUrl>/api/auth })))`; the handler turns the claims into an actor (none → 401
+    with the same `resource_metadata` challenge) and calls `createMcpHandler(factory).fetch` with
+    `authInfo { token: "", clientId: azp, scopes, extra: { actor } }`.
+  - `apps/server/src/mcp/actor.ts` (new): `actorFromMcpClaims(claims)`.
+  - `apps/server/src/mcp/server.ts` (new): `mcpServerFactory(db)`, `McpServer` named `sky-brain`;
+    re-parses `ctx.authInfo.extra.actor` with `ActorSchema` before registering tools.
+  - `apps/server/src/mcp/whoami.ts` (new): `whoami(db, actor)` and `registerWhoami`.
+  - `apps/server/src/mcp/mcp.test.ts`, `claude-flow.test.ts` (new tests), `test-flow.ts` (new
+    shared test helper: the authorize → sign-in → consent → token flow, MCP POSTs, SSE parsing).
+  - `apps/server/src/app.ts`: `mountMcp` right after `mountAuth` when `auth` is given.
+  - `docs/PLAN.md`: section 8 (one paragraph: `/mcp`, `legacy: "stateless"`, `whoami`, MCP
+    callers are agents `mcp/<client host>` for the token's subject across their workspaces) and
+    section 9 (one sentence: `brain:*` scopes advertised, not required until write tools land).
+- **Proof** (all run after the last edit):
+  - `pnpm --filter @sky-brain/server exec vitest run src/mcp --reporter=verbose`: exit 0,
+    2 files, 11 tests passed; every one of the 11 `prints` lines appears as a `✓` line.
+  - `pnpm lint && pnpm typecheck && pnpm test`: exit 0; eslint and prettier clean, tsc clean in
+    all three packages, server 23 files / 299 tests passed, shared 2 files / 15 tests passed.
+- **Decisions**:
+  - The actor is read in the factory (`McpRequestContext.authInfo`) and closed over by the tool,
+    rather than from the tool's `ctx.http.authInfo`; it is parsed again with `ActorSchema` there
+    so a factory reached without a verified actor throws instead of serving anyone.
+  - `whoami` throws (MCP tool error) when the token's subject has no `user` row, instead of
+    answering an empty email.
+  - The no-actor 401 from `route.ts` is built by hand with the exact header `requireMcpAuth`
+    sends, so a token whose claims give no actor looks like any other refused token. Tested
+    (`sub` missing, `azp` over HTTP) inside "mcp: an MCP caller is an agent ...".
+  - Refusal tests carry a control: the same `signJwt` claims with the right `aud`/`iss`/`exp`
+    pass (`initialize` 200), so each refusal is caused by the one field changed.
+  - `test-flow.ts` is typed without `any` because the lint relaxation covers only `*.test.ts`
+    and `src/testing/**`, and `src/testing/` is outside Touches.
+- **Shortcuts taken**:
+  - `requireMcpAuth` fetches the JWKS from `<publicUrl>/api/auth/jwks` over HTTP (its default),
+    so on Vercel the function calls its own public URL to verify a token. It works wherever the
+    function can reach its own origin; if that latency or self-call becomes a problem, pass a
+    local `remoteVerify`/JWKS via `createMcpProtectedRequestHandler` instead.
+  - `whoami` orders workspaces by `created_at`; nothing depends on the order.
+- **For later tickets**:
+  - Later tools go in `mcp/server.ts`'s factory; the actor is the `actor` argument there. Write
+    tools must call `requireHuman`-style checks themselves (the actor is an agent) and require
+    `brain:write` (spec.md Decisions → Scopes), e.g. with `requireMcpAuth`'s `requiredScopes` or
+    a per-tool `scopeChallenge`.
+  - 07: `pnpm --filter @sky-brain/server exec vitest run src/mcp/claude-flow.test.ts
+    --reporter=verbose` prints the bar's line. `test-flow.ts` holds the reusable flow helpers.
