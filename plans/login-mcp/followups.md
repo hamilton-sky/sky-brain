@@ -23,3 +23,9 @@ What the run left for later: minor findings of passing reviews, the findings a l
 - 2. minor apps/server/src/auth/pages/consent.ts: when /api/auth/get-session answers 200 with a null body (no session), the page leaves the placeholder "you" and shows no status. The catch path only covers a non-2xx answer. Treat a missing session.user like the failure: set the status line and disable Allow. (pair review)
 - 3. minor apps/server/src/auth/pages/consent.ts: only the `brain:*` scopes are shown, so a request that adds offline_access (refresh tokens that outlive the visit) or profile/email reads "Access: read, write", or "your sign-in only" when there are no brain scopes. That matches the spec mock-up, so it is not a defect here. Consider saying "stays signed in" when offline_access is present. (pair review)
 - 4. minor apps/server/src/auth/oauth-flow.test.ts: 397 lines, at the 400-line limit (CLAUDE.md). Ticket 05 or a later ticket that adds a case here must split it first. One option is to move the flow helpers (authorizeAndSignIn, getCode, token, codeGrant) into src/testing/. (pair review)
+
+## 05-mcp-endpoint-whoami (left for later)
+
+- 1. minor apps/server/src/mcp/route.ts: `createMcpHandler(mcpServerFactory(o.db))` takes the SDK's default body limit of 4 MiB and up to 100 messages per JSON-RPC batch. So one authenticated POST can run up to 200 `whoami` database queries, while `/api/v1` caps bodies at 64kb. Fix: pass `maxRequestBodySize` (64kb, matching `/api/v1`) when the handler is built. (pair review)
+- 2. minor apps/server/src/mcp/whoami.ts: when the user row is missing, the memberships query still runs before the code throws "No such user." Fix: check `row` straight after the first query. (pair review)
+- 3. minor apps/server/src/mcp/actor.ts: `client.hostname.toLowerCase()` repeats work, because the URL parser already lower-cases the hostname. Fix: drop the call, or keep it and say in a comment that it is belt-and-braces. (pair review)
