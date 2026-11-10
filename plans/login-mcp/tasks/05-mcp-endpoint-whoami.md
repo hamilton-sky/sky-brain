@@ -1,7 +1,7 @@
 # Serve /mcp behind the bearer check, as an agent acting for the person, with whoami
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 02, 03, 04
 Test first: yes
 Level: 3
@@ -129,7 +129,7 @@ to be 401` (no `/mcp` route; the SPA catch-all answered).
   - `apps/server/src/mcp/server.ts` (new): `mcpServerFactory(db)`, `McpServer` named `sky-brain`;
     re-parses `ctx.authInfo.extra.actor` with `ActorSchema` before registering tools.
   - `apps/server/src/mcp/whoami.ts` (new): `whoami(db, actor)` and `registerWhoami`.
-  - `apps/server/src/mcp/mcp.test.ts`, `claude-flow.test.ts` (new tests), `test-flow.ts` (new
+  - `apps/server/src/mcp/mcp.test.ts`, `claude-flow.test.ts` (new tests), `test/flow.ts` (new
     shared test helper: the authorize → sign-in → consent → token flow, MCP POSTs, SSE parsing).
   - `apps/server/src/app.ts`: `mountMcp` right after `mountAuth` when `auth` is given.
   - `docs/PLAN.md`: section 8 (one paragraph: `/mcp`, `legacy: "stateless"`, `whoami`, MCP
@@ -151,7 +151,7 @@ to be 401` (no `/mcp` route; the SPA catch-all answered).
     (`sub` missing, `azp` over HTTP) inside "mcp: an MCP caller is an agent ...".
   - Refusal tests carry a control: the same `signJwt` claims with the right `aud`/`iss`/`exp`
     pass (`initialize` 200), so each refusal is caused by the one field changed.
-  - `test-flow.ts` is typed without `any` because the lint relaxation covers only `*.test.ts`
+  - `test/flow.ts` is typed without `any` because the lint relaxation covers only `*.test.ts`
     and `src/testing/**`, and `src/testing/` is outside Touches.
 - **Shortcuts taken**:
   - `requireMcpAuth` fetches the JWKS from `<publicUrl>/api/auth/jwks` over HTTP (its default),
@@ -165,8 +165,22 @@ to be 401` (no `/mcp` route; the SPA catch-all answered).
     `brain:write` (spec.md Decisions → Scopes), e.g. with `requireMcpAuth`'s `requiredScopes` or
     a per-tool `scopeChallenge`.
   - 07: `pnpm --filter @sky-brain/server exec vitest run src/mcp/claude-flow.test.ts
-    --reporter=verbose` prints the bar's line. `test-flow.ts` holds the reusable flow helpers.
+    --reporter=verbose` prints the bar's line. `mcp/test/flow.ts` holds the reusable flow helpers.
 
 ## Review findings (round 1, test first)
 
 no commit between base and HEAD changes only test files. Commit the failing test alone first, then the code. A test commit does not count when earlier commits already changed production files. If the test and the code are in one commit (or the test commit sits on top of code that is already there), recover: revert that commit, commit the test files alone, then restore the production files in a later commit (git checkout <the old commit> -- <paths>). Do not rewrite history.
+
+## Review fixes (round 1)
+
+- **test first**: agreed. The first test commit `7316321` also added the helper
+  `apps/server/src/mcp/test-flow.ts`, which is not a test file by the floor guard's name pattern
+  (`*.test.ts`, `test/`, ...), so it was not a test-only commit. Recovered without rewriting
+  history: a revert commit took `apps/` and `docs/` back to `192ebae`; a new
+  `test(login-mcp): 05 failing test` commit adds only `mcp.test.ts`, `claude-flow.test.ts` and the
+  helper moved to `apps/server/src/mcp/test/flow.ts` (matches `test/`; not picked up by Vitest's
+  `*.test.ts` include; still inside Touches). At that commit `vitest run src/mcp` failed: 2 files,
+  `Cannot find module './actor.ts'` and `expected 404 to be 401`. The code commit then restores the
+  production files unchanged from `0ac0c58`. Re-proved after: `vitest run src/mcp --reporter=verbose`
+  exit 0, 11/11 passed with every `prints` line; `pnpm lint && pnpm typecheck && pnpm test` exit 0
+  (server 23 files / 299 tests, shared 2 files / 15 tests).
