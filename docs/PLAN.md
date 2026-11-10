@@ -172,10 +172,6 @@ artifact summary with links) and `supersede` when it found something newer than 
 | `supersede` | propose a replacement for an entry |
 | `ask` | post a question; returns its id and any answer so far |
 
-`/mcp` serves MCP over streamable HTTP (`createMcpHandler`, `legacy: "stateless"`, so 2025-era
-clients work too); today it has one tool, `whoami`, the connection check. An MCP caller is the
-agent `mcp/<client host>` acting for the token's subject, across all of that person's workspaces.
-
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
 
@@ -194,8 +190,7 @@ Better Auth runs inside the server.
   (`cimd()` plugin), uses PKCE, and returns to `https://claude.ai/api/mcp/auth_callback`. The
   login page is the same Perminister sign-in. Access tokens are JWTs whose audience is
   `https://<host>/mcp`, checked against the server's own keys. Dynamic client registration
-  stays off unless a client we need cannot use CIMD (checked in ticket T0). The scopes
-  `brain:read` and `brain:write` are advertised but not required on `/mcp` until write tools land.
+  stays off unless a client we need cannot use CIMD (checked in ticket T0).
 - **Headless agents**: a person logs a machine in once, with the OAuth device flow. Pathly then
   calls `POST /api/v1/run-tokens` with that device credential and gets a token that lasts at
   most 30 minutes and is bound to one workspace, one project, one role and a list of verbs.

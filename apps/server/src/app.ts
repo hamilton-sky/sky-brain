@@ -6,7 +6,6 @@ import { mountAuth } from "./auth/routes.ts";
 import { sessionActorResolver } from "./auth/session-resolver.ts";
 import type { Db } from "./db/client.ts";
 import { errorHandler } from "./http/error-handler.ts";
-import { mountMcp } from "./mcp/route.ts";
 
 export interface AppOptions {
   db: Db;
@@ -36,14 +35,7 @@ export function createApp(options: AppOptions): express.Express {
   });
 
   // Before /api/v1, the /api 404, express.static and the catch-all, which would shadow it.
-  if (options.auth) {
-    mountAuth(app, options.auth.instance);
-    mountMcp(app, {
-      auth: options.auth.instance,
-      db: options.db,
-      publicUrl: options.auth.publicUrl,
-    });
-  }
+  if (options.auth) mountAuth(app, options.auth.instance);
 
   // Check order steps 1 and 2: the actor before the body, so an anonymous body is never read.
   app.use(
