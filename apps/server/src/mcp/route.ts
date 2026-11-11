@@ -8,19 +8,29 @@ import { toNodeHandler } from "better-auth/node";
 import type express from "express";
 import type { Auth } from "../auth/auth.ts";
 import type { Db } from "../db/client.ts";
+import type { RateLimiter } from "../guards/ratelimit.ts";
 import { actorFromMcpClaims } from "./actor.ts";
 import { mcpServerFactory } from "./server.ts";
 
 export interface McpRouteOptions {
   auth: Auth;
   db: Db;
+  /** The clock board tools use. Default: `() => new Date()`. */
+  now?: () => Date;
+  /** The board-write limiter the REST routes share. */
+  limiter?: RateLimiter;
   publicUrl: string;
 }
 
 export function mountMcp(app: express.Express, o: McpRouteOptions): void {
   const resource = `${o.publicUrl}/mcp`;
   // Default legacy: "stateless", so 2025-era clients are served too (spec.md Decisions).
-  const mcp = createMcpHandler(mcpServerFactory(o.db));
+  const mcp = createMcpHandler(
+    mcpServerFactory(o.db, {
+      ...(o.now ? { now: o.now } : {}),
+      ...(o.limiter ? { limiter: o.limiter } : {}),
+    }),
+  );
   const unauthorized = () =>
     new Response(
       JSON.stringify({

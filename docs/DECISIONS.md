@@ -282,3 +282,33 @@ days) is recorded as a new decision.
 **Why:** claude.ai works on it and no client has failed; D7's WorkOS fallback is for a client
 that fails.
 **Rejected:** leaving T0 open with no auth decision until every client is tried.
+
+### D20. Goals and tasks move to sky-brain; devices pull approved work
+**Chosen (2026-11-11):** the goals and task DAG of a project (tasks, dependencies, claims, file
+claims, attempts) live in sky-brain, one authority per workspace. Workers pull ready tasks and
+claim one with a 10-minute lease and a fencing number (`claim_seq`); a late report after the
+lease ran out is refused. Only a person approves a goal, and approval pins each task's text: a
+task added or changed later waits for a new approval. A device, and an MCP client, sees and
+claims only tasks of goals **its own person approved**; being the goal's `assignee` is not
+enough (shammai's choice, 2026-11-11, recommended option: "nothing runs on my machines that I
+did not see"). Agents propose goals as drafts and add tasks; they never approve. Pathly's
+device flow and run tokens (`sbd_`, `sbr_`) and the MCP board tools (`list_projects`,
+`list_goals`, `get_goal`, `propose_goal`, `add_tasks`, `next_task`, `claim_task`, `renew_task`,
+`release_task`, `report_task`) are two doors to the same routes; the MCP tools call the REST
+routers in process, so every check applies to both.
+**Supersedes D3** (tasks and task claims; FSM state, events and telemetry stay in Pathly) **and
+narrows D1 and CLAUDE.md hard rule 1**: a device may pull and run, without confirmation at the
+device, tasks from goals its own person approved in sky-brain; sky-brain still never pushes,
+starts, stops or steers anything, and never contacts a machine.
+**Numbering:** the cloud-task-board plan called this D19 (or D16 on its branch); login-mcp took
+D16 to D19 first, so it is D20.
+**Why:** shammai's ask (2026-11-01): two machines split one goal, and a crashed laptop's task
+comes back by itself when its lease runs out. D3's "one lock in one place" still holds: the
+place is now sky-brain's Postgres (a conditional update under a per-project advisory lock).
+**Rejected:**
+- Goal checkout (a machine takes a whole goal): one slow machine holds every task of it.
+- Registered runners that sky-brain sends work to: that is the cloud steering a laptop, which
+  D1 rules out.
+- A mirror with local accept (cloud proposes, each laptop confirms): a second copy of the board
+  to keep in sync, and the confirmation is the approval the person already gave in the cloud.
+- Approved-or-assigned eligibility: another editor's approval would run work on your machines.

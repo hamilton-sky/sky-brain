@@ -48,10 +48,11 @@ One Node service serves the API, the MCP endpoint, the auth routes and the web a
 origin. One origin means no cross-site cookies and no wide CORS. Layer 2 adds a websocket
 route for live editing to the same service.
 
-**What stays out of sky-brain:** running agents, code checkouts, build and test gates,
-Pathly's task list and task claims, FSM state, run events and cost telemetry. Those belong to
-Pathly, next to the code. Task claims need one lock in one place, and gates need the code;
-both are reasons they stay local.
+**What stays out of sky-brain:** running agents, code checkouts, build and test gates, FSM
+state, run events and cost telemetry. Those belong to Pathly, next to the code, because gates
+need the code. The goals and task DAG with its claims moved in (D20): sky-brain is the one lock,
+and it is pull-only. Workers ask for ready tasks and claim them; sky-brain never contacts a
+machine.
 
 ## 4. Scopes
 
@@ -79,7 +80,13 @@ sky-brain adds:
 | `features` | id, project_id, slug, name, archived_at |
 | `entries` | see below |
 | `audit_log` | seq, workspace_id, actor, action, target_id, at, details. Append-only. |
-| `devices` | id, user_id, name, created_at, last_seen_at, revoked_at |
+| `devices` | id, user_id, name, created_at, last_seen_at, revoked_at, secret_hash (the `sbd_` device token's SHA-256) |
+| `device_codes` | the device flow (RFC 8628): device_code_hash, user_code, client_name, expires_at, interval, approved_by, device_id, issued_at |
+| `run_tokens` | token_hash, device_id, workspace_id, project_id, role, verbs, expires_at (at most 30 minutes) |
+| `goals` | id, workspace_id, project_id, feature_id, title, body, executor, status (`draft` \| `approved` \| `cancelled`), assignee, approved_by, approved_at, quarantined_because, author_kind, author, on_behalf_of |
+| `tasks` | id, goal_id, title, body, lane, files, context_refs, position, status (`pending` \| `in_progress` \| `done` \| `failed` \| `blocked`), attempts, max_attempts, holder, lease_expires_at, claim_seq, text_hash, approved_hash, proof, fail_reason |
+| `task_deps` | task_id, depends_on_id (the DAG; no cycles, same goal) |
+| `task_events` | task_id, kind (`created` \| `claimed` \| `renewed` \| `released` \| `done` \| `failed` \| `reclaimed`), actor, device_id, claim_seq, at. Append-only. |
 
 ### `entries`
 
@@ -173,11 +180,44 @@ artifact summary with links) and `supersede` when it found something newer than 
 | `ask` | post a question; returns its id and any answer so far |
 
 `/mcp` serves MCP over streamable HTTP (`createMcpHandler`, `legacy: "stateless"`, so 2025-era
-clients work too); today it has one tool, `whoami`, the connection check. An MCP caller is the
+clients work too); today it has `whoami`, the connection check, and the task board tools below. An MCP caller is the
 agent `mcp/<client host>` acting for the token's subject, across all of that person's workspaces.
 
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
+
+### The task board (D20)
+
+| MCP tool | Does |
+|---|---|
+| `list_projects` | the projects of the person's workspaces |
+| `list_goals` / `get_goal` | a project's goals with task counts; one goal with its tasks |
+| `propose_goal` | a draft goal (only a person approves it) |
+| `add_tasks` | tasks with `depends_on` and `files`; a task added to an approved goal waits for approval |
+| `next_task` | the next task the person may take now in a project, or null |
+| `claim_task` / `renew_task` / `release_task` | a 10-minute lease and its `claim_seq` |
+| `report_task` | `done` with proof, or `failed` with a reason |
+
+The MCP tools call the REST routers in process with the verified MCP actor, so both doors make
+the same checks. REST routes:
+
+| Route | Who |
+|---|---|
+| `GET /api/v1/me` | anyone signed in (the web page) |
+| `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
+| `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
+| `POST /api/v1/goals/:id/tasks` | writers |
+| `POST /api/v1/goals/:id/approve`, `/cancel`, `/release` | people only |
+| `GET /api/v1/tasks/ready`, `GET /api/v1/tasks/:id` | members (a run token: its project) |
+| `POST /api/v1/tasks/:id/claim`, `/renew`, `/release`, `/done`, `/fail` | writers; `renew` to `fail` need the holder's `claim_seq` |
+| `POST /api/v1/tasks/:id/release-text` | people only |
+
+A task is ready when its goal is approved by the caller's own person and not held, its text is
+the text that was approved, every dependency is done, and it is pending (or its lease ran out).
+A claim also waits while another live lease in the project holds an overlapping file. A browser
+session's writes must send `application/json` (415 `json_required` otherwise), so a cross-site
+form cannot approve anything. The web page at `/` lists goals and tasks and has the person-only
+Approve, Cancel and Release buttons.
 
 ## 9. Auth
 
@@ -196,9 +236,14 @@ Better Auth runs inside the server.
   `https://<host>/mcp`, checked against the server's own keys. Dynamic client registration
   stays off unless a client we need cannot use CIMD (checked in ticket T0). The scopes
   `brain:read` and `brain:write` are advertised but not required on `/mcp` until write tools land.
-- **Headless agents**: a person logs a machine in once, with the OAuth device flow. Pathly then
-  calls `POST /api/v1/run-tokens` with that device credential and gets a token that lasts at
-  most 30 minutes and is bound to one workspace, one project, one role and a list of verbs.
+- **Headless agents**: a person logs a machine in once, with the OAuth device flow:
+  `POST /api/device/code`, the person approves the user code (`POST /api/v1/devices/approve`),
+  and the machine polls `POST /api/device/token` for its device token (`sbd_`). Pathly then
+  calls `POST /api/v1/run-tokens` with that device token and gets a run token (`sbr_`) that
+  lasts at most 30 minutes and is bound to one workspace, one project, one role and a list of
+  verbs: `read`, `plan` (create goals and tasks), `claim` (claim, renew, release) and `report`
+  (done, fail). A device token may only mint. `GET /api/v1/devices` lists a person's devices and
+  `POST /api/v1/devices/:id/revoke` ends one and every run token it minted.
 - **Fallback**: if Better Auth's MCP support fails the T0 test, WorkOS AuthKit becomes the OAuth
   server and the rest of the design stays the same.
 - **Dev header** (D15): sign-in is the real path; `/api/v1` knows the caller from the session
@@ -276,7 +321,12 @@ This work lives in `pathly-adapters`, not in this repo.
   force) to every prompt.
 - **Outbox:** if sky-brain cannot be reached, writes go to `pathly/outbox/<run_id>.jsonl` and are
   sent later. They are never dropped silently.
-- **Unchanged:** tasks, claims, FSM state, events and telemetry stay in Pathly.
+- **Tasks (D20):** a project linked to sky-brain (`.pathly/brain-link.json`) uses the
+  cloud board as its only task store: Pathly pulls ready tasks with a run token, claims them, renews
+  the lease while it works, and reports done with proof or failed. Unlinked projects keep
+  Pathly's local board unchanged. The client that does this is a separate plan in
+  pathly-adapters (plans/cloud-task-board/map.md § Follow-up: Pathly client).
+- **Unchanged:** FSM state, events and telemetry stay in Pathly.
 - **After the two-week test passes:** sky-brain becomes the only store for those entry kinds,
   and Pathly stops keeping them locally.
 

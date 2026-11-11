@@ -1,0 +1,267 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1b1f24;
+  --muted: #5f6b7a;
+  --line: #e1e5ea;
+  --accent: #2f5bd3;
+  --accent-text: #ffffff;
+  --danger: #b42318;
+  --warn-bg: #fff6e0;
+  --warn-text: #7a4b00;
+  --pending: #eef1f5;
+  --running: #e3ecff;
+  --done: #e3f5e8;
+  --failed: #fde8e6;
+  --blocked: #f3e8ff;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --surface: #1a1f25;
+    --text: #e8ebef;
+    --muted: #98a2b0;
+    --line: #2c333c;
+    --accent: #6b8cff;
+    --accent-text: #0d1117;
+    --danger: #ff7b6e;
+    --warn-bg: #3a2e12;
+    --warn-text: #f5d38a;
+    --pending: #252b33;
+    --running: #1f2f55;
+    --done: #193424;
+    --failed: #45201c;
+    --blocked: #34224d;
+    color-scheme: dark;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    15px/1.5 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+.page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.top h1 {
+  font-size: 20px;
+  margin: 0;
+}
+.who {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.who .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+h2 {
+  font-size: 17px;
+  margin: 0 0 8px;
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 13px;
+}
+.error {
+  color: var(--danger);
+}
+.warn {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.center {
+  text-align: center;
+}
+.toolbar,
+.section-head,
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.toolbar {
+  margin-bottom: 16px;
+}
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-head {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+}
+.button {
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.button.danger {
+  color: var(--danger);
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.goals,
+.tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.goal {
+  padding: 0;
+}
+.goal-cancelled {
+  opacity: 0.6;
+}
+.goal-head {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+}
+.goal-title {
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.goal-body {
+  padding: 0 16px 14px;
+  border-top: 1px solid var(--line);
+}
+.body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pill,
+.badge {
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  background: var(--pending);
+  white-space: nowrap;
+}
+.badge {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+.badge-approved {
+  background: var(--done);
+}
+.badge-draft {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+.badge-held {
+  background: var(--failed);
+}
+.status-in_progress {
+  background: var(--running);
+}
+.status-done {
+  background: var(--done);
+}
+.status-failed {
+  background: var(--failed);
+}
+.status-blocked {
+  background: var(--blocked);
+}
+.task {
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+.task-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.task-title {
+  font-weight: 500;
+}
+.task p {
+  margin: 4px 0;
+}

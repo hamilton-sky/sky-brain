@@ -12,6 +12,7 @@ Times are rough estimates for one person building with Claude.
 | Layer | What you get | Rough time |
 |---|---|---|
 | 1. Brain core | Google sign-in, projects, typed entries, MCP connector, a simple web page, live on Render | 2–3 weeks |
+| 1b. Task board | Goals and a task DAG in the cloud: agents propose, you approve on the web page, devices and MCP clients pull and claim | 1–2 weeks |
 | Two-week test | Use it every day; decide go or stop | 2 weeks |
 | 2. Pages | Block editor, live co-editing, comments, history; agents read and propose edits | 3–4 weeks |
 | 3. Views and templates | Table, kanban and calendar views; saved views; templates | 2–3 weeks |
@@ -48,12 +49,32 @@ between machines.
 
 Tickets: [layer-1/TICKETS.md](layer-1/TICKETS.md).
 
+## Layer 1b: Task board
+
+**Goal:** one board of goals and tasks that every machine and agent works from (D20).
+
+**Ships:**
+- Goals (draft, approved, cancelled) and a task DAG with dependencies and file lists, per project.
+- Pull-only work: ready list, a 10-minute lease with a fencing number, renew, release, done with
+  proof, failed with retries; a failed task's dependents are blocked.
+- Device login and short-lived run tokens for Pathly; MCP board tools for claude.ai, the phone
+  app and Claude Code.
+- The web board page: projects, goals, tasks, and the person-only Approve.
+
+**Done when:**
+- An agent proposes a goal over MCP, you approve it from your phone, and a worker on another
+  machine claims and finishes its first task.
+- Two workers racing for one task: exactly one wins (tested on real Postgres).
+
+**Retires:** Pathly's local task board for projects linked to sky-brain.
+
 ## The two-week test (between Layer 1 and Layer 2)
 
 Use sky-brain every day on at least two machines, the phone and cloud sessions.
 
 - **Go** if at least 30% of reads come from a different machine or tool than the one that
   wrote the entry, and at least 10 answers given from the phone unblocked work.
+- **Go** also needs this: at least one goal a week is run from the cloud board.
 - **Stop and rethink** if fewer than 15% of reads cross machines or tools, or if you catch
   yourself pasting decisions into `CLAUDE.md` instead.
 

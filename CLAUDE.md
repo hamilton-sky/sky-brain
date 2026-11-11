@@ -11,7 +11,9 @@ before you change anything; it is the contract for the current design.
 These come from the security review behind the plan. Do not weaken them.
 
 1. **Context, not execution.** No endpoint may start, stop or steer a run, a process or a
-   command anywhere. sky-brain sends data, never commands.
+   command anywhere. sky-brain sends data, never commands. A device may pull, and
+   run without confirmation at the device, tasks from goals its own person approved in
+   sky-brain (D20); sky-brain never pushes them.
 2. **Identity comes from the token or session only.** Never trust an author, role or user id
    sent in a request body.
 3. **Agents cannot write rules, approve, reject, release or delete.** Agents cannot write to
@@ -51,6 +53,8 @@ pnpm install --frozen-lockfile   install exactly what pnpm-lock.yaml pins
 pnpm lint                        ESLint and prettier --check
 pnpm typecheck                   tsc --noEmit in every package
 pnpm test                        Vitest in every package
+pnpm health                      RepNix: typecheck, lint, tests, dead code, duplication
+                                 (new findings only; existing ones are in .repnix-baseline.json)
 pnpm build                       build the web shell (apps/web/dist)
 pnpm dev                         build the web shell, then run the server on one port
 node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it
