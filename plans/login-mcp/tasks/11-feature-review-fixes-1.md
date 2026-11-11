@@ -1,7 +1,7 @@
 # Fix the findings of the feature review, round 1
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 2
@@ -71,9 +71,11 @@ Started at commit `ad88c139bf3e51a37f2ff327b5453a383d7be81a`.
 - `apps/server/src/config.ts`: the client id/secret production errors now read
   `PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set when NODE_ENV is
   production; refusing to start`; `fail` lost its now unused `hint` parameter.
-- `apps/server/src/config.test.ts`: the refusal test matches the whole new message (both names).
-- `plans/login-mcp/followups.md`: the four repeated deferred `07-prove-the-bar` curl entries removed
-  (finding 1 asks for this; the checks are now proven).
+- `apps/server/src/config.test.ts`: the refusal test matches the whole new message (both names),
+  and keeps its earlier `toContain(\`or the older ${oldName}\`)` assertion.
+- `plans/login-mcp/followups.md`: unchanged (see Review fixes). The deferred `07-prove-the-bar`
+  curl entries there are now proven by shammai's run below; the flow, which owns that file, can
+  drop them.
 
 **Proof**
 
@@ -97,7 +99,7 @@ Started at commit `ad88c139bf3e51a37f2ff327b5453a383d7be81a`.
 - Finding 4 (minor): temporary production-branch note in CONNECT.md § Verified (the finding's
   second option); PLAN.md unchanged, since `main` stays the intended state.
 - Finding 5 (minor): `pnpm --filter @sky-brain/server exec vitest run src/config.test.ts`:
-  `Tests 16 passed (16)`. Acceptance `pnpm exec vitest run --root plans/login-mcp/acceptance`:
+  `Tests 16 passed (16)`. (re-run after the round 1 fixes: `Tests 16 passed (16)` again.) Acceptance `pnpm exec vitest run --root plans/login-mcp/acceptance`:
   `Tests 83 passed (83)` (it matches the names only). `pnpm lint` exit 0, `pnpm typecheck` exit 0.
 - commands.md's Test command: left to the conductor's gate.
 
@@ -108,6 +110,19 @@ Started at commit `ad88c139bf3e51a37f2ff327b5453a383d7be81a`.
   this is manual work, not code. If the flow wants a ticket for it, the planner adds one.
 - The deploy check is recorded in CONNECT.md and D19 (not in ticket 07, which I may not edit).
 - No commit hash is given for the deploy: shammai said "the latest push", and I cannot see Vercel.
+
+**Review fixes** (round 1, floor guard)
+
+- "1 assertion line(s) removed": I had folded `expect(message, newName).toContain(\`or the older
+  ${oldName}\`)` into the stricter anchored regex. Restored the line next to the regex, so no
+  assertion is removed and the test is stricter than before. `git diff ad88c13 --
+  apps/server/src/config.test.ts` now shows only the regex change. config.test.ts: `Tests 16
+  passed (16)`; acceptance: `Tests 83 passed (83)`; `pnpm lint` exit 0; `pnpm typecheck` exit 0.
+- "ticket-edit: plans/login-mcp/followups.md": restored the file to its state at ad88c13
+  (`git checkout ad88c13 -- plans/login-mcp/followups.md`; `git diff ad88c13 --stat` no longer
+  lists it). Feature finding 1 asked to remove the repeated deferred entries, but a builder may
+  not edit that file and the ticket has no `Floor:` line for it. The proof that replaces them is
+  in Proof above, CONNECT.md § Verified and D19; removing the stale entries is left to the flow.
 
 **Shortcuts taken**: none.
 
