@@ -40,32 +40,17 @@ What the run left for later: minor findings of passing reviews, the findings a l
 - 1. minor /home/user/sky-brain/apps/server/src/config.ts: the id and the secret fall back separately. If PERMINISTER_APP_CLIENT_ID and the old PERMINISTER_CLIENT_SECRET are set (or the other way round), the server builds an id/secret pair from two different clients and still passes checkProductionAuth. The fault only shows up later as a failed token exchange with Perminister, not at startup. This is not a security hole, because whoever sets the env vars already controls the deployment. Fix: take both values from the new names or both from the old names. If they are mixed, fail at startup, or add a test that records the current behaviour. (pair review)
 - 2. minor /home/user/sky-brain/apps/server/src/config.ts: a value of only spaces (e.g. PERMINISTER_APP_CLIENT_ID=" ") counts as set, so it wins over the old name and passes the production check. This is not new: the other settings already worked this way. Fix: trim the values before the || chain if this matters. (pair review)
 
-## 07-prove-the-bar (left for later)
-
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
-
 ## 09-acceptance-fixes-1 (left for later)
 
 - 1. minor apps/server/src/auth/routes.ts: the 404 body `{ error: { code: "not_found", message: "No such API route." } }` is copied from the `/api` 404 handler in `apps/server/src/app.ts:65` - move it into one small shared helper (or constant) that both use. (pair review)
 - 2. minor apps/server/src/auth/discovery.test.ts: the test now hits the new 404 route, not Better Auth's own handler. If someone turned dynamic registration back on in the auth config, this test would still pass; only the metadata check would catch it - add a line that checks Better Auth still refuses registration underneath, or a comment saying the 404 route is the guard. (pair review)
-
-## 07-prove-the-bar (left for later)
-
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
-
-## 07-prove-the-bar (left for later)
-
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
 
 ## 10-acceptance-fixes-2 (left for later)
 
 - 1. minor apps/server/src/auth/routes.ts: the new guard on GET /api/auth/callback/perminister sends every callback with no state to `error=state_mismatch`. That includes a Perminister error callback with no state, such as `?error=access_denied`, so the person sees "state mismatch" instead of the real refusal. Still no session and no security effect. Fix: if you want the real reason shown, let a stateless callback that carries `error=` through, or pass its value along. (pair review)
 - 2. minor apps/server/src/auth/routes.ts: the redirect target `/api/auth/error` is hardcoded. It matches Better Auth's default error URL today, but it would drift if an `errorURL` is ever configured. Fix: take it from the auth config, or note the coupling in a comment. (pair review)
 
-## 07-prove-the-bar (left for later)
+## 11-feature-review-fixes-1 (left for later)
 
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
+- 1. T0 clients not yet tried (D18, D19), owner shammai: the Claude phone app, Claude Code CLI, a Perminister account without `sky-brain` access, cold-start timing of the first discovery and token calls, and Codex CLI with DCR. Record each in `docs/CONNECT.md` § Verified and the final T0 result (and shammai's answer on whether Better Auth stays) as a new D entry.
+- 2. Vercel's production branch is `claude/login-mcp` for the T0 test (D18); switch it back to `main` once the branch is merged, and drop the note in `docs/CONNECT.md` § Verified.

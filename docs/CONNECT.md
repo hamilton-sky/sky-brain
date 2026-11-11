@@ -113,11 +113,19 @@ Without all three settings the server still starts, but there is no Perminister 
   the `sky-brain` product, or their account has no email. Give them access in Perminister and
   have them sign in again.
 - A function that will not start names the missing or wrong setting in Vercel's logs, for
-  example `PERMINISTER_APP_CLIENT_ID must be set when NODE_ENV is production; refusing to start (or the older PERMINISTER_CLIENT_ID)`.
+  example `PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set when NODE_ENV is production; refusing to start`.
 
 ## Verified
 
 - claude.ai whoami: returned s…@gmail.com on 2026-11-11
+  The address is masked on purpose, because this repo is public: shammai confirmed on 2026-11-11
+  that it is his and chose the masked form.
+- Deploy checks, run by shammai from his own machine on 2026-11-11 against production built from
+  the latest `claude/login-mcp` push: `POST /mcp` answered `status 401`, and
+  `/.well-known/oauth-protected-resource/mcp` named the resource `https://sky-brain.vercel.app/mcp`
+  with authorization server `https://sky-brain.vercel.app/api/auth`.
+- Production branch: for this test Vercel's production branch is `claude/login-mcp`, not `main`
+  as [PLAN.md](PLAN.md) §12 says. Switch it back to `main` once the branch is merged.
 - Claude phone app: not yet tested
 - Claude Code CLI: not yet tested
 - Perminister account without `sky-brain` access: not yet tested
@@ -127,3 +135,5 @@ Without all three settings the server still starts, but there is no Perminister 
   `/.well-known` paths returned the web page); a production redeploy from the new branch fixed it.
   The connector also asks for a Name (`sky-brain`).
 - Codex CLI and DCR: not yet tested
+- Owner of the untested items above: shammai (they need his phone, his Claude Code and a second
+  Perminister account); recorded in `plans/login-mcp/followups.md` and D19.

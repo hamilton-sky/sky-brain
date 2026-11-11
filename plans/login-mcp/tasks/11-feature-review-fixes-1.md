@@ -1,7 +1,7 @@
 # Fix the findings of the feature review, round 1
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 2
@@ -57,3 +57,56 @@ The review of the whole feature (from commit 192ebae3a05893808eed80da515c61362e8
 > REVIEW: FAIL
 
 ## Answer
+
+**Built**
+- `apps/server/src/config.ts`: `fail` takes one message; the client id and secret errors now read
+  `PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set when NODE_ENV is production; refusing to start` (and the same for the secret).
+- `apps/server/src/config.test.ts`: the production test matches the whole new message (both
+  names, anchored at both ends) instead of a prefix plus a `toContain`.
+- `docs/CONNECT.md`: Troubleshooting example updated; § Verified gains the masked-email note, the
+  deploy check results, the temporary production-branch note and the owner of the untested items.
+- `docs/DECISIONS.md`: new D19 (D18 untouched, the file is append-only).
+- `plans/login-mcp/followups.md`: the four repeated `07-prove-the-bar` deferred-curl sections
+  removed; a `11-feature-review-fixes-1` section added with the T0 client follow-up (owner
+  shammai) and the production-branch switch back.
+
+**Proof**
+- Finding 1 (major, deploy): fixed with shammai's input (2026-11-11 18:15 UTC). He ran both curls
+  from his own machine against https://sky-brain.vercel.app, production built from the latest
+  `claude/login-mcp` push (this container cannot reach `*.vercel.app`, learnings 07):
+  ```
+  $ curl -sS -o /dev/null -w 'status %{http_code}' -X POST https://sky-brain.vercel.app/mcp
+  status 401
+  $ curl -fsS https://sky-brain.vercel.app/.well-known/oauth-protected-resource/mcp
+  {"resource":"https://sky-brain.vercel.app/mcp","authorization_servers":["https://sky-brain.vercel.app/api/auth"],"bearer_methods_supported":["header"],"dpop_signing_alg_values_supported":["EdDSA","ES256","ES512","PS256","RS256"],"scopes_supported":["brain:read","brain:write"]}
+  ```
+  Both match ticket 07 bullet 2 (`status 401`; `/mcp` in the output). Recorded in CONNECT.md
+  § Verified and D19; the deferred entries are gone from followups.md (`grep -c 07-prove
+  followups.md` prints 0). I did not run these curls myself; the output is shammai's.
+- Finding 2 (major, masked email): shammai chose the masked form `s…@gmail.com` on a decision card
+  (the repo is public) and confirmed the address is his. CONNECT.md § Verified now says the mask is
+  on purpose and that shammai confirmed it. The full address is written nowhere (a grep of the diff
+  for `<chars>@gmail` finds nothing).
+- Finding 3 (minor): shammai has not answered yet. D19 records Better Auth as staying
+  provisionally, pending his answer; the untested clients (phone app, Claude Code CLI, account
+  without access, cold start, Codex/DCR) have an owner, shammai, in followups.md and CONNECT.md.
+- Finding 4 (minor): took the second option, a note in CONNECT.md § Verified that Vercel's
+  production branch is `claude/login-mcp` for the test and must go back to `main` after the merge
+  (also a followups.md item). PLAN.md is unchanged, since `main` is still the intended state.
+- Finding 5 (minor): fixed as above. `vitest run src/config.test.ts`: 16 passed.
+- `pnpm test` (commands.md Test): exit 0, server 301 passed (23 files), shared 15 passed.
+  `pnpm lint` exit 0, `pnpm typecheck` exit 0, Acceptance 83 of 83 passed.
+
+**Decisions**
+- The untested T0 clients get their owner through a followups.md entry and D19, not a new ticket
+  file: creating tickets is the planner's job and would reopen the feature.
+- D19 "Qualifies" D18 rather than "Supersedes" it, since the outcome is not final.
+
+**Shortcuts taken:** none.
+
+**Review fixes:** all five findings handled as in Proof. None judged wrong.
+
+**For later tickets**
+- When shammai answers on Better Auth or the other clients are tried, add a new D entry (D20);
+  do not edit D18 or D19. Switch Vercel's production branch back to `main` after the merge and
+  drop the note in CONNECT.md § Verified.

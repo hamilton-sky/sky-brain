@@ -265,3 +265,21 @@ one-function change. A board per person needs no schema change.
 **Chosen:** Better Auth stays (D7). No client failed, so the WorkOS AuthKit fallback is not
 taken. T0's bar (claude.ai, the phone app and Claude Code all pass) is met for claude.ai only; the
 other clients are still to be tried.
+
+### D19. Better Auth stays provisionally, until the phone app and Claude Code are tried
+**Chosen:** Better Auth stays for now (D7, D18), on the claude.ai result alone. This is
+provisional and pending shammai's answer: T0's bar asks for claude.ai, the phone app and Claude
+Code to pass, and only claude.ai has been tried.
+**Why:**
+- claude.ai, the main client, passed end to end, and on 2026-11-11 shammai checked the deploy
+  from his own machine against production built from the latest `claude/login-mcp` push:
+  `POST /mcp` answers 401 and the protected-resource metadata names
+  `https://sky-brain.vercel.app/mcp`.
+- No client has failed, so nothing points to the WorkOS AuthKit fallback yet.
+**Open:**
+- shammai has not yet answered whether Better Auth stays provisionally or T0 stays open.
+- Still to try, owned by shammai (follow-up in `plans/login-mcp/followups.md`): the Claude phone
+  app, Claude Code CLI, a Perminister account without `sky-brain` access, cold-start timing of
+  the first discovery and token calls, and Codex CLI with DCR. `docs/CONNECT.md` § Verified keeps
+  the list. The final T0 result goes in a new D entry.
+**Qualifies:** D18's "Chosen" line: Better Auth stays provisionally, not on T0's full bar.
