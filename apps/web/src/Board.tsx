@@ -1,6 +1,7 @@
 // One project's goals: newest first, each with its task counts; open one to see its tasks and
 // approve, cancel or release it. Only a person can do those, so they live here, not in MCP.
 import { useCallback, useEffect, useState } from "react";
+import { FormFooter } from "./FormFooter.tsx";
 import {
   api,
   type Goal,
@@ -328,19 +329,12 @@ function NewGoal(props: {
       <p className="muted small">
         It starts as a draft. Add tasks with Claude, then approve it here.
       </p>
-      {error && <p className="error">{error}</p>}
-      <div className="row">
-        <button className="button primary" disabled={busy || !title.trim()}>
-          Create draft
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => props.onDone(false)}
-        >
-          Cancel
-        </button>
-      </div>
+      <FormFooter
+        error={error}
+        submitLabel="Create draft"
+        disabled={busy || !title.trim()}
+        onCancel={() => props.onDone(false)}
+      />
     </form>
   );
 }

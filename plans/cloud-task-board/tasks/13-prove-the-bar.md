@@ -1,7 +1,7 @@
 # Prove the round-one bar end to end
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 01, 02, 04, 05, 06, 07, 08, 10
 Test first: no
 Level: 1
@@ -58,3 +58,28 @@ needs a Postgres reachable at TEST_DATABASE_URL
 - map.md § Destination (the bar); spec.md § Goal and the bar
 
 ## Answer
+
+Resolved 2026-11-11 on `claude/cloud-task-board-v1` (main b3c9965 plus this plan, merged).
+
+Commands run, all exit 0:
+
+- `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test`: shared 30 tests,
+  server 515 tests (after the MCP board tools, projects routes and D20).
+- `pnpm --filter @sky-brain/server exec vitest run src/tasks src/run-tokens src/devices src/mcp
+  src/projects`: 196 passed.
+- `pnpm exec vitest run --root plans/cloud-task-board/acceptance`: 102 passed.
+- `pnpm --filter @sky-brain/server test:pg` against a local Postgres 16 (`TEST_DATABASE_URL`):
+  3 passed (the claim race). CI runs it on Postgres 18.
+- Upgrade path: main's migrations (0000 to 0002) then this branch's (0003 board tables, 0004
+  task_events append-only triggers) applied to one Postgres database with `migrate-cli.ts`, as
+  production will; both triggers present.
+- `pnpm health` (RepNix, added in this session): no new findings.
+
+Bar properties 1 to 8 are proved by the files the ticket lists; property 6 (eligibility) now
+reads "approved by the caller's person" (D20). `mcp/board-tools.test.ts` adds the same story
+over MCP with a real OAuth token: draft by the agent, refusal of agent approval, approval by the
+person, next, claim, done with proof, and another person's project refused.
+
+Deferred: the live half of the brief's bar (Pathly runs a three-task goal while the phone
+watches) belongs to the pathly-adapters follow-up plan and round two (map.md § Follow-up: Pathly
+client, R2-10).

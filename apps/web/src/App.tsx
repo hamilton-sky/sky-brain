@@ -1,5 +1,6 @@
 // The board page: who is signed in, a project picker, and the project's goals.
 import { useCallback, useEffect, useState } from "react";
+import { FormFooter } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Board } from "./Board.tsx";
 
@@ -213,19 +214,12 @@ function NewProject(props: {
           onChange={(e) => setName(e.target.value)}
         />
       </label>
-      {error && <p className="error">{error}</p>}
-      <div className="row">
-        <button className="button primary" disabled={busy || !name.trim()}>
-          Create
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => props.onDone(null)}
-        >
-          Cancel
-        </button>
-      </div>
+      <FormFooter
+        error={error}
+        submitLabel="Create"
+        disabled={busy || !name.trim()}
+        onCancel={() => props.onDone(null)}
+      />
     </form>
   );
 }

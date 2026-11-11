@@ -20,7 +20,7 @@ type ToolResult = {
 };
 
 /** A 2xx answer as the tool's result; anything else as a tool error carrying the API error. */
-export function toToolResult(res: BoardResponse): ToolResult {
+function toToolResult(res: BoardResponse): ToolResult {
   const ok = res.status >= 200 && res.status < 300;
   const body =
     res.body !== null && typeof res.body === "object"

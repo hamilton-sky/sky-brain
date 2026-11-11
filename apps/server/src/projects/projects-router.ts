@@ -23,7 +23,7 @@ import { boardWriteLimit } from "../tasks/goals-router.ts";
 
 type ProjectRow = typeof projects.$inferSelect;
 
-export function toWireProject(row: ProjectRow): Project {
+function toWireProject(row: ProjectRow): Project {
   return {
     id: row.id,
     workspace_id: row.workspaceId,
@@ -34,7 +34,7 @@ export function toWireProject(row: ProjectRow): Project {
 }
 
 /** Every project in the workspaces `person` belongs to, optionally one workspace only. */
-export async function listProjects(
+async function listProjects(
   db: DbOrTx,
   person: string,
   workspaceId?: string,

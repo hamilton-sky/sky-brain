@@ -1,7 +1,7 @@
 # Record the new decision, and update PLAN and ROADMAP for the task board
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 3
@@ -101,3 +101,15 @@ $ pnpm lint
 - `docs/DECISIONS.md` D1, D3, D8; `docs/PLAN.md`; `docs/ROADMAP.md`
 
 ## Answer
+
+Resolved 2026-11-11 in the task board v1 session (branch `claude/cloud-task-board-v1`; the
+first build of this ticket was lost with its container and never pushed, so this is a rebuild).
+
+- The decision is **D20**: login-mcp took D16 to D19 first. It also records shammai's answer to
+  the open question from the first build: a device (and an MCP client) runs only goals its own
+  person approved; the assignee path is dropped from `eligibleTask`, with
+  `tasks/ready-claim.test.ts` and `acceptance/claim.test.ts` updated.
+- `docs/PLAN.md` § 3, § 5, § 8 (new "The task board" subsection, with the MCP board tools that
+  were round two here and landed in this session), § 9 and § 13; `docs/ROADMAP.md` row, "Layer 1b:
+  Task board" section and the two-week test line; `CLAUDE.md` hard rule 1 as approved, with D20.
+- Every grep in the check block prints its match, and `git diff docs/DECISIONS.md` only adds lines.
