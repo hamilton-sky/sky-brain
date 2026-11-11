@@ -119,7 +119,7 @@ Without all three settings the server still starts, but there is no Perminister 
 
 - claude.ai whoami: returned s…@gmail.com on 2026-11-11
   The address is masked on purpose, at shammai's choice (the repo is public).
-- Claude phone app: not yet tested
+- Claude phone app: whoami returned the same masked address and one owner workspace on 2026-11-11 (after production moved to `main`)
 - Claude Code CLI: not yet tested
 - Perminister account without `sky-brain` access: not yet tested
 - Cold-start timing of the first discovery and token calls: not yet tested
