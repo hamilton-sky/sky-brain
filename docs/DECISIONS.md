@@ -238,3 +238,30 @@ one-function change. A board per person needs no schema change.
 - The `ALLOWED_EMAILS` allowlist with `BOOTSTRAP_OWNER_EMAIL`: a second list of people to keep
   in step with Perminister.
 - Google sign-in: shammai replaced it with Perminister.
+
+### D18. T0 result: claude.ai connects through Better Auth; other clients not yet tested
+**Result (2026-11-11):**
+- claude.ai passed. shammai added the custom connector (URL `https://sky-brain.vercel.app/mcp`,
+  no client id or secret), signed in with Perminister, allowed consent, and `whoami` returned his
+  email and one workspace with role `owner`.
+- The deploy was branch `claude/login-mcp` at commit 0cd813d, with Vercel's production branch
+  switched to it for the test. Discovery at
+  `/.well-known/oauth-authorization-server/api/auth` answered with issuer
+  `https://sky-brain.vercel.app/api/auth` and `client_id_metadata_document_supported: true`.
+- Not yet tested: the Claude phone app, Claude Code CLI, a Perminister account without
+  `sky-brain` access, cold-start timing, and Codex CLI with DCR. `docs/CONNECT.md` § Verified
+  keeps the list.
+**Setup tested:**
+- Sign-in with Perminister through Better Auth's `genericOAuth()`, users keyed by Perminister
+  `subjectId` (D17).
+- Better Auth 1.7.15 with `@better-auth/mcp` and `@better-auth/cimd` 1.7.15, pinned exactly.
+- Issuer `<PUBLIC_URL>/api/auth`; resource `<PUBLIC_URL>/mcp`.
+- CIMD on, with the resolve-once transport (`fetchClientMetadataResource` from
+  `@better-auth/cimd/node`); DCR off.
+- MCP callers are agents `mcp/<client host>` acting for the token's person across their
+  workspaces.
+- `createMcpHandler` with its default `legacy: "stateless"`; scopes are advertised, not yet
+  required.
+**Chosen:** Better Auth stays (D7). No client failed, so the WorkOS AuthKit fallback is not
+taken. T0's bar (claude.ai, the phone app and Claude Code all pass) is met for claude.ai only; the
+other clients are still to be tried.

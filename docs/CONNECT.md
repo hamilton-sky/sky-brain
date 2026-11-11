@@ -117,4 +117,13 @@ Without all three settings the server still starts, but there is no Perminister 
 
 ## Verified
 
-- claude.ai whoami: not yet verified
+- claude.ai whoami: returned s…@gmail.com on 2026-11-11
+- Claude phone app: not yet tested
+- Claude Code CLI: not yet tested
+- Perminister account without `sky-brain` access: not yet tested
+- Cold-start timing of the first discovery and token calls: not yet tested
+- Steps that differed from this doc: the first claude.ai connect failed with "Couldn't register
+  with sky-brain's sign-in service" because an older build was still serving production (the
+  `/.well-known` paths returned the web page); a production redeploy from the new branch fixed it.
+  The connector also asks for a Name (`sky-brain`).
+- Codex CLI and DCR: not yet tested
