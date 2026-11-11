@@ -154,6 +154,7 @@ describe("readConfig auth settings", () => {
         expect(message, newName).toMatch(
           new RegExp(`^${newName} must be set when NODE_ENV is production`),
         );
+        expect(message, newName).toContain(`or the older ${oldName}`);
         expect(message).not.toContain("test-client-secret");
       }
     }

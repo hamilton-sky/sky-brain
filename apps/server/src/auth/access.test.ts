@@ -196,6 +196,17 @@ describe("sign-in refused", () => {
     expect(setsSession(forgedEnd)).toBe(false);
     expect(await userCount("forged@example.com")).toBe(0);
 
+    // No state at all: the same error, not Better Auth's `state_not_found`.
+    for (const query of ["", "&state="]) {
+      const stateless = await forger.request(
+        `/auth/perminister/callback?code=${encodeURIComponent(code)}${query}`,
+      );
+      const statelessEnd = await forger.request(stateless.next!);
+      expect(statelessEnd.next).toMatch(/[?&]error=state_mismatch/);
+      expect(setsSession(statelessEnd)).toBe(false);
+    }
+    expect(await userCount("forged@example.com")).toBe(0);
+
     // A code that was already exchanged, sent with the state of a fresh sign-in.
     const used = await signIn({
       subjectId: "subject-reused",

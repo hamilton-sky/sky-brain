@@ -13,6 +13,7 @@ import {
   type PerministerAccount,
 } from "./fake-perminister.ts";
 import type { TestResponse } from "./harness.ts";
+import { navigate } from "./navigate.ts";
 
 export type { PerministerAccount };
 
@@ -93,11 +94,13 @@ function browserFor(url: string): Browser {
         );
       }
       headers.set("origin", url);
-      const res = await fetch(url + path, {
-        ...init,
-        headers,
-        redirect: "manual",
-      });
+      // A GET is the person's browser following a link or redirect (a navigation); anything
+      // else is the page script's fetch.
+      const method = (init.method ?? "GET").toUpperCase();
+      const res =
+        method === "GET" && init.body == null
+          ? await navigate(url + path, headers)
+          : await fetch(url + path, { ...init, headers, redirect: "manual" });
       for (const cookie of res.headers.getSetCookie()) {
         const [pair = "", ...attrs] = cookie.split(";");
         const at = pair.indexOf("=");

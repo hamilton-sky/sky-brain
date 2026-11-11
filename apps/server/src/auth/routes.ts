@@ -42,6 +42,16 @@ export function mountAuth(app: express.Express, auth: Auth): void {
       .status(404)
       .json({ error: { code: "not_found", message: "No such API route." } });
   });
+  // A callback with no state is a forged one too (spec.md Edge cases): Better Auth would answer
+  // `state_not_found`, the spec asks for its error page with `state_mismatch` and no session.
+  app.get("/api/auth/callback/perminister", (req, res, next) => {
+    const { state } = req.query;
+    if (typeof state === "string" && state !== "") {
+      next();
+      return;
+    }
+    res.redirect(302, "/api/auth/error?error=state_mismatch");
+  });
   app.all("/api/auth/*splat", handler);
   // Better Auth's mcp() and oauth provider answer these absolute paths in its own handler.
   app.get("/.well-known/oauth-protected-resource", handler);

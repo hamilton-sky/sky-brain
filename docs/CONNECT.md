@@ -113,7 +113,7 @@ Without all three settings the server still starts, but there is no Perminister 
   the `sky-brain` product, or their account has no email. Give them access in Perminister and
   have them sign in again.
 - A function that will not start names the missing or wrong setting in Vercel's logs, for
-  example `PERMINISTER_APP_CLIENT_ID must be set when NODE_ENV is production; refusing to start`.
+  example `PERMINISTER_APP_CLIENT_ID must be set when NODE_ENV is production; refusing to start (or the older PERMINISTER_CLIENT_ID)`.
 
 ## Verified
 

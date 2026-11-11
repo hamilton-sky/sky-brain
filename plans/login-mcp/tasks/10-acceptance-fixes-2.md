@@ -1,7 +1,7 @@
 # Make the acceptance tests pass, round 2
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 2
@@ -83,3 +83,55 @@ If you are sure a test asks for something spec.md does not say, do not work arou
        Duration  7.44s (tests 82%, import 17%, transform 1%)
 
 ## Answer
+
+Work started at c7d18928e0bb0ad4c322f64440517097839c839b.
+
+**Built**
+- `apps/server/src/testing/navigate.ts` (new): a GET over `node:http` that sends
+  `Sec-Fetch-Mode: navigate`. Node's fetch (undici) always sends `Sec-Fetch-Mode: cors` and
+  overwrites any value a caller sets, so Better Auth's oauth provider took every harness request
+  for a page script's fetch: the Perminister callback that resumes an OAuth authorization answered
+  `302 Location: /` with a body `{redirect: true, url: "/consent?..."}`, and `next` was `/`. A real
+  browser's navigation gets `302 Location: /consent?...` (as in shammai's claude.ai connect).
+- `apps/server/src/testing/auth-harness.ts`: `Browser.request` sends a body-less GET through
+  `navigate` (a link or redirect), everything else through fetch as before (the page scripts).
+- `apps/server/src/auth/routes.ts`: `GET /api/auth/callback/perminister` with no or an empty
+  `state` redirects 302 to `/api/auth/error?error=state_mismatch` before Better Auth, which would
+  answer `state_not_found` (spec.md Edge cases: "forged or missing `state`" gives `state_mismatch`).
+- `apps/server/src/config.ts`: the two client errors end with `(or the older PERMINISTER_CLIENT_ID)`
+  / `(or the older PERMINISTER_CLIENT_SECRET)`. They still start with ticket 08's
+  `PERMINISTER_APP_CLIENT_* must be set when NODE_ENV is production; refusing to start`, and now
+  also name spec.md's names, which the four acceptance config tests ask for.
+- `apps/server/src/auth/access.test.ts`: a callback with no state and with `state=` ends at
+  `error=state_mismatch` with no session and no user (refused case; the forged-state case beside it
+  already existed).
+- `apps/server/src/config.test.ts`: the refused-production test also checks the fallback name.
+- `docs/CONNECT.md`: the troubleshooting example quotes the full new message.
+
+**Proof**
+- `pnpm exec vitest run --root plans/login-mcp/acceptance`: `Test Files 6 passed (6)`,
+  `Tests 83 passed (83)`, exit 0 (before: 24 failed). No test was ruled wrong; no Ask.
+- `pnpm test`: shared `15 passed`, server `Test Files 23 passed (23)`, `Tests 301 passed (301)`,
+  exit 0. Also `pnpm lint` exit 0, `pnpm typecheck` exit 0, and ticket 08's greps still print
+  `errors-ok` and `trouble-ok`.
+
+**Decisions**
+- Fixed the harness, not the server, for the consent redirect: production already answers a
+  navigation with the right 302 (claude.ai connect worked on 2026-11-11); the harness could not
+  send what a browser sends. spec.md says the harness plays the browser and that step 3's `next` is
+  `/consent?...`.
+- Config errors name both names rather than going back to the old ones: ticket 08 (approved by
+  shammai) keeps `PERMINISTER_APP_CLIENT_*` first; spec.md line 211 still names the old names and
+  was never updated for 08. Naming both satisfies both.
+
+**Shortcuts taken**
+- The missing-state guard covers GET only (Perminister calls back with GET). A form_post callback
+  without state would still get Better Auth's `state_not_found`, also with no session.
+
+**For later tickets**
+- spec.md (Settings, line 211 edge case) still names only `PERMINISTER_CLIENT_ID` /
+  `PERMINISTER_CLIENT_SECRET`; a human should bring it in line with ticket 08.
+- Harness GETs are navigations now: a callback that resumes an OAuth flow answers a real 302 with
+  no JSON body. Existing tests that read `body.url` first still fall back to `next`.
+- Step 5's claim (`Status: claimed`) was not saved before the code changes in this run; the ticket
+  went from open to resolved.
