@@ -1,7 +1,7 @@
 # Fix the findings of the feature review, round 1
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 2
@@ -57,3 +57,60 @@ The review of the whole feature (from commit 192ebae3a05893808eed80da515c61362e8
 > REVIEW: FAIL
 
 ## Answer
+
+Started at commit `ad88c139bf3e51a37f2ff327b5453a383d7be81a`.
+
+**Built**
+
+- `docs/CONNECT.md` § Verified: a note under the claude.ai line that the address is masked on
+  purpose and that shammai confirmed it is his; an owner line (shammai) for the untested items;
+  the deploy-check result; a note that Vercel's production branch is temporarily
+  `claude/login-mcp`, not `main`. § Troubleshooting: the error example uses the new wording.
+- `docs/DECISIONS.md`: new `### D19. Better Auth stays, provisionally, until the phone app and
+  Claude Code are tried` (D18 untouched), with the open items owned by shammai and the deploy check.
+- `apps/server/src/config.ts`: the client id/secret production errors now read
+  `PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set when NODE_ENV is
+  production; refusing to start`; `fail` lost its now unused `hint` parameter.
+- `apps/server/src/config.test.ts`: the refusal test matches the whole new message (both names).
+- `plans/login-mcp/followups.md`: the four repeated deferred `07-prove-the-bar` curl entries removed
+  (finding 1 asks for this; the checks are now proven).
+
+**Proof**
+
+- Finding 1 (major): shammai's report, 2026-11-11, after the latest push of `claude/login-mcp` was
+  deployed to production, run from his own machine, verbatim:
+  ```
+  $ curl -sS -o /dev/null -w 'status %{http_code}' -X POST https://sky-brain.vercel.app/mcp
+  status 401
+  $ curl -fsS https://sky-brain.vercel.app/.well-known/oauth-protected-resource/mcp
+  {"resource":"https://sky-brain.vercel.app/mcp","authorization_servers":["https://sky-brain.vercel.app/api/auth"],"bearer_methods_supported":["header"],"dpop_signing_alg_values_supported":["EdDSA","ES256","ES512","PS256","RS256"],"scopes_supported":["brain:read","brain:write"]}
+  ```
+  `status 401` and the metadata names `/mcp`: ticket 07's bullet 2 holds. This container still
+  cannot reach `*.vercel.app` (learnings 07), so I did not run them myself. The local tracking ref
+  `origin/claude/login-mcp` is 439db5f; `git diff --stat 439db5f ad88c13 -- apps api vercel.json
+  packages` is empty, so the deployed server code is HEAD's (before this ticket's message change).
+- Finding 2 (major): shammai chose the masked form `s…@gmail.com` (public repo) and confirmed it
+  is his address; the note is in CONNECT.md § Verified. The Done when grep of ticket 07 still prints
+  `120:- claude.ai whoami: returned s…@gmail.com on 2026-11-11` (the note is on its own line).
+- Finding 3 (minor): D19 added; `grep -nE '^### D[0-9]+\.' docs/DECISIONS.md | tail -2` prints D18
+  and D19. Owner of the untested items: shammai, in D19 and CONNECT.md.
+- Finding 4 (minor): temporary production-branch note in CONNECT.md § Verified (the finding's
+  second option); PLAN.md unchanged, since `main` stays the intended state.
+- Finding 5 (minor): `pnpm --filter @sky-brain/server exec vitest run src/config.test.ts`:
+  `Tests 16 passed (16)`. Acceptance `pnpm exec vitest run --root plans/login-mcp/acceptance`:
+  `Tests 83 passed (83)` (it matches the names only). `pnpm lint` exit 0, `pnpm typecheck` exit 0.
+- commands.md's Test command: left to the conductor's gate.
+
+**Decisions**
+
+- The owner for the untested items is shammai (they need his accounts and devices), named in D19
+  and CONNECT.md. I did not add a new ticket file: a builder may not add or edit other tickets, and
+  this is manual work, not code. If the flow wants a ticket for it, the planner adds one.
+- The deploy check is recorded in CONNECT.md and D19 (not in ticket 07, which I may not edit).
+- No commit hash is given for the deploy: shammai said "the latest push", and I cannot see Vercel.
+
+**Shortcuts taken**: none.
+
+**For later tickets**: when `claude/login-mcp` is merged, switch Vercel's production branch back to
+`main` and drop the "Temporary" line in CONNECT.md § Verified. The final T0 outcome is a new D entry
+after D19.

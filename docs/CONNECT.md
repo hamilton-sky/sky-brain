@@ -113,11 +113,12 @@ Without all three settings the server still starts, but there is no Perminister 
   the `sky-brain` product, or their account has no email. Give them access in Perminister and
   have them sign in again.
 - A function that will not start names the missing or wrong setting in Vercel's logs, for
-  example `PERMINISTER_APP_CLIENT_ID must be set when NODE_ENV is production; refusing to start (or the older PERMINISTER_CLIENT_ID)`.
+  example `PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set when NODE_ENV is production; refusing to start`.
 
 ## Verified
 
 - claude.ai whoami: returned s…@gmail.com on 2026-11-11
+  The address is masked on purpose (the repo is public); shammai confirmed it is his.
 - Claude phone app: not yet tested
 - Claude Code CLI: not yet tested
 - Perminister account without `sky-brain` access: not yet tested
@@ -127,3 +128,14 @@ Without all three settings the server still starts, but there is no Perminister 
   `/.well-known` paths returned the web page); a production redeploy from the new branch fixed it.
   The connector also asks for a Name (`sky-brain`).
 - Codex CLI and DCR: not yet tested
+- The untested lines above are owned by shammai (they need his accounts and devices); record each
+  result here and the final T0 outcome as a new decision in `docs/DECISIONS.md` (D19).
+- Deploy checks, 2026-11-11, run by shammai from his own machine after the latest push of
+  `claude/login-mcp` was deployed to production:
+  `curl -sS -o /dev/null -w 'status %{http_code}' -X POST https://sky-brain.vercel.app/mcp`
+  printed `status 401`, and
+  `curl -fsS https://sky-brain.vercel.app/.well-known/oauth-protected-resource/mcp` returned
+  `"resource":"https://sky-brain.vercel.app/mcp"` with authorization server
+  `https://sky-brain.vercel.app/api/auth` and scopes `brain:read`, `brain:write`.
+- Temporary: for these tests Vercel's production branch is `claude/login-mcp`, not `main` as
+  `docs/PLAN.md` § 12 says. Switch it back to `main` once `claude/login-mcp` is merged.

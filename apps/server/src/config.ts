@@ -56,11 +56,8 @@ function isHttpsOrigin(value: string): boolean {
   }
 }
 
-function fail(message: string, hint?: string): never {
-  const tail = hint ? ` (${hint})` : "";
-  throw new Error(
-    `${message} when NODE_ENV is production; refusing to start${tail}`,
-  );
+function fail(message: string): never {
+  throw new Error(`${message} when NODE_ENV is production; refusing to start`);
 }
 
 /** Throws naming the first auth setting a production start is missing; never echoes a secret. */
@@ -83,14 +80,12 @@ function checkProductionAuth(config: Config): void {
   }
   if (!config.perministerClientId) {
     fail(
-      "PERMINISTER_APP_CLIENT_ID must be set",
-      "or the older PERMINISTER_CLIENT_ID",
+      "PERMINISTER_APP_CLIENT_ID (or the older PERMINISTER_CLIENT_ID) must be set",
     );
   }
   if (!config.perministerClientSecret) {
     fail(
-      "PERMINISTER_APP_CLIENT_SECRET must be set",
-      "or the older PERMINISTER_CLIENT_SECRET",
+      "PERMINISTER_APP_CLIENT_SECRET (or the older PERMINISTER_CLIENT_SECRET) must be set",
     );
   }
 }
