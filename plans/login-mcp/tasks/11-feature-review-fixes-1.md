@@ -1,7 +1,7 @@
 # Fix the findings of the feature review, round 1
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: —
 Test first: no
 Level: 2
@@ -114,3 +114,10 @@ Started at commit `ad88c139bf3e51a37f2ff327b5453a383d7be81a`.
 **For later tickets**: when `claude/login-mcp` is merged, switch Vercel's production branch back to
 `main` and drop the "Temporary" line in CONNECT.md § Verified. The final T0 outcome is a new D entry
 after D19.
+
+## Review findings (round 1, floor guard)
+
+warning: 1 assertion line(s) removed, 0 added. check that no test got weaker.
+floor guard: the diff weakens the bar instead of meeting it
+ticket-edit: plans/login-mcp/followups.md: only your own ticket, map.md and learnings.md may change
+if a finding is intended, the ticket needs a line like: Floor: allow <category>
