@@ -1,7 +1,7 @@
 # Make the acceptance tests pass, round 1
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 Test first: no
 Level: 2
@@ -148,3 +148,20 @@ Tester: rewrite the suite against spec.md's Perminister interfaces:
 - **Refusals:** test the three the spec names: no organization for product `sky-brain` lands on `/sign-in?error=no_access`; no email lands on `/sign-in?error=email_not_found`; access taken away in Perminister gives "No access" at the next sign-in.
 
 The product owner ruled the test wrong: leave it failing and finish the rest. The tester changes it once this ticket is resolved.
+
+## Answer (after the po ruling)
+
+The product owner ruled all 43 disputed acceptance tests wrong (Option A above): they test the replaced Google / `ALLOWED_EMAILS` / `BOOTSTRAP_OWNER_EMAIL` design. Per the ruling, the server and the acceptance files are left as they are; the ticket finishes with the DCR 403-to-404 fix from commit 100d03d.
+
+**Built**: no new code in this pass. The change stays `apps/server/src/auth/routes.ts` (DCR register route answers 404) and `apps/server/src/auth/discovery.test.ts` (expects exactly 404, no `client_id`), from commit 100d03d.
+
+**Proof** (run fresh at ec0e82b)
+- `pnpm exec vitest run --root plans/login-mcp/acceptance`: Test Files 5 failed | 1 passed (6), Tests 43 failed | 26 passed (69). Every failure is in the ruled-wrong set: 34 error blocks `TypeError: server.setGoogleUser is not a function` (35 tests), 4 `config.test.ts` asserts expecting `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in the error, `reads a complete production configuration` (throws on `PERMINISTER_BASE_URL`), the two `readConfig outside production` tests expecting allowlist / Google keys, and the sign-in page expecting `id="google"`. The `register` test passes.
+- `pnpm test` (commands.md Test): exit 0; server 23 files, 301 tests passed; shared 2 files, 15 tests passed.
+- `pnpm lint`: exit 0. `pnpm typecheck`: exit 0.
+
+**Decisions**: followed the po ruling; did not add Google, `setGoogleUser` or the allowlist.
+
+**Shortcuts taken**: none.
+
+**For later tickets**: the tester rewrites the acceptance suite against spec.md's Perminister interfaces, as listed in the po answer under Consulted (harness `setPerministerAccount` / `approve`, button `id="perminister"`, `PERMINISTER_*` config, the three Perminister refusals).
