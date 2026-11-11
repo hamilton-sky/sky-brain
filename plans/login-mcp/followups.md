@@ -39,3 +39,8 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - 1. minor /home/user/sky-brain/apps/server/src/config.ts: the id and the secret fall back separately. If PERMINISTER_APP_CLIENT_ID and the old PERMINISTER_CLIENT_SECRET are set (or the other way round), the server builds an id/secret pair from two different clients and still passes checkProductionAuth. The fault only shows up later as a failed token exchange with Perminister, not at startup. This is not a security hole, because whoever sets the env vars already controls the deployment. Fix: take both values from the new names or both from the old names. If they are mixed, fail at startup, or add a test that records the current behaviour. (pair review)
 - 2. minor /home/user/sky-brain/apps/server/src/config.ts: a value of only spaces (e.g. PERMINISTER_APP_CLIENT_ID=" ") counts as set, so it wins over the old name and passes the production check. This is not new: the other settings already worked this way. Fix: trim the values before the || chain if this matters. (pair review)
+
+## 07-prove-the-bar (left for later)
+
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
