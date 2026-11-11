@@ -1,7 +1,7 @@
 # Read Perminister's own variable names for the app client
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 06
 Test first: yes
 Level: 3
@@ -119,3 +119,44 @@ exit 0
   `docs/CONNECT.md` sections 1, 2, Local development and Troubleshooting, `docs/PLAN.md` section 12.
 
 ## Answer
+
+Work started at `4d63cdc05dd00b06717f75796a9692ebb4d353ee`. Test-only commit: `27df0c5`
+(`test(login-mcp): 08 failing test`); at that commit the config tests failed 4 of 16 (the
+preference test got `old-client-id`; the fallback-with-`""` and refused cases got
+`PERMINISTER_CLIENT_ID must be set ...`).
+
+- **Built**:
+  - `apps/server/src/config.ts`: `readConfig` reads `PERMINISTER_APP_CLIENT_ID ||
+    PERMINISTER_CLIENT_ID || undefined` and the same for the secret; `checkProductionAuth` messages
+    now `PERMINISTER_APP_CLIENT_ID must be set` / `PERMINISTER_APP_CLIENT_SECRET must be set`, same
+    order, no value echoed. `Config` field names unchanged.
+  - `apps/server/src/config.test.ts`: fixture uses the new names; new tests `prefers
+    PERMINISTER_APP_CLIENT_ID and PERMINISTER_APP_CLIENT_SECRET` and `falls back to
+    PERMINISTER_CLIENT_ID and PERMINISTER_CLIENT_SECRET` (new names `undefined` and `""`);
+    `refuses production without the Perminister client` now unsets both names (as `undefined` and
+    as `""`) and checks the message starts with the new name and never contains the secret value.
+  - `CLAUDE.md` Environment bullet; `docs/CONNECT.md` section 1 step 3, section 2 table rows plus
+    a fallback paragraph under the table, local `.env` example (secret still empty), Troubleshooting
+    example; `docs/PLAN.md` section 12 auth bullet. `## Verified` untouched.
+- **Proof** (all run after the last edit):
+  - `vitest run src/config.test.ts --reporter=verbose`: exit 0, 16 passed, prints both new titles.
+  - errors grep printed `errors-ok`.
+  - `grep -l PERMINISTER_APP_CLIENT_ID ... | wc -l` printed `3`; same for `_SECRET` printed `3`.
+  - troubleshooting grep printed `trouble-ok`.
+  - secret grep printed `0`.
+  - ticket 06 variable count printed `8`; PLAN grep printed `plan-ok`.
+  - `pnpm lint && pnpm typecheck && pnpm test` exit 0: Prettier clean, tsc clean, server 23 files
+    / 301 tests passed, shared 2 files / 15 tests passed.
+- **Decisions**:
+  - `||` chain, so an empty new name falls through to the old one and an empty old one to
+    `undefined`, matching the existing "empty counts as unset" rule.
+  - The old names appear once in each of CONNECT.md and PLAN.md, in the fallback sentence, as the
+    ticket asks; the table and `.env` example name only the new ones.
+  - The test fix after the test commit (`as const` on the tuple list) was for `tsc` only; Vitest
+    does not typecheck, so the test commit still failed for the right reason.
+- **Shortcuts taken**: none.
+- **For later tickets**:
+  - 07: set `PERMINISTER_APP_CLIENT_ID` / `PERMINISTER_APP_CLIENT_SECRET` in Vercel as
+    Perminister hands them out; a missing one now logs the `PERMINISTER_APP_` name.
+  - `plans/login-mcp/followups.md` 06 item 2 (quote secrets in the `.env` example) still applies,
+    now to `PERMINISTER_APP_CLIENT_SECRET`.

@@ -78,9 +78,11 @@ Environment:
   PGlite folder: a random value kept in `sky-brain-auth-secret` inside that folder, so it lasts as
   long as the dev database (the jwt() keys are encrypted with it). With `memory://` or
   `DATABASE_URL` outside production: a random value per process; set it yourself there.
-- `PERMINISTER_BASE_URL`, `PERMINISTER_CLIENT_ID`, `PERMINISTER_CLIENT_SECRET`: the Perminister
-  app client; required in production. Without all three there is no Perminister sign-in. Never
-  write the client secret into the repo, a test or a log.
+- `PERMINISTER_BASE_URL`, `PERMINISTER_APP_CLIENT_ID`, `PERMINISTER_APP_CLIENT_SECRET`: the
+  Perminister app client, under the names Perminister hands out; required in production. The
+  older `PERMINISTER_CLIENT_ID` / `PERMINISTER_CLIENT_SECRET` are still read as a fallback. Without
+  all three there is no Perminister sign-in. Never write the client secret into the repo, a test
+  or a log.
 
 ## Docs stay in sync
 

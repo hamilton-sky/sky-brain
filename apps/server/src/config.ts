@@ -35,8 +35,12 @@ export function readConfig(env: Record<string, string | undefined>): Config {
     publicUrl: env.PUBLIC_URL || undefined,
     betterAuthSecret: env.BETTER_AUTH_SECRET || undefined,
     perministerBaseUrl: env.PERMINISTER_BASE_URL || undefined,
-    perministerClientId: env.PERMINISTER_CLIENT_ID || undefined,
-    perministerClientSecret: env.PERMINISTER_CLIENT_SECRET || undefined,
+    perministerClientId:
+      env.PERMINISTER_APP_CLIENT_ID || env.PERMINISTER_CLIENT_ID || undefined,
+    perministerClientSecret:
+      env.PERMINISTER_APP_CLIENT_SECRET ||
+      env.PERMINISTER_CLIENT_SECRET ||
+      undefined,
   };
   if (config.nodeEnv === "production") checkProductionAuth(config);
   return config;
@@ -74,9 +78,11 @@ function checkProductionAuth(config: Config): void {
       "PERMINISTER_BASE_URL must be an https:// origin with no path, query or trailing slash",
     );
   }
-  if (!config.perministerClientId) fail("PERMINISTER_CLIENT_ID must be set");
+  if (!config.perministerClientId) {
+    fail("PERMINISTER_APP_CLIENT_ID must be set");
+  }
   if (!config.perministerClientSecret) {
-    fail("PERMINISTER_CLIENT_SECRET must be set");
+    fail("PERMINISTER_APP_CLIENT_SECRET must be set");
   }
 }
 

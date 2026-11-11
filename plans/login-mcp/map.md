@@ -294,3 +294,4 @@ acceptance ticket (07) runs both.
 - Whether Codex CLI needs DCR (LOGIN-MCP-PLAN's T0 check list): recorded in `docs/CONNECT.md` by
   ticket 07 if tried; turning DCR on is out of scope.
 - 06 — `docs/CONNECT.md` written (Perminister client, eight Vercel variables, checks, clients, local dev, troubleshooting, `## Verified` placeholder); PLAN.md §12 names the five auth variables; LOGIN-MCP-PLAN.md has a superseded-in-part header. The server does not load `.env`: the doc exports it with `set -a; . ./.env; set +a`.
+- 08 — `readConfig` reads Perminister's own names `PERMINISTER_APP_CLIENT_ID` / `PERMINISTER_APP_CLIENT_SECRET` first, falling back to `PERMINISTER_CLIENT_ID` / `PERMINISTER_CLIENT_SECRET`; production errors and CLAUDE.md, CONNECT.md, PLAN.md name the new names.

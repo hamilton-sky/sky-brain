@@ -14,7 +14,8 @@ Anyone Perminister has given access to the `sky-brain` product gets in; everyone
 2. Create the production client with app origin `https://sky-brain.vercel.app` and
    self-registration off. The callback path is fixed at `/auth/perminister/callback`, so
    Perminister sends people back to `https://sky-brain.vercel.app/auth/perminister/callback`.
-3. Copy the client's id and secret straight into Vercel (section 2). Perminister shows the
+3. Copy the client's id and secret straight into Vercel (section 2). Perminister hands them
+   out already named `PERMINISTER_APP_CLIENT_ID` and `PERMINISTER_APP_CLIENT_SECRET`, and shows the
    secret once. Never paste it into the repo, a chat or a log.
 
 To let someone in, give them access to the `sky-brain` product in Perminister. A sky-brain
@@ -25,16 +26,20 @@ invite for their email is accepted at their next sign-in.
 Set these in Vercel → Project → Settings → Environment Variables, Production scope, by hand.
 They are never committed.
 
-| Variable                    | Value                                                                         |
-| --------------------------- | ----------------------------------------------------------------------------- |
-| `PUBLIC_URL`                | `https://sky-brain.vercel.app`                                                |
-| `BETTER_AUTH_SECRET`        | a new random value of at least 32 characters (`openssl rand -base64 32`)      |
-| `DATABASE_URL`              | Nanogres app role, PgBouncer port 6432 (already set by D16)                   |
-| `MIGRATION_DATABASE_URL`    | Nanogres migrate role, port 6433 (already set by D16); used only by the build |
-| `MIGRATION_DATABASE_ROLE`   | the owner role from the migrate role's Nanogres snippet (already set by D16)  |
-| `PERMINISTER_BASE_URL`      | Perminister's base URL: `https://`, no path, no trailing slash                |
-| `PERMINISTER_CLIENT_ID`     | the production app client's id (section 1)                                    |
-| `PERMINISTER_CLIENT_SECRET` | the production app client's secret (section 1; shown once by Perminister)     |
+| Variable                        | Value                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `PUBLIC_URL`                    | `https://sky-brain.vercel.app`                                                |
+| `BETTER_AUTH_SECRET`            | a new random value of at least 32 characters (`openssl rand -base64 32`)      |
+| `DATABASE_URL`                  | Nanogres app role, PgBouncer port 6432 (already set by D16)                   |
+| `MIGRATION_DATABASE_URL`        | Nanogres migrate role, port 6433 (already set by D16); used only by the build |
+| `MIGRATION_DATABASE_ROLE`       | the owner role from the migrate role's Nanogres snippet (already set by D16)  |
+| `PERMINISTER_BASE_URL`          | Perminister's base URL: `https://`, no path, no trailing slash                |
+| `PERMINISTER_APP_CLIENT_ID`     | the production app client's id (section 1)                                    |
+| `PERMINISTER_APP_CLIENT_SECRET` | the production app client's secret (section 1; shown once by Perminister)     |
+
+Perminister hands out the client's id and secret under these two names. The older
+`PERMINISTER_CLIENT_ID` / `PERMINISTER_CLIENT_SECRET` still work as a fallback; when both are set,
+the `PERMINISTER_APP_` names win.
 
 `PUBLIC_URL` and `PERMINISTER_BASE_URL` must be `https://` origins with no path or trailing
 slash. In production the server refuses to start without any of the five auth variables, and
@@ -87,8 +92,8 @@ Put the three Perminister settings in a `.env` file at the repo root (git ignore
 ```sh
 # Fill in the base URL (https://, no trailing slash) and the local client's secret.
 PERMINISTER_BASE_URL=
-PERMINISTER_CLIENT_ID=10e163a2-1cfe-408d-a6f5-968aa7f46923
-PERMINISTER_CLIENT_SECRET=
+PERMINISTER_APP_CLIENT_ID=10e163a2-1cfe-408d-a6f5-968aa7f46923
+PERMINISTER_APP_CLIENT_SECRET=
 ```
 
 The server does not read `.env` itself, so export it into the shell that runs `pnpm dev`:
@@ -108,7 +113,7 @@ Without all three settings the server still starts, but there is no Perminister 
   the `sky-brain` product, or their account has no email. Give them access in Perminister and
   have them sign in again.
 - A function that will not start names the missing or wrong setting in Vercel's logs, for
-  example `PERMINISTER_CLIENT_ID must be set when NODE_ENV is production; refusing to start`.
+  example `PERMINISTER_APP_CLIENT_ID must be set when NODE_ENV is production; refusing to start`.
 
 ## Verified
 

@@ -143,7 +143,7 @@ describe("readConfig auth settings", () => {
     for (const [newName, oldName] of [
       ["PERMINISTER_APP_CLIENT_ID", "PERMINISTER_CLIENT_ID"],
       ["PERMINISTER_APP_CLIENT_SECRET", "PERMINISTER_CLIENT_SECRET"],
-    ]) {
+    ] as const) {
       for (const unset of [undefined, ""]) {
         let message = "";
         try {
