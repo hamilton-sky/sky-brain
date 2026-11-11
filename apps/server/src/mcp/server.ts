@@ -8,7 +8,7 @@ import {
 import type { Db } from "../db/client.ts";
 import { registerWhoami } from "./whoami.ts";
 
-export function mcpServerFactory(db: Db) {
+export function mcpServerFactory(db: Db, now: () => Date = () => new Date()) {
   return (ctx: McpRequestContext): McpServer => {
     // route.ts only calls the handler with a verified actor; check it again rather than trust it.
     const actor = ActorSchema.parse(ctx.authInfo?.extra?.actor);

@@ -187,7 +187,7 @@ async function toTestResponse(res: Response): Promise<TestResponse> {
   return { status: res.status, headers: res.headers, body, text };
 }
 
-function testClient(url: string, token: string | undefined): TestClient {
+export function testClient(url: string, token: string | undefined): TestClient {
   const request = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);

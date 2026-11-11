@@ -214,7 +214,12 @@ export const devices = pgTable("devices", {
   createdAt: createdAt(),
   lastSeenAt: at("last_seen_at"),
   revokedAt: at("revoked_at"),
+  /** SHA-256 hex of the device token (`sbd_`); null until the device flow hands it out. */
+  secretHash: text("secret_hash").unique(),
 });
 
 // Better Auth's tables (login-mcp), so the Db type and drizzle-kit see them.
 export * from "./auth-schema.ts";
+// Device login and run tokens (cloud-task-board).
+export * from "./device-schema.ts";
+export * from "./tasks-schema.ts";

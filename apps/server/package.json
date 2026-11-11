@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:pg": "vitest run --config vitest.pg.config.ts",
     "dev": "tsx watch src/dev.ts",
     "start": "tsx src/main.ts",
     "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@vercel/functions --outfile=dist/vercel.mjs",

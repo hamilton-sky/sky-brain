@@ -14,13 +14,17 @@ import { mcpServerFactory } from "./server.ts";
 export interface McpRouteOptions {
   auth: Auth;
   db: Db;
+  /** The clock board tools use. Default: `() => new Date()`. */
+  now?: () => Date;
   publicUrl: string;
 }
 
 export function mountMcp(app: express.Express, o: McpRouteOptions): void {
   const resource = `${o.publicUrl}/mcp`;
   // Default legacy: "stateless", so 2025-era clients are served too (spec.md Decisions).
-  const mcp = createMcpHandler(mcpServerFactory(o.db));
+  const mcp = createMcpHandler(
+    mcpServerFactory(o.db, o.now ?? (() => new Date())),
+  );
   const unauthorized = () =>
     new Response(
       JSON.stringify({

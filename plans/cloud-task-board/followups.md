@@ -1,0 +1,49 @@
+# Follow-ups: cloud-task-board
+
+What the run left for later: minor findings of passing reviews, the findings a level 2 ticket passed with after 2 review rounds, and Done when checks this host could not pass. Each is a candidate for a cleanup ticket.
+
+## 01-device-login (left for later)
+
+- 1. minor apps/server/src/server.ts: `publicBaseUrl` exists, but `start()` never passes it, so in production `verification_uri` is still built from the caller's `Host` or `X-Forwarded-Host`. This carries over from round 2's finding 4. - Read a `PUBLIC_BASE_URL` setting in config.ts and pass it to `createApp`, at the latest before R2-01 depends on it. (pair review)
+- 2. minor apps/server/src/app.ts: outside dev, `trustProxyHops` is always 1. Nothing sets it from the environment, and Render's real hop count is still unchecked. Any server that runs without NODE_ENV=development and without a proxy in front lets a caller choose their rate-limit bucket through `X-Forwarded-For`. - Make the hop count a setting, and record the checked Render value in a decision, as round 2's finding 2 asked. (pair review)
+- 3. minor apps/server/src/app.test.ts ("trusts as many proxy hops as it is told"): the test would also pass with 0 or 1 trusted hops. Every request has the same rightmost and second-from-right addresses, so all 61 requests share one bucket anyway. It cannot catch a wrong hop count. - Vary the second-from-right entry and keep the last one fixed, then check that each varied address gets its own bucket. (pair review)
+
+## 02-run-tokens (left for later)
+
+- 1. minor apps/server/src/run-tokens/resolver.ts: `bearerOf` returns undefined for a header such as `Bearer sbr_<x> extra`, because the regex anchors on a single `\S+`. The request then falls through to the next resolver instead of getting 401 `invalid_token`. This is harmless today because production has no other resolver, but the ticket says these tokens never fall through. Fix: when the header starts with the Bearer scheme and its first token starts with `sbd_` or `sbr_`, reject a malformed header with 401 `invalid_token`. (pair review)
+
+## 03-board-tables (left for later)
+
+- 1. minor packages/shared/src/tasks.ts: `depends_on` has no length cap and allows duplicates. I checked: `[0,0,0]` and 5,000 entries both parse. Ticket 05 inserts these into `task_deps`, whose primary key is `(task_id, depends_on_id)`. So a duplicate entry will hit a PK violation and probably come back as a 500 unless the route removes duplicates. Fix: add `.max(...)` (for example `TASK_CAPS.tasks` plus a sane bound for existing ids) and a uniqueness refine, or flag it for ticket 05 to dedupe. (pair review)
+- 2. minor packages/shared/src/tasks.ts: `lane` (TaskInputSchema) and `assignee` (GoalCreateRequestSchema) have no maximum length. A 60,000-character value parses, so only the 64 KB body cap holds them back. `assignee` is meant to be a user id but its format is not checked. Fix: give both a cap (for example 200), and give `assignee` a user-id shape. (pair review)
+- 3. minor packages/shared/src/tasks.ts (`tooLargeField`): when a body has both an unknown field and an over-cap value, the answer is 413 `too_large`. Spec Routes says an unknown field is 400 `invalid_request`. I checked with `{actor, title: 300 chars}`, which gives `tl=title`. The request is still refused, so this is not a hole, only an inconsistency. Fix: return null when any issue is `unrecognized_keys`, or let ticket 04 settle the order. (pair review)
+- 4. minor apps/server/src/db/tasks-schema.ts: `task_deps` does not stop a task depending on a task in another goal or workspace. `tasks` does pin workspace and project to its goal with composite FKs, so the gap is only in `task_deps`. Cross-workspace isolation for dependencies now rests entirely on the ticket 05 route check. Fix: add `workspace_id` (or `goal_id`) to `task_deps` with composite FKs to `tasks (id, workspace_id)` as defence in depth, or make ticket 05 test that a dependency on another workspace's task is refused. (pair review)
+- 5. minor apps/server/src/db/tasks-schema.ts: there is no unique constraint on `tasks (goal_id, position)`, only an index. `seedTask` computes the position as `count(*)`, so two concurrent inserts can get the same position. The ticket asks only for an index, so this is a note for ticket 05: take positions under a lock, or add a unique constraint. (pair review)
+
+## 04-goals-api (left for later)
+
+- 1. minor apps/server/src/tasks/goals-service.ts: `approveGoal` checks for held tasks, then pins with a separate UPDATE that does not filter `quarantined_because`. Under READ COMMITTED, a held task that ticket 05 inserts between the two statements would be pinned. A later `release-text` would then leave it pinned and claimable without a fresh approval. To fix, add `isNull(tasks.quarantinedBecause)` to the pin UPDATE's where clause. Ticket 05's add-tasks should also lock the goal row (`FOR UPDATE`) the way human writes do. (pair review)
+- 2. minor apps/server/src/tasks/goals-service.ts: `goalTasks` hides held tasks from agents, but it builds `depends_on` from every `task_deps` row. A visible task's `depends_on` can therefore give an agent the id of a held task. To fix, drop dependency ids that are not in the visible set when the caller is an agent. (pair review)
+
+## 05-add-tasks (left for later)
+
+- 1. minor apps/server/src/tasks/tasks-router.ts: `GET /:id` returns every `depends_on` id without filtering. An agent can read a visible task that depends on a held task and so learn the held task's id, although spec says an agent "never sees" a held task. It gets the id only, never the text, and the goal view from ticket 04 has the same gap. Change: for an agent, drop held ids from `depends_on`, or record the choice in followups.md. (pair review)
+- 2. minor packages/shared/src/tasks.ts (used by add-tasks.ts): `depends_on` has no max length. Only the 64 KB body cap limits it, which still allows about 1,500 ids per task, all sent through one `inArray` query. Change: add a `.max(...)` cap, for example `TASK_CAPS.tasks` plus a fixed bound. (pair review)
+
+## 06-ready-and-claim (left for later)
+
+- 1. minor apps/server/src/tasks/tasks-router.ts: The `pinned` flag on the wire now uses the recomputed `liveTextHash` only in `findTask` (GET /tasks/:id) and `goalTasks`. The release-text response (`toWireTask(updated, ...)`), the add-tasks response and the approve response still compare the stored `text_hash`. So after someone edits a task directly in the database, `POST /tasks/:id/release-text` can still answer `pinned: true` while GET answers `false`. Fix: select `liveTextHash` in the RETURNING there too (or in `toWireTask`'s callers), so every wire task computes `pinned` the same way. (pair review)
+- 2. minor apps/server/src/tasks/eligibility.ts: Not fixed since round 1. `liveTextHash` runs SHA-256 over every candidate row in the project on each ready call. Because of the ORDER BY, the hash runs on every row before `limit` applies. Ready is not rate limited, so this cost grows with the size of the project. Fix: keep the cheap `approved_hash = text_hash` test first (it is already there, so Postgres may short-circuit), or document the cost and add an index or cap later. (pair review)
+- 3. minor apps/server/src/tasks/ready.ts: Not fixed since round 1, but the map now records it as following the spec. Ready still lists tasks whose files overlap a running live lease, so workers keep pulling tasks that answer 409 `files_busy`. (pair review)
+
+## 07-renew-and-report (left for later)
+
+- 1. minor apps/server/src/tasks/report.ts: withheldProof runs `pr_url` and `commit` through withholdSecrets as well. When a secret is found in a URL's query, the stored `pr_url` becomes `[withheld: <rule>]`, which is not an https URL, so the stored proof no longer fits ProofSchema or the wire `Proof` that clients link to. `commit` is hex-only, so scanning it does nothing. - For pr_url, either refuse with 422 secret_detected (refuseSecrets) or drop the field when it is withheld, and leave commit unscanned. (pair review)
+- 2. minor apps/server/src/tasks/report.ts: a done row keeps holder_actor, holder_person, holder_device and lease_expires_at, so the idempotent repeat can match on them. It is harmless today because hasLiveLease and file overlap both require in_progress. A later ticket that reads holder columns without checking status would see a stale holder. - Add a comment at the done branch, or filter on status wherever holder columns are read. (pair review)
+- 3. minor apps/server/src/tasks/report.test.ts: the file is 399 lines, one under the 400-line rule, so any follow-up test will break the cap. - Move the shared helpers (worker, board, row, events, statusAudits) into a test helper module. (pair review)
+
+## 08-postgres-claim-race (left for later)
+
+- deferred check, needs a Postgres reachable at TEST_DATABASE_URL: `pnpm --filter @sky-brain/server test:pg` (here: exit 1)
+- 1. minor apps/server/vitest.pg.config.ts: Vitest's file parallelism is left on. When a second `*.pg.test.ts` is added, both files will call `migrateDb` on the same database at the same moment, and the drizzle migrator can fail when two runs race - set `fileParallelism: false`, or run the migration once in a `globalSetup`. (pair review)
+- 2. minor apps/server/src/tasks/claim-race.pg.test.ts: the test migrates and seeds workspaces into whatever database TEST_DATABASE_URL names, with no guard - add a header comment, plus a note in the error message, saying it must be a throwaway database. (pair review)
