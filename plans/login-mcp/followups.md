@@ -42,8 +42,6 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 ## 07-prove-the-bar (left for later)
 
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
 
 ## 09-acceptance-fixes-1 (left for later)
 
@@ -52,13 +50,9 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 ## 07-prove-the-bar (left for later)
 
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
 
 ## 07-prove-the-bar (left for later)
 
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
 
 ## 10-acceptance-fixes-2 (left for later)
 
@@ -67,8 +61,6 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 ## 07-prove-the-bar (left for later)
 
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
-- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
 
 ## 11-feature-review-fixes-1 (left for later)
 
@@ -81,3 +73,9 @@ What the run left for later: minor findings of passing reviews, the findings a l
 - 2. minor /home/user/sky-brain/docs/CONNECT.md and /home/user/sky-brain/docs/DECISIONS.md D19 (ticket 11): The deploy check says it ran "after the latest push of `claude/login-mcp`". That push was 439db5f, and the branch is now 4 commits ahead of origin. - Name commit 439db5f in both places, so a reader can tell which code was checked. (feature review)
 - 3. minor /home/user/sky-brain/plans/login-mcp/followups.md (ticket 11): The earlier finding 1 also asked to remove the repeated "deferred check ... (here: exit 3)" curl entries. They are still there, four times each (lines 45-46, 55-56, 60-61, 70-71). They now contradict the recorded deploy result. - Remove them, or add a line saying shammai ran the checks on 2026-11-11 against 439db5f. If this file belongs to the flow and the author may not edit it, the conductor should do this. (feature review)
 - 4. minor /home/user/sky-brain/docs/PLAN.md (ticket 11): § 12 still says "Production deploys from `main`". The temporary switch to `claude/login-mcp` is only noted in CONNECT.md, which is the option the earlier finding allowed. - Once `claude/login-mcp` is merged, switch Vercel's production branch back to `main` and delete the Temporary line in CONNECT.md. (feature review)
+
+## Done after the merge (2026-11-11)
+
+- Deploy curls: shammai ran both against production built from 439db5f (POST /mcp 401; metadata names /mcp); the deferred entries are removed. Recorded in docs/CONNECT.md § Verified.
+- CONNECT.md now names 439db5f and says the email is masked at shammai's choice; map.md matches.
+- Vercel's production branch is back on `main`.
