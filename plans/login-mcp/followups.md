@@ -69,3 +69,8 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
 - deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
+
+## 11-feature-review-fixes-1 (left for later)
+
+- 1. minor /home/user/sky-brain/docs/CONNECT.md: The Verified note says "shammai confirmed it is his". The evidence file (/mnt/project-files/login-mcp/ticket-11-inputs.md) only records that he chose the masked form `s…@gmail.com` on a decision card because the repo is public. It does not quote him saying the address is his. Change the note to "masked on purpose at shammai's choice", or get his explicit confirmation before claiming it. (pair review)
+- 2. minor /home/user/sky-brain/docs/CONNECT.md and /home/user/sky-brain/docs/DECISIONS.md D19: The deploy check is recorded as run "after the latest push of `claude/login-mcp`". That push is 439db5f. The branch is now 4 commits ahead of origin, so the deployed code does not include this ticket's config.ts message change. The /mcp and metadata code in apps/ is the same in 439db5f and the base, so the checks still hold. Name the commit that was checked (439db5f) instead of "latest push". (pair review)
