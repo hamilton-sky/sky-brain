@@ -200,7 +200,7 @@ class LaneScheduler(SerialScheduler):
             merged = git.head(cwd=ws.folder)
             if problem is None and self.merge_gate(ws):
                 quick = True if c.checkpointing() else ws.gate_quick()
-                result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=ws.folder)
+                result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=ws.folder, log=ws.log)
                 ws.log("MERGE-GATE-%s-%s" % ("QUICK" if quick else "FULL", "PASS" if result.ok else "FAIL"))
                 if not result.ok:
                     problem, report = "the gate on its merge failed", result.out
@@ -258,7 +258,7 @@ class LaneScheduler(SerialScheduler):
                 lanes.git_in(ws.folder, "checkout", "-q", "-B", name, "HEAD")
                 if self.merge_gate(ws):
                     quick = True if c.checkpointing() else ws.gate_quick()
-                    result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=ws.folder)
+                    result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=ws.folder, log=ws.log)
                     ws.log("REFRESH-GATE-%s-%s" % ("QUICK" if quick else "FULL", "PASS" if result.ok else "FAIL"))
                     if not result.ok:
                         problem, report = "the gate failed on top of the feature branch", result.out

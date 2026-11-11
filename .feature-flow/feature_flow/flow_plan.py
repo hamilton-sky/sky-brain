@@ -11,13 +11,16 @@ it with a re-plan. The Build step shows how far the run is.
 import re
 from pathlib import Path
 
-from feature_flow import builders, gate, lanes, profiles, status, tickets
+from feature_flow import builders, gate, lanes, profiles, reality, status, tickets
 
 PLAN_KEYS = ("profile", "lanes", "gate", "full_review")
 GATE_CHOICES = ("each", "batch 2", "batch 3", "batch 5", "end")
 GATE_NOTES = {"each": "the full gate, Done when and a review after every ticket",
               "end": "cheap checks after each ticket; the full gate, Done when and one review at the end",
               "batch": "cheap checks after each ticket; the full gate, Done when and one review every %s tickets"}
+BUILDER_NOTES = {"frontend": "user interface code: reuse the folder's components and styles",
+                 "backend": "server, library or command line code: check every outside input where it enters",
+                 "docs": "documentation: every command, flag and path named must exist in the code"}
 BUILDER_KEY = "builder-"  # builder-<NN>: one pick per ticket, its Builder: line
 
 
@@ -132,22 +135,25 @@ def sections(folder, draft, environ=None):
         {"value": str(n), "label": str(n)} for n in range(1, lanes.MAX_LANES_PLAN + 1)]
     choices = [
         {"key": "profile", "label": "Profile", "kind": "one", "value": profile if profile in profiles.PROFILES else "normal",
+         "about": "How much review each ticket gets while it builds.",
          "options": [{"value": p, "label": p.capitalize(), "note": PROFILE_NOTES.get(p, "")} for p in
-                     ("fast", "standard", "careful", "normal")],
-         "note": PROFILE_NOTES.get(profile, "").capitalize() + "."},
+                     ("fast", "standard", "careful", "normal")]},
         {"key": "lanes", "label": "Tickets building at once", "kind": "one",
          "value": lanes_value if lanes_value in ("auto", "1", "2", "3", "4") else "1", "options": lanes_options,
+         "about": "Tickets that touch different files can build side by side, each in its own worktree.",
          "note": "Auto takes the plan's width, at most %d with this profile. FLOW_LANES still overrides it." % plan.lanes_cap()},
     ]
     cadence = plan.gate()
     if cadence != "off unsafe":
         choices.append({"key": "gate", "label": "When the full gate and review run", "kind": "one",
+                        "about": "The gate runs your test command and checks; sooner catches a break sooner, later is faster.",
                         "value": cadence, "options": [{"value": v, "label": v.capitalize(), "note": gate_note(v)} for v in
                                                       GATE_CHOICES + (() if cadence in GATE_CHOICES else (cadence,))],
                         "note": "The %s profile's default is %s. A level 3 ticket keeps its own review either way."
                                 % (profile, plan_gate_default(profile))})
     choices += [
         {"key": "full_review", "label": "Tickets with a full review (spec, then quality)", "kind": "some",
+         "about": "A full review checks the ticket against its spec first, then its code quality. Pick the risky ones.",
          "value": plan.full_review(), "options": [{"value": g.lab[t], "label": "%s %s" % (g.lab[t], g.title[t])}
                                                   for t in g.order]},
     ]
@@ -160,8 +166,11 @@ def sections(folder, draft, environ=None):
                         "note": "Its paths suggest %s." % hint if hint else "Its paths suggest none."})
     build_md = checks_text(plan) + ("\n\nAdd a check by asking in the chat: a `Typecheck:`, `Security:` or `Check <path>:` "
                                     "line goes into commands.md. Relaxing one needs a reason, and turning the gate off is "
-                                    "marked unsafe." if draft else "")
-    out = [{"title": "Plan", "kind": "text", "markdown": plan_md, "items": [], "step": "Plan"},
+                                    "marked unsafe.\n\nBuilder notes add a short guide to one ticket's build: %s."
+                                    % "; ".join("**%s**, %s" % (n.capitalize(), BUILDER_NOTES[n]) for n in builders.NAMES)
+                                    if draft else "")
+    out = [{"title": "Plan", "kind": "text", "markdown": plan_md, "items": [], "step": "Plan",
+            "ask_about": ["%s %s" % (g.lab[t], g.title[t]) for t in g.order]},
            {"title": "Build flow", "kind": "text", "markdown": build_md, "items": [], "step": "Plan",
             "choices": choices if draft else []}]
     lanes_said = "lanes auto (%d)" % max(1, cap) if lanes_value == "auto" else "%s lane%s" % (lanes_value, "" if lanes_value == "1" else "s")
@@ -169,14 +178,19 @@ def sections(folder, draft, environ=None):
 
 
 def build_section(folder):
-    """(the Build step's state and summary, its section) from the accepted plan's ticket statuses."""
+    """(the Build step's state and summary, its sections: the ticket statuses, then plan vs reality once a build ran) from the accepted plan's ticket statuses."""
     g = Plan(folder).graph
     done = sum(1 for t in g.order if g.stat[t] in ("resolved", "parked"))
     state = "done" if g.order and done == len(g.order) else "current"
     summary = "%d of %d tickets done" % (done, len(g.order))
     rows = ["| Ticket | Status |", "|---|---|"] + ["| %s %s | %s |" % (g.lab[t], g.title[t].replace("|", "/"), g.stat[t])
                                                    for t in g.order]
-    return state, summary, {"title": "Build", "kind": "text", "markdown": "\n".join(rows), "items": [], "step": "Build"}
+    out = [{"title": "Build", "kind": "text", "markdown": "\n".join(rows), "items": [], "step": "Build"}]
+    items, run = reality.for_plan(folder, Path(folder).name)
+    if any(item["changed"] is not None for item in items):
+        out.append({"title": "Plan vs reality", "kind": "text", "markdown": reality.markdown(items, run), "items": [],
+                    "step": "Build"})
+    return state, summary, out
 
 
 def set_header(text, key, value):

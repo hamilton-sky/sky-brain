@@ -48,7 +48,7 @@ class Test(Phase):
         if not changed:
             note = "the last tester committed nothing under %s" % folder
         elif ws.gate_on:
-            result = checks.gate(ws.scripts, ws.feature, ws.gate_timeout)
+            result = checks.gate(ws.scripts, ws.feature, ws.gate_timeout, log=ws.log)
             ws.log("TEST-GATE-PASS" if result.ok else "TEST-GATE-FAIL")
             if not result.ok:
                 note = ("with the acceptance tests committed, the gate fails. keep them where only the Acceptance "

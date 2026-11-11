@@ -70,6 +70,9 @@
       }
       if (change.ask) s.asks.push(change.ask);
       if (change.pick) { s.picks = s.picks || {}; s.picks[change.pick.key] = change.pick.entry; }
+      (change.picks || []).forEach(function (p) { s.picks = s.picks || {}; s.picks[p.key] = p.entry; });
+      if (change.approve) { s.approved = s.approved || {}; s.approved[change.approve.step] = { by: change.approve.by, at: change.approve.at }; }
+      (change.unapprove || []).forEach(function (name) { if (s.approved) delete s.approved[name]; });
     }
     // a change saved just before a reload (a clash) is saved again now
     try {
@@ -146,21 +149,33 @@
       figs.push({ key: key, f: f, pick: pick, save: saveBtn });
     });
 
-    var sets = [];  // the document's choices: what people pick is saved into the page's state for the session
+    // the document's choices. In a step, a pick waits on the page until the step's Approve saves them all at once,
+    // and that save wakes the session; a choice outside any step is saved as it is picked.
+    var sets = [], pending = {};
+    var order = [].slice.call(document.querySelectorAll('[role=tabpanel][data-step]')).map(function (p) { return p.dataset.step; });
+    function stepOf(el) { var p = el.closest && el.closest('[role=tabpanel][data-step]'); return p ? p : null; }
     document.querySelectorAll('fieldset.choice').forEach(function (set) {
       var key = set.dataset.key, kind = set.dataset.kind, top = set.dataset.max ? Number(set.dataset.max) : null;
+      var panel = stepOf(set), open = !panel || panel.classList.contains('current');
       var buttons = [].slice.call(set.querySelectorAll('button[data-value]')), boxes = [].slice.call(set.querySelectorAll('input[type=checkbox]'));
+      function value() {
+        if (kind === 'some') return boxes.filter(function (x) { return x.checked; }).map(function (x) { return x.value; });
+        var on = buttons.filter(function (b) { return b.getAttribute('aria-pressed') === 'true'; })[0];
+        return on ? on.dataset.value : null;
+      }
       function show(v) {
         if (kind === 'some') boxes.forEach(function (b) { b.checked = Array.isArray(v) && v.indexOf(b.value) >= 0; });
         else buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.value === v)); });
       }
       function limit() {
+        var can = writable && open && !(panel && st.approved && st.approved[panel.dataset.step]);
         var n = boxes.filter(function (b) { return b.checked; }).length;
-        boxes.forEach(function (b) { b.disabled = !writable || (top !== null && !b.checked && n >= top); });
-        buttons.forEach(function (b) { b.disabled = !writable; });
+        boxes.forEach(function (b) { b.disabled = !can || (top !== null && !b.checked && n >= top); });
+        buttons.forEach(function (b) { b.disabled = !can; });
       }
-      function pick(value, label) {
-        save({ pick: { key: key, entry: { by: me, at: new Date().toISOString(), value: value } } },
+      function pick(v, label) {
+        if (panel) { pending[key] = v; set.classList.add('changed'); return; }
+        save({ pick: { key: key, entry: { by: me, at: new Date().toISOString(), value: v } } },
              function () { toast('Saved: ' + label + '. Claude reads it when its session picks it up.'); });
       }
       buttons.forEach(function (b) {
@@ -170,24 +185,90 @@
         b.addEventListener('change', function () {
           if (!writable) return;
           limit();
-          pick(boxes.filter(function (x) { return x.checked; }).map(function (x) { return x.value; }), (set.querySelector('legend') || {}).textContent || key);
+          pick(value(), (set.querySelector('legend') || {}).textContent || key);
         });
       });
-      sets.push({ key: key, show: show, limit: limit });
+      sets.push({ key: key, show: show, limit: limit, value: value, panel: panel, set: set,
+                  label: function () { var l = set.querySelector('legend'); return (l ? l.firstChild.textContent : key).trim(); } });
+    });
+    // "Ask Claude about this": on each option, and on a section that names its subjects (a plan's tickets)
+    var askers = [];
+    function asker(where, subjects, label) {
+      var row = make('div', { class: 'ask-row' }), open = make('button', { type: 'button', class: 'ask-open' }, label);
+      row.appendChild(open); where.appendChild(row);
+      open.addEventListener('click', function () {
+        if (row.querySelector('textarea')) { row.querySelector('textarea').focus(); return; }
+        var pick = null;
+        if (subjects.length > 1) {
+          pick = make('select', { 'aria-label': 'About' });
+          subjects.forEach(function (x) { pick.appendChild(make('option', { value: x }, x)); });
+          row.appendChild(pick);
+        }
+        var area = make('textarea', { 'aria-label': 'Your question', placeholder: 'For example: why this order? What would you cut?' });
+        var go = make('button', { type: 'button', class: 'go' }, 'Send to Claude');
+        row.appendChild(area); row.appendChild(go); area.focus();
+        go.addEventListener('click', function () {
+          var text = area.value.trim(); if (!text) { area.focus(); return; }
+          go.disabled = true;
+          save({ ask: { by: me, at: new Date().toISOString(), figure: null, version: null, about: pick ? pick.value : subjects[0], text: text } },
+               function () { area.value = ''; go.disabled = false; toast('Sent. Claude answers in Talk to Claude when its session picks it up.'); });
+        });
+      });
+      askers.push(open);
+    }
+    document.querySelectorAll('article.opt[data-about]').forEach(function (a) { asker(a, [a.dataset.about], 'Ask Claude about this option'); });
+    document.querySelectorAll('.ask-about').forEach(function (box) {
+      var subjects = []; try { subjects = JSON.parse(box.querySelector('script').textContent); } catch (e) {}
+      if (!subjects.length) return;
+      box.hidden = false; asker(box, subjects, 'Ask Claude about a ticket');
+    });
+
+    var approves = [].slice.call(document.querySelectorAll('button.approve[data-approve]'));
+    approves.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!writable) return;
+        var name = btn.dataset.approve, at = new Date().toISOString();
+        var mine = sets.filter(function (x) { return x.panel && x.panel.dataset.step === name; });
+        var picks = mine.map(function (x) { return { key: x.key, entry: { by: me, at: at, value: x.value() } }; });
+        var said = mine.map(function (x) { var v = x.value(); return x.label() + ': ' + (Array.isArray(v) ? (v.length ? v.join(', ') : 'none') : (v === null ? 'none' : v)); });
+        btn.disabled = true;
+        save({ picks: picks, approve: { step: name, by: me, at: at },
+               ask: { by: me, at: at, figure: null, version: null, step: name, approve: true, text: 'Approved ' + name + (said.length ? ': ' + said.join('; ') : '') } },
+             function () {
+               mine.forEach(function (x) { delete pending[x.key]; x.set.classList.remove('changed'); });
+               toast('Approved ' + name + '. Claude takes it from here when its session picks it up.');
+             });
+      });
     });
     var changes = [].slice.call(document.querySelectorAll('button.change[data-change]'));
     changes.forEach(function (btn) {
       btn.addEventListener('click', function () {
         if (!writable) return;
         btn.disabled = true;
-        save({ ask: { by: me, at: new Date().toISOString(), figure: null, version: null, step: btn.dataset.change, text: 'Change the step ' + btn.dataset.change } },
-             function () { toast('Sent. Claude reopens ' + btn.dataset.change + ' when its session picks it up.'); btn.disabled = false; });
+        var name = btn.dataset.change, from = order.indexOf(name);
+        save({ unapprove: from < 0 ? [name] : order.slice(from),
+               ask: { by: me, at: new Date().toISOString(), figure: null, version: null, step: name, text: 'Change the step ' + name } },
+             function () { toast('Sent. Claude reopens ' + name + ' when its session picks it up.'); btn.disabled = false; });
       });
     });
 
     function render() {
-      sets.forEach(function (x) { var p = st.picks && st.picks[x.key]; if (p) x.show(p.value); x.limit(); });
+      sets.forEach(function (x) {
+        var p = st.picks && st.picks[x.key];
+        if (x.key in pending) x.show(pending[x.key]); else if (p) x.show(p.value);
+        x.limit();
+      });
       changes.forEach(function (btn) { btn.hidden = !writable; });
+      askers.forEach(function (btn) { btn.hidden = !writable; });
+      approves.forEach(function (btn) {
+        var done = st.approved && st.approved[btn.dataset.approve], hint = btn.parentNode.querySelector('.approve-hint');
+        btn.hidden = !writable;
+        btn.disabled = !writable || !!done;
+        btn.textContent = done ? 'Approved' : 'Approve ' + btn.dataset.approve;
+        if (hint) hint.textContent = !writable ? 'Reply ok in the chat to take these, or say what to change.'
+          : done ? 'Waiting for Claude: it writes these into its files and opens the next step.'
+          : 'Pick here, then Approve: that saves your picks and wakes Claude. Nothing is saved before you approve.';
+      });
       document.querySelectorAll('.choice-hint').forEach(function (h) {
         h.textContent = writable ? 'What you pick here is saved to this page, and Claude reads it. You can also answer in the chat.' : 'Reply ok in the chat to take these, or say what to change.';
       });
@@ -216,7 +297,7 @@
         st.asks.forEach(function (a) {
           var li = make('li', { class: a.answer ? 'answered' : '' });
           var fig = a.figure && st.figures[a.figure];
-          li.appendChild(make('span', { class: 'who' }, (who[a.by] || 'Someone') + (fig ? ' on "' + (fig.title || 'figure ' + a.figure) + '"' : '') + (a.version ? ', with ' + (a.version === me ? 'your' : 'their') + ' version' : '')));
+          li.appendChild(make('span', { class: 'who' }, (who[a.by] || 'Someone') + (fig ? ' on "' + (fig.title || 'figure ' + a.figure) + '"' : '') + (a.about ? ' about "' + a.about + '"' : '') + (a.version ? ', with ' + (a.version === me ? 'your' : 'their') + ' version' : '')));
           li.appendChild(make('span', {}, a.text));
           li.appendChild(a.answer ? make('span', { class: 'reply' }, 'Claude: ' + a.answer) : make('span', { class: 'who' }, 'Waiting for Claude'));
           list.appendChild(li);

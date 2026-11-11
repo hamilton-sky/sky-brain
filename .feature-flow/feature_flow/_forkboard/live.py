@@ -3,13 +3,18 @@
 The page (index.html) stays fixed; what people do lands in state.json beside it, which the page saves with the
 artifact's own publish. Each person saves their own version of a diagram, keyed by their id; the original is the
 document's diagram; asks are questions for the session, which answers them and publishes again. A Change button on a
-done step is an ask with its "step". Picks are the last thing anyone picked on each of the document's choices.
+done step is an ask with its "step", and it takes back the approval of that step and the ones after it. On a page
+with steps, a pick waits on the page until the step's Approve button saves all of that step's picks at once, with an
+approval and an ask that has "approve": true; that save is what wakes the session. Picks are the last thing anyone
+approved (or, for a choice outside any step, picked) on each of the document's choices. An ask's "about" names the
+option, or the subject from a section's "ask_about" (a plan's ticket), that someone asked about.
 
     state.json = {"feature", "round",
                   "figures": {"<n>": {"title", "source", "original": graph,
                                       "versions": {"<person id>": {"graph", "pos", "at", "via"}}}},
-                  "asks": [{"by", "at", "figure", "version", "text", "answer", "step"?}],
-                  "picks": {"<choice key>": {"by", "at", "value"}}}
+                  "asks": [{"by", "at", "figure", "version", "text", "answer", "step"?, "approve"?, "about"?}],
+                  "picks": {"<choice key>": {"by", "at", "value"}},
+                  "approved": {"<step name>": {"by", "at"}}}
 
 The n-th figure is the n-th mermaid diagram in the document, counted from 1, as on the page. "feature" is the
 document's id (the name is kept so pages published before forkboard still load). "source" is a fingerprint of the
@@ -35,7 +40,14 @@ def state(doc, old=None):
                            "versions": kept.get("versions") or {}}
     return {"feature": doc.get("id") or "review", "round": int(old.get("round") or 0) + 1, "figures": figures,
             "asks": old.get("asks") if isinstance(old.get("asks"), list) else [],
-            "picks": old.get("picks") if isinstance(old.get("picks"), dict) else {}}
+            "picks": old.get("picks") if isinstance(old.get("picks"), dict) else {},
+            "approved": approved(old)}
+
+
+def approved(st):
+    """{step name: {by, at}} for the steps someone approved on the page and nobody took back with Change."""
+    got = (st or {}).get("approved")
+    return {str(k): v for k, v in got.items() if isinstance(v, dict)} if isinstance(got, dict) else {}
 
 
 def picks(st):
@@ -56,8 +68,10 @@ def asks(st):
         fig = str(ask.get("figure") or "")
         where = fig and (st.get("figures") or {}).get(fig)
         lines.append("ask %d from %s at %s%s%s:" % (i, ask.get("by") or "someone", ask.get("at") or "?",
-                                                      " about figure %s (%s)" % (fig, where.get("title", "")) if where else "",
-                                                      " to change the step %s" % ask["step"] if ask.get("step") else ""))
+                                                      (" about figure %s (%s)" % (fig, where.get("title", "")) if where else "")
+                                                      + (' about "%s"' % ask["about"] if ask.get("about") else ""),
+                                                      (" to approve the step %s" if ask.get("approve") else " to change the step %s")
+                                                      % ask["step"] if ask.get("step") else ""))
         lines.append("  " + str(ask.get("text") or "").replace("\n", "\n  "))
         version = where and ask.get("version") and where["versions"].get(ask["version"])
         if version:

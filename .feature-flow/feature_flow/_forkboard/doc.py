@@ -12,11 +12,15 @@
 Two parts are optional, and a page without them looks as before:
 
      "steps": [{"name": "Setup", "state": "done|current|later", "summary": "type learn, scouts web=deep"}],
+     a section's "ask_about": ["01 Export button"]   # subjects people can ask the tool about, one at a time
      a section's "step": "Setup"     # the step it belongs to: a done step folds into its summary and a Change button
-     a section's "choices": [{"key": "type", "label": "Type", "kind": "one|some", "max": 2,
+     a section's "choices": [{"key": "type", "label": "Type", "kind": "one|some", "max": 2, "about": "what it sets",
                               "options": [{"value": "learn", "label": "Learn", "note": "new to the domain"}],
                               "value": "learn"}]   # one: a string; some: a list. What people pick lands in the
                                                    # page's state (live.py), and the tool reads it back.
+                                                   # Each option's note is shown under the choice, so people
+                                                   # see what each one means. With steps, the page shows them as
+                                                   # tabs, and a pick waits for its step's Approve button.
 
 The markdown is the restricted kind page.blocks() renders. Forkboard never reads or writes the tool's own files:
 the tool turns them into this document, and writes back what people did itself.
@@ -45,6 +49,9 @@ def check(doc):
             raise ValueError("a section's items must be a list of objects")
         for choice in section.get("choices") or []:
             check_choice(choice)
+        about = section.get("ask_about", [])
+        if not isinstance(about, list) or not all(isinstance(x, str) for x in about):
+            raise ValueError("a section's ask_about must be a list of strings")
     steps = doc.get("steps") or []
     if not isinstance(steps, list) or not all(isinstance(s, dict) and s.get("name") and s.get("state", "later") in STATES
                                               for s in steps):

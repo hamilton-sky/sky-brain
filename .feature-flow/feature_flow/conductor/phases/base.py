@@ -84,7 +84,7 @@ def ticket_prompt(ws, word, notes=()):
                              notes,
                              retry=retry,
                              workdir=(str(ws.folder.resolve()), lanes.branch(ws.feature, ws.get("num"))) if ws.lane else None,
-                             top=ws.prompts_top)
+                             top=ws.prompts_top, gate_on=bool(ws.gate_on))
     try:
         text = build(notes, ws.num("round") > 0 or ws.num("attempt") > 1)  # sent back, or an attempt left it unresolved
         if ws.lane:  # the role, the guide and the task get the rewrite; the notes and the debugging guide never did

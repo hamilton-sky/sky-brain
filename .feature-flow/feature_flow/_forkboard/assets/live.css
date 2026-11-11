@@ -26,3 +26,8 @@ g.ghost text{fill:#c8402f;opacity:.75;text-decoration:line-through;font-family:v
 .dg g.edge.diff-add path:not(.hit){stroke:#2f8a3e;stroke-width:2.4}
 g.edge.ghost path{fill:none;stroke:#c8402f;stroke-width:1.6;stroke-dasharray:5 4;opacity:.75}
 .diff-sum{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.ask-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--f-display);font-size:.82rem;margin-top:8px}
+.ask-row textarea{font:inherit;font-size:.9rem;background:var(--box);color:var(--fg);border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;width:100%;min-height:3.5em;resize:vertical}
+.ask-row select,.ask-row button{font:inherit;background:var(--box);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px 10px;cursor:pointer;max-width:100%}
+.ask-row button.go{background:var(--acc);color:var(--box);border-color:var(--acc)}
+.ask-row button[hidden],.ask-about[hidden]{display:none}

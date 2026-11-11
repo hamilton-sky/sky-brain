@@ -104,7 +104,7 @@ class BatchScheduler(SerialScheduler):
         # a checkpointed gate runs only Quick here (nothing without a Quick command): the full gate is the checkpoint's
         quick = True if c.checkpointing() else c.gate_quick()
         gated = built and (c.has_quick() or not c.checkpointing())
-        gate = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick) if gated else None
+        gate = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, log=c.log) if gated else None
         if gated:
             c.log("GATE-PASS" if gate.ok else "GATE-FAIL")
         broke = None

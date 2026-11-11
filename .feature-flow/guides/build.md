@@ -77,7 +77,7 @@ Proceed?
 For every bullet in **Done when**, in this order:
 
 1. Name the command.
-2. Run it fresh, in full, now. A result from earlier in the session does not count.
+2. Run it fresh, in full, now. A result from earlier in the session does not count. (The one exception is the whole Test command, below: it is the conductor's.)
 3. Read all of its output and its exit code.
 4. Check that the output says what the bullet claims.
 5. Only then write the claim.
@@ -86,14 +86,15 @@ For every bullet in **Done when**, in this order:
 
 The conductor also runs the ticket's `check` block (the `$` commands in Done when) before review, so run that block yourself first.
 
-While you work, run only the tests you are changing (or the `Quick:` command, when `commands.md` has one), not the whole Test command after every edit. Run the whole Test command once, at the end, as Done when asks. The conductor's gate runs it again after you, and the reviewer takes the gate's result: the full suite runs once per ticket where it counts.
+**The full suite is the conductor's, not yours.** Run the tests your change touches: the test files you wrote or changed, the tests of the modules you changed, the `Quick:` command when `commands.md` has one, and any `Check <path>:` command for a path you changed. Do not run the whole Test command: the conductor's gate runs it after you (or at its checkpoint), its result is the one that counts, and the reviewer takes it. For a Done when bullet that only says the whole Test command passes, write `left to the conductor's gate` in its Proof instead of running it. Only when your prompt says the gate is off for this run do you run the whole Test command yourself, once, at the end.
 
 Fix failures that are inside the ticket. If a fix needs changes outside it, go to Failure handling.
 
 | You think | What is true |
 |---|---|
 | "It passed before my last edit." | Run it again after the last edit. |
-| "The suite is slow, I will run it once at the end." | A late failure costs more. Run it now. |
+| "The tests I touched are slow, I will run them once at the end." | A late failure costs more. Run them now. |
+| "I will run the whole Test command too, to be safe." | The conductor's gate runs it after you. Run the tests your change touches. |
 | "I will loosen this check a little." | That is weakening the bar. Stop and report. |
 | "This neighbouring file is messy, I will tidy it." | Not in the ticket. Leave it. |
 | "The reviewer will catch it." | You are the first check. Prove it yourself. |

@@ -9,7 +9,7 @@ The page goes beside the brainstorm (same name, .html). The look is a Forkboard 
 that adds its own (an Artifact). --live writes DIR/index.html and DIR/state.json to publish as an artifact that
 saves itself; --asks, --answer, --apply and --picks are the session's side of it, and --apply and --picks are the
 only parts that write the brainstorm (--picks only its Type:, Scouts: and Helpers: lines): Forkboard never touches it.
-The page is the guided flow's one page (feature_flow/flow_page.py): Setup, Options, Plan and Build, as steps.
+The page is the guided flow's one page (feature_flow/flow_page.py): Style, Team, Options, Plan and Build, as tabs.
 """
 
 import os
@@ -145,15 +145,19 @@ def main(argv, out=None, err=None):
         err.write("no style %s: pick one of %s (Forkboard's themes)\n" % (name, ", ".join(names) or "none installed"))
         return 1
     css = fb.page.theme_css(name)
+    old_state = fb.live.load(Path(live) / "state.json") if tool == "live" else None
+    approved = None
+    if tool == "live":  # the steps the user approved on the page move it on, one Approve at a time
+        approved = set(fb.live.approved(old_state or {})) if hasattr(fb.live, "approved") else set()
     try:
-        doc = flow_page.document(document(text, feature), text, top=top, feature=feature)
+        doc = flow_page.document(document(text, feature), text, top=top, feature=feature, approved=approved)
     except brainstorm_mode.BadMode as e:
         err.write("%s. fix the header of %s\n" % (e, path.as_posix()))
         return 1
     if tool == "live":  # the page and its state, to publish together as an artifact that saves itself
         folder = Path(live)
         folder.mkdir(parents=True, exist_ok=True)
-        st = fb.live.state(doc, fb.live.load(folder / "state.json"))
+        st = fb.live.state(doc, old_state)
         (folder / "index.html").write_text(fb.page.render(doc, css, name, True, True), encoding="utf-8")
         (folder / "state.json").write_text(fb.live.dump(st), encoding="utf-8")
         out.write("wrote %s and %s (round %d, %d figures, %d open asks)\n" % (
@@ -188,17 +192,20 @@ def live_tool(fb, tool, path, text, state_path, extra, out, err, plans=(None, No
             picks = fb.live.picks(st)
             draft, plan = plans
             plan_picks = {k: v for k, v in picks.items() if flow_page.is_plan_key(k)}
-            setup_picks = {k: v for k, v in picks.items() if not flow_page.is_plan_key(k)}
+            option = picks.get(flow_page.OPTION_KEY)
+            setup_picks = {k: v for k, v in picks.items() if not flow_page.is_plan_key(k) and k != flow_page.OPTION_KEY}
             if not picks:
                 out.write("no picks on the page: %s is as it was\n" % path.as_posix())
                 return 0
-            if setup_picks and not (draft or plan):  # once the plan is drafted, Setup is done
+            if setup_picks and not (draft or plan):  # once the plan is drafted, Style and Team are done
                 try:
                     new, lines = flow_page.apply_picks(text, setup_picks)
                 except brainstorm_mode.BadMode as e:
                     raise ValueError(str(e))
                 path.write_text(new, encoding="utf-8")
                 out.write("wrote %s into %s\n" % (", ".join("%s: %s" % kv for kv in lines.items()), path.as_posix()))
+            if option and not (draft or plan):
+                out.write("the page picked option %s: write it as Chosen (brainstorm guide, Step 4)\n" % option)
             if plan_picks:
                 if plan:
                     out.write("the plan is accepted, so the Plan step's picks are kept as approved: change its build "

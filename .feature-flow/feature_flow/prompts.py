@@ -99,7 +99,23 @@ def builder_note(scripts, ticket_path, top="."):
             % name, note]
 
 
-def build(phase, scripts, feature, ticket, num, sha, notes=(), retry=False, workdir=None, top="."):
+FIX = re.compile(r"^Type:[ \t]*fix\b", re.IGNORECASE | re.MULTILINE)
+
+
+def is_fix(path):
+    """True when the ticket's header says `Type: fix` (a ticket from flow-status --fix)."""
+    try:
+        head = "\n".join(Path(path).read_text(encoding="utf-8", errors="replace").splitlines()[:20])
+    except OSError:
+        return False
+    return bool(FIX.search(head))
+
+
+GATE_OFF = ("The conductor's gate is off for this run, so nothing runs the whole Test command after you: run it "
+            "yourself once, at the end, and prove it as Done when asks.")
+
+
+def build(phase, scripts, feature, ticket, num, sha, notes=(), retry=False, workdir=None, top=".", gate_on=True):
     role_text = role(scripts, ROLES[phase], top)
     guide = _runner(_body(find_file(scripts, "guides", GUIDES[phase], top)), scripts)
     for placeholder, value in (("<feature>", feature), ("<NN>", num), ("<ticket>", ticket), ("<sha>", sha),
@@ -111,6 +127,8 @@ def build(phase, scripts, feature, ticket, num, sha, notes=(), retry=False, work
         task = ("Your task: build ticket %s of the feature `%s`, in auto mode (`%s auto %s`). The ticket is `%s`. "
                 "The work starts at commit `%s`.\n%s\nWhen you are done, reply with what you built and the "
                 "commit. Do not review your own work." % (num, feature, feature, num, ticket, sha, fresh))
+        if not gate_on:
+            task += "\n" + GATE_OFF
         task += codeintel.note("builder", top, sha)
         intro = "The build guide follows. Follow it exactly."
     else:
@@ -135,6 +153,10 @@ def build(phase, scripts, feature, ticket, num, sha, notes=(), retry=False, work
     if phase == "build":
         parts += builder_note(scripts, Path(workdir[0]) / ticket if workdir is not None else Path(ticket), top)
     parts += ["---", task]
+    if phase == "build" and not retry and is_fix(Path(workdir[0]) / ticket if workdir is not None else Path(top) / ticket):
+        parts += ["This ticket fixes a bug (`Type: fix`). The debugging guide follows: start at its step 2, reproduce, "
+                  "and follow it before you change any code.",
+                  _body(find_file(scripts, "guides", "debug.md", top))]
     if retry and phase == "build":
         parts += ["The debugging guide follows. Follow it before you change any code.",
                   _body(find_file(scripts, "guides", "debug.md", top))]

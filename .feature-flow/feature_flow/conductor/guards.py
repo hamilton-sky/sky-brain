@@ -271,7 +271,7 @@ class BaseGate(Guard):
     def run(self, c, busy):
         if busy or not c.settings.base_gate or not c.gate_on or c.all.get("base_gate"):
             return None
-        result = checks.gate(c.scripts, c.feature, c.gate_timeout)
+        result = checks.gate(c.scripts, c.feature, c.gate_timeout, log=c.log)
         c.log("BASE-GATE-PASS" if result.ok else "BASE-GATE-FAIL")
         if not result.ok:
             log = c.state_file.with_name("%s.base-gate.log" % c.feature)

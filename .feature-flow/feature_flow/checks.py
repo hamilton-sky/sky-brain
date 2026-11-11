@@ -5,6 +5,7 @@ in-process call without touching the conductor.
 """
 
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -56,14 +57,32 @@ def flow_status(scripts, feature, mode, root=None, cwd=None):
     return Result(code, out.text())
 
 
-def gate(scripts, feature, timeout=None, quick=False, cwd=None, changed=None):
+def _stderr(text):
+    try:
+        sys.stderr.write(text)
+        sys.stderr.flush()
+    except (OSError, ValueError, UnicodeError):
+        pass  # a live line is a courtesy: a closed or narrow stderr must not fail the gate
+
+
+def gate(scripts, feature, timeout=None, quick=False, cwd=None, changed=None, log=None):
     """The gate, run in process. stderr is folded into the output as the subprocess call did.
-    timeout is minutes, None for FLOW_GATE_TIMEOUT. quick runs Quick in the place of Test. cwd, changed: see gate.run."""
+    timeout is minutes, None for FLOW_GATE_TIMEOUT. quick runs Quick in the place of Test. cwd, changed: see gate.run.
+    While it runs, a line naming its log and a "still running" line every minute go to this process's stderr, so a
+    person (or an agent that reads it as it comes) is not left waiting in silence. log, when given, is the run log's
+    writer: it gets a `GATE-TIME` line with the seconds each command took (`GATE-TIME Test=182 Lint=4`).
+    Result.timings is the [(command, seconds)] list."""
     chunks = []
-    code = gate_module.run(str(feature), chunks.append, chunks.append, timeout, quick, cwd=cwd, changed=changed)
+    timings = []
+    code = gate_module.run(str(feature), chunks.append, chunks.append, timeout, quick, cwd=cwd, changed=changed,
+                           progress=_stderr, timings=timings, announce=True)
     out = "".join(chunks).encode("utf-8", "surrogateescape").decode("utf-8", "replace")
     out = out.replace("\r\n", "\n").replace("\r", "\n")
-    return Result(code, out)
+    if log is not None and timings:
+        log("GATE-TIME " + " ".join("%s=%d" % (key.replace(" ", "_"), round(seconds)) for key, seconds in timings))
+    result = Result(code, out)
+    result.timings = timings
+    return result
 
 
 def floor_guard(scripts, feature, num, base, cwd=None):

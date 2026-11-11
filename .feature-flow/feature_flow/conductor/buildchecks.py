@@ -7,6 +7,7 @@ the gate only with the gate on (a batch leaves it out: its gate runs once at HEA
 first only with the gate on. A checkpointed gate leaves the full gate and Done when to the checkpoint.
 """
 
+import json
 import re
 
 from feature_flow import checks, git, lanes, proof, tickets
@@ -31,7 +32,8 @@ class Gate:
     def run(self, c):
         quick = c.gate_quick() if self.quick is None else self.quick
         changed = git.diff_names(c.get("base"), "HEAD", c.plan.as_posix(), cwd=_folder(c)) if c.get("base") else None
-        result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=_folder(c), changed=changed)
+        result = checks.gate(c.scripts, c.feature, c.gate_timeout, quick=quick, cwd=_folder(c), changed=changed,
+                             log=c.log)
         c.log("GATE-QUICK" if quick else "GATE-FULL")
         c.log("GATE-PASS" if result.ok else "GATE-FAIL")
         if not result.ok:
@@ -62,9 +64,10 @@ class Footprint:
 
     def run(self, c):
         patterns = lanes.touches(c.ticket_at_base())
+        changed = git.diff_names(c.get("base"), "HEAD", c.plan.as_posix(), cwd=_folder(c))
+        c.log("CHANGED %s" % json.dumps(sorted(changed)[:200]))  # plan vs reality (feature_flow/reality.py) reads it
         if patterns is None:
             return None, "", []
-        changed = git.diff_names(c.get("base"), "HEAD", c.plan.as_posix(), cwd=_folder(c))
         outside = [p for p in changed if not tickets.matches_sensitive(p, patterns)]
         declared = {}
         if len(outside) == 1 and not getattr(c, "lane", 0) and not c.fast():

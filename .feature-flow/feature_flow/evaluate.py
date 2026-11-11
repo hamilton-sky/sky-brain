@@ -124,7 +124,8 @@ PHASE_OF = {"BUILD": "build", "CHECKS": "checks", "REVIEW": "review", "ASK": "as
 def timing(rows, per):
     """Where the run's wall clock went, from the log's timestamps, which survive a reset: minutes per phase (build,
     checks, review, ask, test, waiting for the user), per ticket and per level, the slowest ticket and its biggest
-    phase, and how often the gate ran the whole Test command per ticket. None for a log without dates."""
+    phase, how often the gate ran the whole Test command per ticket, and the gate's minutes per command (from its
+    GATE-TIME lines). None for a log without dates."""
     stamped = [r for r in rows if r[0] is not None]
     if len(stamped) < 2:
         return None
@@ -148,6 +149,13 @@ def timing(rows, per):
     for _, n, event, _ in rows:
         if event in ("GATE-FULL", "MERGE-GATE-FULL-PASS", "MERGE-GATE-FULL-FAIL"):
             full[n] = full.get(n, 0) + 1
+    gate_seconds = {}
+    for _, _, event, detail in rows:
+        if event == "GATE-TIME":
+            for part in detail.split():
+                name, _, value = part.partition("=")
+                if value.isdigit():
+                    gate_seconds[name] = gate_seconds.get(name, 0) + int(value)
     slowest = None
     if by_ticket:
         n = max(by_ticket, key=lambda k: sum(by_ticket[k].values()))
@@ -157,7 +165,8 @@ def timing(rows, per):
     return {"wall_minutes": round(whole), "by_phase": {k: round(v) for k, v in sorted(by_kind.items())},
             "by_ticket": {n: {k: round(v) for k, v in sorted(row.items())} for n, row in sorted(by_ticket.items())},
             "by_level": {k: round(v) for k, v in sorted(by_level.items())}, "slowest": slowest,
-            "full_test_runs": dict(sorted(full.items()))}
+            "full_test_runs": dict(sorted(full.items())),
+            "gate_minutes": {k: round(v / 60.0, 1) for k, v in sorted(gate_seconds.items())}}
 
 
 def driver(rows, run_state):
@@ -465,6 +474,8 @@ def render(record, out_dir, wrote_form):
             lines.append("  slowest ticket: %(ticket)s, %(minutes)d min, most of it in %(most_in)s" % tm["slowest"])
         if tm["full_test_runs"]:
             lines.append("  whole Test runs by the gate: " + ", ".join("%s x%d" % kv for kv in tm["full_test_runs"].items()))
+        if tm.get("gate_minutes"):
+            lines.append("  gate minutes by command: " + ", ".join("%s %s" % kv for kv in tm["gate_minutes"].items()))
     tok = record["tokens"]
     if tok:
         total = tok["total"]

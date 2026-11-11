@@ -239,6 +239,16 @@ FX = ('<svg class="fx" aria-hidden="true" focusable="false"><filter id="fb-rough
 KINDS = {"chosen": "callout good", "rejected": "muted", "open": "callout", "callout": "callout"}
 
 
+def ask_about(subjects):
+    """A place the live layer turns into an "Ask Claude about" box with a pick of the section's subjects (its
+    tickets, say); empty without subjects. Each item of a section is a subject of its own, without this."""
+    subjects = [str(x) for x in subjects or [] if str(x).strip()]
+    if not subjects:
+        return ""
+    data = json.dumps(subjects, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    return '<div class="ask-about" hidden><script type="application/json">%s</script></div>' % data
+
+
 def has_choices(doc):
     return any(section.get("choices") for section in doc.get("sections") or [])
 
@@ -264,36 +274,59 @@ def choices(items):
                 opts.append('<button type="button" data-value="%s" aria-pressed="%s"%s disabled>%s</button>' % (
                     html.escape(v), str(v in picked).lower(), title, inline(label)))
         top = choice.get("max")
-        out.append('<fieldset class="choice" data-key="%s" data-kind="%s"%s><legend>%s%s</legend><div class="pick">%s</div>%s'
-                   '</fieldset>' % (html.escape(key), kind, ' data-max="%d"' % top if isinstance(top, int) else "",
-                                    inline(choice.get("label") or key),
-                                    ' <span class="most">up to %d</span>' % top if isinstance(top, int) and kind == "some" else "",
-                                    "".join(opts),
-                                    '<p class="note">%s</p>' % inline(choice["note"]) if choice.get("note") else ""))
-    return ('<div class="choices">%s<p class="choice-hint">Reply ok in the chat to take these, or say what to change.</p>'
-            '</div>' % "".join(out))
+        explain = [(o.get("label") or str(o["value"]), o["note"]) for o in choice["options"] if o.get("note")]
+        out.append('<fieldset class="choice" data-key="%s" data-kind="%s"%s><legend>%s%s</legend>%s<div class="pick">%s</div>'
+                   '%s%s</fieldset>' % (
+                       html.escape(key), kind, ' data-max="%d"' % top if isinstance(top, int) else "",
+                       inline(choice.get("label") or key),
+                       ' <span class="most">up to %d</span>' % top if isinstance(top, int) and kind == "some" else "",
+                       '<p class="about">%s</p>' % inline(choice["about"]) if choice.get("about") else "",
+                       "".join(opts),
+                       '<ul class="explain">%s</ul>' % "".join('<li><b>%s</b> %s</li>' % (inline(label), inline(note))
+                                                               for label, note in explain) if explain else "",
+                       '<p class="note">%s</p>' % inline(choice["note"]) if choice.get("note") else ""))
+    return '<div class="choices">%s%s</div>' % ("".join(out), CHOICE_HINT)
+
+
+CHOICE_HINT = '<p class="choice-hint">Reply ok in the chat to take these, or say what to change.</p>'
+
+
+def has_choices_html(html_text):
+    return 'class="choice"' in html_text
 
 
 def stepped(steps, body):
-    """The sections as HTML, grouped under their steps when the document has steps: a done step folds into its
-    summary, the current one is open, a later one is greyed. Sections with no step come last."""
+    """The sections as HTML, grouped under their steps when the document has steps: each step is a tab, opened on the
+    current one. A done step shows its summary and a Change button; the current step, when it has choices, an Approve
+    button that saves its picks for the tool at once; a later step is greyed. Sections with no step come last."""
     if not steps:
         return "\n".join(h for _, h in body)
-    out = ['<ol class="steps" aria-label="Steps">%s</ol>' % "".join(
-        '<li class="%s"><span class="n">%d</span><b>%s</b>%s</li>' % (
-            s.get("state") or "later", n, html.escape(s["name"]),
-            '<span class="sum">%s</span>' % inline(s["summary"]) if s.get("summary") else "")
+    current = next((n for n, s in enumerate(steps, 1) if s.get("state") == "current"), None)
+    if current is None:
+        current = max([n for n, s in enumerate(steps, 1) if s.get("state") == "done"] or [1])
+    out = ['<div class="tabs" role="tablist" aria-label="Steps">%s</div>' % "".join(
+        '<button type="button" role="tab" class="tab %s" id="tab-%d" aria-controls="step-%d" aria-selected="%s"%s>'
+        '<span class="n">%d</span><b>%s</b>%s</button>' % (
+            s.get("state") or "later", n, n, str(n == current).lower(), "" if n == current else ' tabindex="-1"', n,
+            html.escape(s["name"]), '<span class="sum">%s</span>' % inline(s["summary"]) if s.get("summary") else "")
         for n, s in enumerate(steps, 1))]
     for n, s in enumerate(steps, 1):
         name, state = s["name"], s.get("state") or "later"
-        inner = "\n".join(h for step, h in body if step == name)
+        inner = "\n".join(h for step, h in body if step == name).replace(CHOICE_HINT, "")  # the Approve row says it
         head = '<div class="step-head"><span class="n">%d</span><b>%s</b>%s%s</div>' % (
             n, html.escape(name), '<span class="sum">%s</span>' % inline(s["summary"]) if s.get("summary") else "",
             '<button type="button" class="change" data-change="%s" hidden>Change</button>' % html.escape(name)
             if state == "done" else "")
-        if state == "done" and inner:
-            inner = '<details class="step-body"><summary>Show %s</summary>%s</details>' % (html.escape(name), inner)
-        out.append('<div class="step %s" data-step="%s">%s%s</div>' % (state, html.escape(name), head, inner))
+        approve = ""
+        if state == "current" and has_choices_html(inner):
+            approve = ('<div class="approve-row"><button type="button" class="approve" data-approve="%s" disabled>'
+                       'Approve %s</button><span class="approve-hint">Reply ok in the chat to take these, or say what '
+                       'to change.</span></div>' % (html.escape(name), html.escape(name)))
+        if state == "later" and not inner:
+            inner = '<p class="later-note">This step opens once the steps before it are approved.</p>'
+        out.append('<section class="step %s" role="tabpanel" id="step-%d" aria-labelledby="tab-%d" data-step="%s"%s>'
+                   '%s%s%s</section>' % (state, n, n, html.escape(name), "" if n == current else " hidden",
+                                         head, inner, approve))
     out += [h for step, h in body if not step]
     return "\n".join(out)
 
@@ -317,16 +350,16 @@ def render(doc, css, theme_name, fragment=False, live=False):
             cid = slug(sub, used)
             children.append('<li><a href="#%s"><span class="n">%s</span>%s</a></li>'
                             % (cid, html.escape(label) if label else "&middot;", inline(sub)))
-            sub_html.append('<article class="opt%s" id="%s"><h3>%s%s</h3>%s</article>' % (
-                " chosen" if picked else "", cid, inline(sub),
+            sub_html.append('<article class="opt%s" id="%s" data-about="%s"><h3>%s%s</h3>%s</article>' % (
+                " chosen" if picked else "", cid, html.escape(sub), inline(sub),
                 ' <span class="badge">chosen</span>' if picked else "", blocks(lines(item.get("markdown")), figures)))
         inner = blocks(lines(section.get("markdown")), figures)
         cls = KINDS.get(kind, "")
         if cls.startswith("callout"):
             inner = '<div class="%s">%s</div>' % (cls, inner)
         body.append((section.get("step") or "", '<section class="block%s" id="%s"><div class="lvl-head"><div class="eyebrow">%s</div><h2>%s</h2>'
-                    '</div>%s%s%s</section>' % (" muted" if kind == "rejected" else "", sid,
-                                              html.escape(ident), inline(heading), inner,
+                    '</div>%s%s%s%s</section>' % (" muted" if kind == "rejected" else "", sid,
+                                              html.escape(ident), inline(heading), inner, ask_about(section.get("ask_about")),
                                               choices(section.get("choices") or []),
                                               '<div class="opts">%s</div>' % "".join(sub_html) if sub_html else "")))
         nav.append('<li><a href="#%s"><span class="n">%d</span>%s</a>%s</li>' % (
