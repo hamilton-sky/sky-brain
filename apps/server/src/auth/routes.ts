@@ -36,6 +36,12 @@ function sendPage(
 export function mountAuth(app: express.Express, auth: Auth): void {
   const handler = toNodeHandler(auth);
 
+  // DCR stays off (spec.md): the oauth provider answers 403 here, the route must not exist.
+  app.all("/api/auth/oauth2/register", (_req, res) => {
+    res
+      .status(404)
+      .json({ error: { code: "not_found", message: "No such API route." } });
+  });
   app.all("/api/auth/*splat", handler);
   // Better Auth's mcp() and oauth provider answer these absolute paths in its own handler.
   app.get("/.well-known/oauth-protected-resource", handler);

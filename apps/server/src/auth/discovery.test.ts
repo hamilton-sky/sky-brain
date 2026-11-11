@@ -60,7 +60,8 @@ describe("discovery", () => {
         token_endpoint_auth_method: "none",
       }),
     });
-    expect(res.status >= 200 && res.status < 300).toBe(false);
+    expect(res.status).toBe(404);
+    expect(res.body?.client_id).toBeUndefined();
   });
 
   it("discovery: auth routes are not shadowed by the /api 404 or the web catch-all", async () => {
