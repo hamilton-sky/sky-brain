@@ -49,3 +49,8 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - 1. minor apps/server/src/auth/routes.ts: the 404 body `{ error: { code: "not_found", message: "No such API route." } }` is copied from the `/api` 404 handler in `apps/server/src/app.ts:65` - move it into one small shared helper (or constant) that both use. (pair review)
 - 2. minor apps/server/src/auth/discovery.test.ts: the test now hits the new 404 route, not Better Auth's own handler. If someone turned dynamic registration back on in the auth config, this test would still pass; only the metadata check would catch it - add a line that checks Better Auth still refuses registration underneath, or a comment saying the 404 route is the guard. (pair review)
+
+## 07-prove-the-bar (left for later)
+
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
