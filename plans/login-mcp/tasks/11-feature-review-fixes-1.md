@@ -1,7 +1,7 @@
 # Fix the findings of the feature review, round 1
 
 Type: task
-Status: resolved
+Status: open
 Blocked by: —
 Test first: no
 Level: 2
@@ -110,3 +110,10 @@ The review of the whole feature (from commit 192ebae3a05893808eed80da515c61362e8
 - When shammai answers on Better Auth or the other clients are tried, add a new D entry (D20);
   do not edit D18 or D19. Switch Vercel's production branch back to `main` after the merge and
   drop the note in CONNECT.md § Verified.
+
+## Review findings (round 1, floor guard)
+
+warning: 1 assertion line(s) removed, 0 added. check that no test got weaker.
+floor guard: the diff weakens the bar instead of meeting it
+ticket-edit: plans/login-mcp/followups.md: only your own ticket, map.md and learnings.md may change
+if a finding is intended, the ticket needs a line like: Floor: allow <category>
