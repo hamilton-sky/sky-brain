@@ -64,3 +64,8 @@ What the run left for later: minor findings of passing reviews, the findings a l
 
 - 1. minor apps/server/src/auth/routes.ts: the new guard on GET /api/auth/callback/perminister sends every callback with no state to `error=state_mismatch`. That includes a Perminister error callback with no state, such as `?error=access_denied`, so the person sees "state mismatch" instead of the real refusal. Still no session and no security effect. Fix: if you want the real reason shown, let a stateless callback that carries `error=` through, or pass its value along. (pair review)
 - 2. minor apps/server/src/auth/routes.ts: the redirect target `/api/auth/error` is hardcoded. It matches Better Auth's default error URL today, but it would drift if an `errorURL` is ever configured. Fix: take it from the auth config, or note the coupling in a comment. (pair review)
+
+## 07-prove-the-bar (left for later)
+
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -sS -o /dev/null -w 'status %{http_code}' -X POST "$PUBLIC_URL/mcp"` (here: exit 3)
+- deferred check, needs network and the deployed service, with PUBLIC_URL set to its address: `curl -fsS "$PUBLIC_URL/.well-known/oauth-protected-resource/mcp"` (here: exit 3)
