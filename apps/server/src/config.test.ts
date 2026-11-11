@@ -6,8 +6,8 @@ const productionAuth = {
   PUBLIC_URL: "https://brain.example.com",
   BETTER_AUTH_SECRET: "test-secret-0123456789abcdef0123456789",
   PERMINISTER_BASE_URL: "https://perminister.example.com",
-  PERMINISTER_CLIENT_ID: "test-client-id",
-  PERMINISTER_CLIENT_SECRET: "test-client-secret",
+  PERMINISTER_APP_CLIENT_ID: "test-client-id",
+  PERMINISTER_APP_CLIENT_SECRET: "test-client-secret",
 };
 
 const productionAuthConfig = {
@@ -112,15 +112,50 @@ describe("readConfig auth settings", () => {
     expect(message).not.toContain("short-secret-value");
   });
 
-  it("refuses production without the Perminister client", () => {
-    for (const name of [
-      "PERMINISTER_BASE_URL",
-      "PERMINISTER_CLIENT_ID",
-      "PERMINISTER_CLIENT_SECRET",
-    ]) {
-      expect(() => production({ [name]: undefined }), name).toThrow(
-        new RegExp(name),
+  it("prefers PERMINISTER_APP_CLIENT_ID and PERMINISTER_APP_CLIENT_SECRET", () => {
+    const config = production({
+      PERMINISTER_CLIENT_ID: "old-client-id",
+      PERMINISTER_CLIENT_SECRET: "old-client-secret",
+    });
+    expect(config.perministerClientId).toBe("test-client-id");
+    expect(config.perministerClientSecret).toBe("test-client-secret");
+  });
+
+  it("falls back to PERMINISTER_CLIENT_ID and PERMINISTER_CLIENT_SECRET", () => {
+    for (const unset of [undefined, ""]) {
+      const config = production({
+        PERMINISTER_APP_CLIENT_ID: unset,
+        PERMINISTER_APP_CLIENT_SECRET: unset,
+        PERMINISTER_CLIENT_ID: "old-client-id",
+        PERMINISTER_CLIENT_SECRET: "old-client-secret",
+      });
+      expect(config.perministerClientId, String(unset)).toBe("old-client-id");
+      expect(config.perministerClientSecret, String(unset)).toBe(
+        "old-client-secret",
       );
+    }
+  });
+
+  it("refuses production without the Perminister client", () => {
+    expect(() => production({ PERMINISTER_BASE_URL: undefined })).toThrow(
+      /PERMINISTER_BASE_URL/,
+    );
+    for (const [newName, oldName] of [
+      ["PERMINISTER_APP_CLIENT_ID", "PERMINISTER_CLIENT_ID"],
+      ["PERMINISTER_APP_CLIENT_SECRET", "PERMINISTER_CLIENT_SECRET"],
+    ]) {
+      for (const unset of [undefined, ""]) {
+        let message = "";
+        try {
+          production({ [newName]: unset, [oldName]: unset });
+        } catch (err) {
+          message = (err as Error).message;
+        }
+        expect(message, newName).toMatch(
+          new RegExp(`^${newName} must be set when NODE_ENV is production`),
+        );
+        expect(message).not.toContain("test-client-secret");
+      }
     }
   });
 
