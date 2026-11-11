@@ -136,4 +136,4 @@ Without all three settings the server still starts, but there is no Perminister 
   The connector also asks for a Name (`sky-brain`).
 - Codex CLI and DCR: not yet tested
 - Owner of the untested items above: shammai (they need his phone, his Claude Code and a second
-  Perminister account); recorded in `plans/login-mcp/followups.md` and D19.
+  Perminister account); recorded in D19.

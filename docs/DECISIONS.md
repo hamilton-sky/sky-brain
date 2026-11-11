@@ -278,7 +278,7 @@ Code to pass, and only claude.ai has been tried.
 - No client has failed, so nothing points to the WorkOS AuthKit fallback yet.
 **Open:**
 - shammai has not yet answered whether Better Auth stays provisionally or T0 stays open.
-- Still to try, owned by shammai (follow-up in `plans/login-mcp/followups.md`): the Claude phone
+- Still to try, owned by shammai: the Claude phone
   app, Claude Code CLI, a Perminister account without `sky-brain` access, cold-start timing of
   the first discovery and token calls, and Codex CLI with DCR. `docs/CONNECT.md` § Verified keeps
   the list. The final T0 result goes in a new D entry.
