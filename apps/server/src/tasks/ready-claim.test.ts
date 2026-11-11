@@ -294,7 +294,7 @@ describe("ready and claim", () => {
     );
   });
 
-  it("a device of P never sees or claims a task of a goal Q approved, unless P is its assignee (bar 6)", async () => {
+  it("a device of P never sees or claims a task of a goal Q approved, even when P is its assignee (bar 6, D20)", async () => {
     const w = await world(ctx.db);
     const byOwner = await seedTask(ctx.db, {
       goalId: (await goal(w, { by: w.owner })).id,
@@ -305,11 +305,13 @@ describe("ready and claim", () => {
       files: ["y"],
     });
     const wk = await worker(w.editor, w.projectA);
-    expect(await readyIds(wk.client)).toEqual([assigned.id]);
+    expect(await readyIds(wk.client)).toEqual([]);
     expectError(await claim(wk.client, byOwner.id), 409, "not_ready");
-    expect((await claim(wk.client, assigned.id)).status).toBe(200);
+    expectError(await claim(wk.client, assigned.id), 409, "not_ready");
     const owner = await worker(w.owner, w.projectA);
-    expect(await readyIds(owner.client)).toEqual([byOwner.id]);
+    expect((await readyIds(owner.client)).sort()).toEqual(
+      [byOwner.id, assigned.id].sort(),
+    );
   });
 });
 

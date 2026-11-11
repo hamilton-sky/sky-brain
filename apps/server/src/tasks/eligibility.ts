@@ -48,8 +48,9 @@ export function eligibleTask({ person, now, runScope }: Eligibility): SQL {
           eq(tasks.projectId, runScope.projectId),
         ]
       : []),
-    // An approved goal, not held, that this person approved or is assigned.
-    sql`exists (select 1 from ${goals} where ${goals.id} = ${tasks.goalId} and ${goals.status} = 'approved' and ${goals.quarantinedBecause} is null and (${goals.approvedBy} = ${person} or ${goals.assignee} = ${person}))`,
+    // An approved goal, not held, that this person approved themselves (D20): being assigned
+    // a goal someone else approved is not enough, so nothing runs for a person they did not see.
+    sql`exists (select 1 from ${goals} where ${goals.id} = ${tasks.goalId} and ${goals.status} = 'approved' and ${goals.quarantinedBecause} is null and ${goals.approvedBy} = ${person})`,
     isNull(tasks.quarantinedBecause),
     // Pinned: the text is what was approved. The row's text is hashed again here as well, so a
     // change that bypassed `text_hash` (a direct database edit) unpins it too.

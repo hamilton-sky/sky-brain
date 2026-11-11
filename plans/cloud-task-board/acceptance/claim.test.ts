@@ -26,10 +26,10 @@ const ctx = setup();
 
 describe("ready", () => {
   // "`GET /api/v1/tasks/ready` lists only `pending` tasks whose dependencies are all `done`,
-  // under an `approved` goal whose `approved_by` or `assignee` is the caller's person, with no held
+  // under an `approved` goal whose `approved_by` is the caller's person (D20 dropped "or `assignee`"), with no held
   // text and with its pinned text unchanged, in the caller's workspace (and the run token's
   // project)."
-  it("lists only pending tasks with done dependencies under approved goals the caller's person approved or is assigned", async () => {
+  it("lists only pending tasks with done dependencies under approved goals the caller's person approved (an assignee alone is not enough, D20)", async () => {
     const w = await world(ctx.db);
     const mine = await approvedGoal(ctx, w, [{}, { depends_on: [0] }]);
     const others = await approvedGoal(ctx, w, [{}], { person: w.owner });
@@ -44,7 +44,8 @@ describe("ready", () => {
 
     const wk = await worker(ctx, w.editor, w.projectId);
     const ready = await readyIds(wk.client);
-    expect(ready.sort()).toEqual([mine.tasks[0].id, assigned.tasks[0].id].sort());
+    expect(ready).toEqual([mine.tasks[0].id]);
+    expect(ready).not.toContain(assigned.tasks[0].id);
     expect(ready).not.toContain(mine.tasks[1].id);
     expect(ready).not.toContain(others.tasks[0].id);
     expect(ready).not.toContain(draftTask.id);
@@ -100,12 +101,13 @@ describe("claim", () => {
   // Bar 1: "two workers racing to claim one ready task: exactly one wins"
   it("when several workers race for one task exactly one gets 200 and the others 409 already_claimed", async () => {
     const w = await world(ctx.db);
-    const { tasks } = await approvedGoal(ctx, w, [{}], { extra: { assignee: w.owner } });
+    // Four devices of the person who approved the goal (D20: only they may run it).
+    const { tasks } = await approvedGoal(ctx, w, [{}]);
     const workers = [
       await worker(ctx, w.editor, w.projectId),
       await worker(ctx, w.editor, w.projectId),
-      await worker(ctx, w.owner, w.projectId),
-      await worker(ctx, w.owner, w.projectId),
+      await worker(ctx, w.editor, w.projectId),
+      await worker(ctx, w.editor, w.projectId),
     ];
     const results = await Promise.all(workers.map((wk) => claim(wk, tasks[0].id)));
     const wins = results.filter((r) => r.status === 200);

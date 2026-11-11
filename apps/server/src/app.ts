@@ -9,7 +9,10 @@ import { deviceFlowRouter } from "./devices/device-flow.ts";
 import { devicesRouter } from "./devices/devices-router.ts";
 import { createRateLimiter } from "./guards/ratelimit.ts";
 import { errorHandler } from "./http/error-handler.ts";
+import { requireJsonWrites } from "./http/json-writes.ts";
 import { mountMcp } from "./mcp/route.ts";
+import { meRouter } from "./projects/me-router.ts";
+import { projectsRouter } from "./projects/projects-router.ts";
 import { mintRouter } from "./run-tokens/mint-router.ts";
 import { runTokenResolver } from "./run-tokens/resolver.ts";
 import { verbMiddleware } from "./run-tokens/verbs.ts";
@@ -107,6 +110,10 @@ export function createApp(options: AppOptions): express.Express {
     res.status(200).json({ ok: true });
   });
 
+  // Check order step 5: one limiter for every board write, per actor and device, on the app
+  // clock; the board's routers and the MCP board tools share it.
+  const boardLimiter = createRateLimiter({ now: () => now().getTime() });
+
   // Before /api/v1, the /api 404, express.static and the catch-all, which would shadow it.
   if (options.auth) {
     mountAuth(app, options.auth.instance);
@@ -114,6 +121,7 @@ export function createApp(options: AppOptions): express.Express {
       auth: options.auth.instance,
       db,
       now,
+      limiter: boardLimiter,
       publicUrl: options.auth.publicUrl,
     });
   }
@@ -140,6 +148,7 @@ export function createApp(options: AppOptions): express.Express {
       resolveActor,
       devActorHeader: options.devActorHeader ?? false,
     }),
+    requireJsonWrites(),
     express.json({ limit: "64kb" }),
     verbMiddleware(),
   );
@@ -147,9 +156,8 @@ export function createApp(options: AppOptions): express.Express {
   app.use("/api/v1/devices", devicesRouter({ db, now }));
   app.use("/api/v1/run-tokens", mintRouter({ db, now }));
 
-  // Check order step 5: one limiter for every board write, per actor and device, on the app
-  // clock; the board's routers share it.
-  const boardLimiter = createRateLimiter({ now: () => now().getTime() });
+  app.use("/api/v1/me", meRouter({ db }));
+  app.use("/api/v1/projects", projectsRouter({ db, limiter: boardLimiter }));
   app.use("/api/v1/goals", goalsRouter({ db, now, limiter: boardLimiter }));
   app.use("/api/v1/tasks", tasksRouter({ db, now, limiter: boardLimiter }));
 

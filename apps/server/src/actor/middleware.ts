@@ -26,6 +26,14 @@ export function actorOf(req: Request): Actor {
   return actor;
 }
 
+/**
+ * Attach an actor that was already verified elsewhere: the MCP route's bearer JWT, for the
+ * board tools' in-process calls (mcp/board-dispatch.ts). Never call it with request input.
+ */
+export function attachVerifiedActor(req: Request, actor: Actor): void {
+  actors.set(req, actor);
+}
+
 function parseDevActor(raw: string): Actor {
   let value: unknown;
   try {

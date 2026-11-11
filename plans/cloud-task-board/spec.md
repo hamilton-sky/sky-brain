@@ -125,7 +125,8 @@ that I did not see.
 report it, **so that** no task runs twice on purpose and a crashed worker's task comes back.
 
 - [ ] `GET /api/v1/tasks/ready` lists only `pending` tasks whose dependencies are all `done`,
-  under an `approved` goal whose `approved_by` or `assignee` is the caller's person, with no held
+  under an `approved` goal whose `approved_by` is the caller's person (D20: an `assignee` alone is
+  not enough), with no held
   text and with its pinned text unchanged, in the caller's workspace (and the run token's
   project).
 - [ ] `POST /api/v1/tasks/:id/claim` on a ready task returns 200 with the task `in_progress`
