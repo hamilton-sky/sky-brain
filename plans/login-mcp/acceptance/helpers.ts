@@ -1,7 +1,7 @@
 // Shared helpers for the login-mcp acceptance tests. They reach the server only through the
 // names spec.md makes public: `startAuthTestServer` (Interfaces -> How a test reaches the
 // server), brain-core's `createTestDb` and seeds, the schema's `members`, `invites` and
-// `workspaces`, Better Auth's `user` and `session` tables (Migration and compatibility), and the
+// `workspaces`, Better Auth's `user`, `account` and `session` tables (Migration and compatibility), and the
 // routes in Interfaces -> Routes this feature adds.
 import { createHash, randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, vi } from "vitest";
@@ -22,8 +22,6 @@ const AUTH_HARNESS = new URL(
 ).href;
 
 export interface ServerOpts {
-  bootstrapOwnerEmail?: string;
-  allowedEmails?: string[];
   cimdDocuments?: Record<string, object>;
 }
 
@@ -41,12 +39,9 @@ export interface Browser {
 
 export interface AuthServer {
   url: string;
-  setGoogleUser(p: {
-    email: string;
-    sub?: string;
-    emailVerified?: boolean;
-    name?: string;
-  }): void;
+  perministerUrl: string;
+  setPerministerAccount(a: PerministerAccount): void;
+  approve(authorizeUrl: string): string;
   browser(): Browser;
   signJwt(payload: Record<string, unknown>): Promise<string>;
   close(): Promise<void>;
@@ -68,31 +63,22 @@ export interface Ctx {
   db: Db;
   /** The file's auth server, started on first use. */
   server(): Promise<AuthServer>;
-  /** Another auth server on the same database (closed after the file). */
-  extraServer(opts: ServerOpts): Promise<AuthServer>;
 }
 
 /** One PGlite database per file; the auth server starts lazily with `opts`. */
 export function setup(opts: ServerOpts = {}): Ctx {
   let started: Promise<AuthServer> | undefined;
-  const extras: AuthServer[] = [];
   const ctx: Ctx = {
     db: undefined as unknown as Db,
     server() {
       started ??= startAuthServer(ctx.db, opts);
       return started;
     },
-    async extraServer(o) {
-      const s = await startAuthServer(ctx.db, o);
-      extras.push(s);
-      return s;
-    },
   };
   beforeAll(async () => {
     ctx.db = await createTestDb();
   });
   afterAll(async () => {
-    for (const s of extras) await s.close();
     if (started) {
       const s = await started.catch(() => undefined);
       if (s) await s.close();
@@ -171,60 +157,88 @@ export function expectApiError(res: Res, status: number, code: string): void {
   });
 }
 
-// ---- Google sign-in ------------------------------------------------------------------------
+// ---- Perminister sign-in -------------------------------------------------------------------
 
-export interface GoogleUser {
-  email: string;
-  sub?: string;
-  emailVerified?: boolean;
-  name?: string;
+/** Interfaces -> How a test reaches the server: `PerministerAccount`. */
+export interface PerministerAccount {
+  subjectId: string;
+  email: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  productIds?: string[];
 }
 
-function googleUser(u: GoogleUser): Required<GoogleUser> {
+/** A Perminister account with access to `sky-brain` (the harness's default `productIds`). */
+export function account(
+  address: string | null,
+  extra: Partial<PerministerAccount> = {},
+): PerministerAccount {
+  counter += 1;
   return {
-    sub: "g" + createHash("sha256").update(u.email.toLowerCase()).digest("hex").slice(0, 20),
-    emailVerified: true,
-    name: u.email.split("@")[0]!,
-    ...u,
-  } as Required<GoogleUser>;
+    subjectId: `subject-${run}-${counter}-${randomBytes(4).toString("hex")}`,
+    email: address,
+    ...extra,
+  };
 }
 
 /**
- * Steps 2 and 3 of the flow in Interfaces: `sign-in/social` then the Google callback. Returns
- * the callback's response; its `next` is where the browser lands.
+ * Step 2 of the flow in Interfaces: `sign-in/social` with provider `perminister`. Returns the
+ * Perminister authorize URL the browser is sent to.
  */
-export async function googleSignIn(
+export async function startPerministerSignIn(
   server: AuthServer,
   b: Browser,
-  user: GoogleUser,
   oauthQuery?: string,
-): Promise<Res> {
-  server.setGoogleUser(googleUser(user));
+): Promise<string> {
   const start = await b.request(
     "/api/auth/sign-in/social",
     jsonInit({
-      provider: "google",
+      provider: "perminister",
       callbackURL: "/",
       errorCallbackURL: "/sign-in",
       ...(oauthQuery !== undefined ? { oauth_query: oauthQuery } : {}),
     }),
   );
-  const googleUrl: string = start.body?.url ?? start.next ?? "";
-  expect(googleUrl).toMatch(/^https:\/\/accounts\.google\.com\//);
-  const state = new URL(googleUrl).searchParams.get("state");
-  expect(state).toBeTruthy();
-  return b.request(
-    `/api/auth/callback/google?code=x&state=${encodeURIComponent(state!)}`,
-  );
+  const authorizeUrl: string = start.body?.url ?? start.next ?? "";
+  expect(authorizeUrl.startsWith(`${server.perministerUrl}/oauth/authorize?`)).toBe(true);
+  return authorizeUrl;
+}
+
+/**
+ * Step 3 of the flow: Perminister approves (`approve`), its fixed callback path answers with a
+ * redirect to `/api/auth/callback/perminister`, and that callback runs. Returns the callback's
+ * response; its `next` is where the browser lands.
+ */
+export async function finishPerministerSignIn(
+  server: AuthServer,
+  b: Browser,
+  authorizeUrl: string,
+): Promise<Res> {
+  const fixed = await b.request(server.approve(authorizeUrl));
+  const callback = pathOf(server, fixed.next);
+  expect(callback.startsWith("/api/auth/callback/perminister?")).toBe(true);
+  return b.request(callback);
+}
+
+/** Steps 2 and 3 of the flow, signing in as `who`. */
+export async function perministerSignIn(
+  server: AuthServer,
+  b: Browser,
+  who: PerministerAccount,
+  oauthQuery?: string,
+): Promise<Res> {
+  server.setPerministerAccount(who);
+  const authorizeUrl = await startPerministerSignIn(server, b, oauthQuery);
+  return finishPerministerSignIn(server, b, authorizeUrl);
 }
 
 /** A plain sign-in (no OAuth client), as a person opening the site would. */
 export async function signIn(
   server: AuthServer,
-  user: GoogleUser,
+  who: PerministerAccount,
 ): Promise<{ browser: Browser; callback: Res }> {
   const browser = server.browser();
-  const callback = await googleSignIn(server, browser, user);
+  const callback = await perministerSignIn(server, browser, who);
   return { browser, callback };
 }
 
@@ -269,12 +283,12 @@ export interface CodeResult {
 }
 
 /**
- * Steps 1 to 4 of the flow: authorize, Google sign-in, consent (Allow). Fails the test when a
+ * Steps 1 to 4 of the flow: authorize, Perminister sign-in, consent (Allow). Fails the test when a
  * step does not lead where Interfaces says.
  */
 export async function getCode(
   server: AuthServer,
-  user: GoogleUser,
+  who: PerministerAccount,
   opts: { clientId?: string; redirectUri?: string; browser?: Browser } = {},
 ): Promise<CodeResult> {
   const b = opts.browser ?? server.browser();
@@ -288,7 +302,7 @@ export async function getCode(
   );
   const toSignIn = pathOf(server, auth.next);
   expect(toSignIn.startsWith("/sign-in?")).toBe(true);
-  const cb = await googleSignIn(server, b, user, queryOf(toSignIn));
+  const cb = await perministerSignIn(server, b, who, queryOf(toSignIn));
   let redirect = pathOf(server, cb.next);
   if (redirect.startsWith("/consent")) {
     const consent = await b.request(
@@ -328,13 +342,13 @@ export interface Tokens {
   refresh_token: string;
 }
 
-/** The whole flow: an access token for `user` through the claude.ai CIMD client. */
+/** The whole flow: an access token for `who` through the claude.ai CIMD client. */
 export async function connect(
   server: AuthServer,
-  user: GoogleUser,
+  who: PerministerAccount,
   opts: { clientId?: string; redirectUri?: string } = {},
 ): Promise<Tokens> {
-  const c = await getCode(server, user, opts);
+  const c = await getCode(server, who, opts);
   const res = await tokenRequest(server, codeGrant(c));
   expect(res.status).toBe(200);
   expect(typeof res.body?.access_token).toBe("string");
@@ -484,4 +498,15 @@ export async function sessionCount(db: Db): Promise<number> {
 export async function userCount(db: Db): Promise<number> {
   const res: any = await db.execute(`select count(*)::int as n from "user"`);
   return Number(res.rows[0].n);
+}
+
+/** Better Auth's `account` rows for a Perminister `subjectId`. */
+export async function accountsForSubject(
+  db: Db,
+  subjectId: string,
+): Promise<{ user_id: string; provider_id: string; account_id: string }[]> {
+  const res: any = await db.execute(
+    `select user_id, provider_id, account_id from "account" where account_id = ${sqlString(subjectId)}`,
+  );
+  return res.rows;
 }

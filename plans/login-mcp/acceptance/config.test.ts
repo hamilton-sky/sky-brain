@@ -8,8 +8,9 @@ const GOOD_PROD = {
   DATABASE_URL: "postgres://u:p@db.internal:5432/sky",
   PUBLIC_URL: "https://brain.example.com",
   BETTER_AUTH_SECRET: "s".repeat(40),
-  GOOGLE_CLIENT_ID: "client-id.apps.googleusercontent.com",
-  GOOGLE_CLIENT_SECRET: "google-client-secret-value",
+  PERMINISTER_BASE_URL: "https://perminister.example.com",
+  PERMINISTER_CLIENT_ID: "made-up-perminister-client-id",
+  PERMINISTER_CLIENT_SECRET: "made-up-perminister-client-secret",
 };
 
 function expectThrowsNaming(env: Record<string, string | undefined>, name: string): void {
@@ -23,14 +24,16 @@ function expectThrowsNaming(env: Record<string, string | undefined>, name: strin
 }
 
 describe("readConfig in production", () => {
-  // Edge: "`NODE_ENV=production` without `PUBLIC_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID` or
-  // `GOOGLE_CLIENT_SECRET`, or `PUBLIC_URL` not HTTPS | `readConfig` throws naming the setting, so
-  // the server never starts (Interfaces → Settings)"
+  // Edge: "`NODE_ENV=production` without `PUBLIC_URL`, `BETTER_AUTH_SECRET`, `PERMINISTER_BASE_URL`,
+  // `PERMINISTER_CLIENT_ID` or `PERMINISTER_CLIENT_SECRET`, or `PUBLIC_URL` or `PERMINISTER_BASE_URL`
+  // not HTTPS | `readConfig` throws naming the setting, so neither `start` nor the Vercel function
+  // comes up (Interfaces → Settings)"
   for (const name of [
     "PUBLIC_URL",
     "BETTER_AUTH_SECRET",
-    "GOOGLE_CLIENT_ID",
-    "GOOGLE_CLIENT_SECRET",
+    "PERMINISTER_BASE_URL",
+    "PERMINISTER_CLIENT_ID",
+    "PERMINISTER_CLIENT_SECRET",
   ] as const) {
     it(`throws naming ${name} when it is missing`, () => {
       expectThrowsNaming({ ...GOOD_PROD, [name]: undefined }, name);
@@ -44,6 +47,24 @@ describe("readConfig in production", () => {
   it("throws naming PUBLIC_URL when it is not HTTPS", () => {
     expectThrowsNaming({ ...GOOD_PROD, PUBLIC_URL: "http://brain.example.com" }, "PUBLIC_URL");
   });
+
+  it("throws naming PERMINISTER_BASE_URL when it is not HTTPS", () => {
+    expectThrowsNaming(
+      { ...GOOD_PROD, PERMINISTER_BASE_URL: "http://perminister.example.com" },
+      "PERMINISTER_BASE_URL",
+    );
+  });
+
+  // Interfaces: "`PERMINISTER_BASE_URL` | required, `https://`, no path, query or trailing slash"
+  for (const bad of [
+    "https://perminister.example.com/",
+    "https://perminister.example.com/app",
+    "https://perminister.example.com?x=1",
+  ]) {
+    it(`throws naming PERMINISTER_BASE_URL for ${bad}`, () => {
+      expectThrowsNaming({ ...GOOD_PROD, PERMINISTER_BASE_URL: bad }, "PERMINISTER_BASE_URL");
+    });
+  }
 
   // Interfaces: "`PUBLIC_URL` | required, `https://`, no path, query or trailing slash"
   for (const bad of [
@@ -62,49 +83,46 @@ describe("readConfig in production", () => {
   });
 
   it("reads a complete production configuration", () => {
-    const config = readConfig({
-      ...GOOD_PROD,
-      BOOTSTRAP_OWNER_EMAIL: "Boss@Example.com",
-      ALLOWED_EMAILS: " Ann@Example.com, ,ben@example.com ,",
-    });
+    // Interfaces: "`Config` gains `publicUrl`, `betterAuthSecret`, `perministerBaseUrl`,
+    // `perministerClientId` and `perministerClientSecret`"
+    const config = readConfig(GOOD_PROD);
     expect(config).toMatchObject({
       publicUrl: "https://brain.example.com",
       betterAuthSecret: "s".repeat(40),
-      googleClientId: GOOD_PROD.GOOGLE_CLIENT_ID,
-      googleClientSecret: GOOD_PROD.GOOGLE_CLIENT_SECRET,
-      bootstrapOwnerEmail: "boss@example.com",
-      allowedEmails: ["ann@example.com", "ben@example.com"],
+      perministerBaseUrl: GOOD_PROD.PERMINISTER_BASE_URL,
+      perministerClientId: GOOD_PROD.PERMINISTER_CLIENT_ID,
+      perministerClientSecret: GOOD_PROD.PERMINISTER_CLIENT_SECRET,
     });
   });
 });
 
 describe("readConfig outside production", () => {
   // Interfaces: "Outside production it never throws for these"; "an empty string reads as unset;
-  // the defaults above are applied by `start`, not `readConfig`".
+  // the defaults above are applied by `authFromConfig`, not `readConfig`".
   it("does not throw without the auth settings and leaves them unset", () => {
     const config = readConfig({
       NODE_ENV: "development",
       PUBLIC_URL: "",
       BETTER_AUTH_SECRET: "",
-      ALLOWED_EMAILS: "",
+      PERMINISTER_BASE_URL: "",
+      PERMINISTER_CLIENT_ID: "",
+      PERMINISTER_CLIENT_SECRET: "",
     });
     expect(Object.keys(config)).toEqual(
       expect.arrayContaining([
         "publicUrl",
         "betterAuthSecret",
-        "googleClientId",
-        "googleClientSecret",
-        "bootstrapOwnerEmail",
-        "allowedEmails",
+        "perministerBaseUrl",
+        "perministerClientId",
+        "perministerClientSecret",
       ]),
     );
     expect(config).toMatchObject({
       publicUrl: undefined,
       betterAuthSecret: undefined,
-      googleClientId: undefined,
-      googleClientSecret: undefined,
-      bootstrapOwnerEmail: undefined,
-      allowedEmails: [],
+      perministerBaseUrl: undefined,
+      perministerClientId: undefined,
+      perministerClientSecret: undefined,
     });
   });
 
@@ -119,14 +137,17 @@ describe("readConfig outside production", () => {
     });
   });
 
-  // Interfaces: "`ALLOWED_EMAILS` | optional, comma separated" — "each entry trimmed and
-  // lower-cased, empty entries dropped; the bootstrap email is lower-cased too"
-  it("trims and lower-cases ALLOWED_EMAILS and BOOTSTRAP_OWNER_EMAIL and drops empty entries", () => {
+  // Interfaces: "`PERMINISTER_BASE_URL` | ... | optional"
+  it("does not throw for an http PERMINISTER_BASE_URL and reads the Perminister settings", () => {
     const config = readConfig({
-      BOOTSTRAP_OWNER_EMAIL: "Shammai@Example.COM",
-      ALLOWED_EMAILS: "A@x.com,, b@X.com ,",
+      PERMINISTER_BASE_URL: "http://localhost:4000",
+      PERMINISTER_CLIENT_ID: "dev-client",
+      PERMINISTER_CLIENT_SECRET: "dev-secret",
     });
-    expect(config.allowedEmails).toEqual(["a@x.com", "b@x.com"]);
-    expect(config.bootstrapOwnerEmail).toBe("shammai@example.com");
+    expect(config).toMatchObject({
+      perministerBaseUrl: "http://localhost:4000",
+      perministerClientId: "dev-client",
+      perministerClientSecret: "dev-secret",
+    });
   });
 });

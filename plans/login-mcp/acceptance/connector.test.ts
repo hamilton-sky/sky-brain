@@ -16,17 +16,18 @@ import {
   pathOf,
   pkce,
   queryOf,
-  googleSignIn,
+  account,
+  perministerSignIn,
   setup,
   tokenRequest,
   usersWithEmail,
 } from "./helpers.ts";
 
-const OWNER = email("owner");
-const LOOPER = email("looper");
-const DENIER = email("denier");
+const OWNER = account(email("owner"));
+const LOOPER = account(email("looper"));
+const DENIER = account(email("denier"));
 
-const ctx = setup({ bootstrapOwnerEmail: OWNER, allowedEmails: [LOOPER, DENIER] });
+const ctx = setup();
 
 describe("the 401 challenge", () => {
   // - [ ] `POST /mcp` with no token answers 401 with
@@ -80,11 +81,11 @@ describe("discovery documents", () => {
 
 describe("a CIMD client completes the flow", () => {
   // - [ ] A client whose `client_id` is an HTTPS CIMD URL listing
-  //       `https://claude.ai/api/mcp/auth_callback` completes authorize → Google sign-in → consent →
+  //       `https://claude.ai/api/mcp/auth_callback` completes authorize → Perminister sign-in → consent →
   //       token with PKCE S256, and gets a JWT `access_token` plus a `refresh_token`.
-  it("claude.ai flow: CIMD client signs in with Google and whoami returns the email", async () => {
+  it("claude.ai flow: CIMD client signs in with Perminister and whoami returns the email", async () => {
     const server = await ctx.server();
-    const c = await getCode(server, { email: OWNER });
+    const c = await getCode(server, OWNER);
     expect(c.redirect.startsWith(CLAUDE_AI_CALLBACK + "?")).toBe(true);
     expect(new URL(c.redirect).searchParams.get("iss")).toBe(`${server.url}/api/auth`);
     const res = await tokenRequest(server, codeGrant(c));
@@ -97,7 +98,7 @@ describe("a CIMD client completes the flow", () => {
     expect(aud).toContain(`${server.url}/mcp`);
     expect(claims.iss).toBe(`${server.url}/api/auth`);
     const { whoami } = await callWhoami(server, res.body.access_token);
-    expect(whoami.email).toBe(OWNER);
+    expect(whoami.email).toBe(OWNER.email);
   });
 
   // - [ ] A Claude Code-style CIMD client listing `http://localhost/callback` and
@@ -108,7 +109,7 @@ describe("a CIMD client completes the flow", () => {
   for (const redirectUri of ["http://localhost:53682/callback", "http://127.0.0.1:3118/callback"]) {
     it(`a Claude Code-style CIMD client is accepted with the loopback redirect ${redirectUri}`, async () => {
       const server = await ctx.server();
-      const c = await getCode(server, { email: LOOPER }, { clientId: CLAUDE_CODE_CLIENT, redirectUri });
+      const c = await getCode(server, LOOPER, { clientId: CLAUDE_CODE_CLIENT, redirectUri });
       const res = await tokenRequest(server, codeGrant(c));
       expect(res.status).toBe(200);
       expect(decodeJwt(res.body.access_token)).toBeTruthy();
@@ -124,7 +125,7 @@ describe("a CIMD client completes the flow", () => {
       "/api/auth/oauth2/authorize?" +
         authorizeQuery(server, { challenge: pkce().challenge, state: "deny-state" }),
     );
-    const cb = await googleSignIn(server, b, { email: DENIER }, queryOf(pathOf(server, auth.next)));
+    const cb = await perministerSignIn(server, b, DENIER, queryOf(pathOf(server, auth.next)));
     const consentPage = pathOf(server, cb.next);
     expect(consentPage.startsWith("/consent")).toBe(true);
     const deny = await b.request(
@@ -145,10 +146,10 @@ describe("whoami", () => {
   //       whatever the tool arguments say.
   it("whoami returns the email, user id and own workspace as structuredContent and the same JSON as text", async () => {
     const server = await ctx.server();
-    const { access_token } = await connect(server, { email: OWNER });
+    const { access_token } = await connect(server, OWNER);
     const { result, whoami } = await callWhoami(server, access_token);
-    const [user] = await usersWithEmail(ctx.db, OWNER);
-    expect(whoami.email).toBe(OWNER);
+    const [user] = await usersWithEmail(ctx.db, OWNER.email!);
+    expect(whoami.email).toBe(OWNER.email);
     expect(whoami.user_id).toBe(user!.id);
     expect(whoami.workspaces).toHaveLength(1);
     expect(whoami.workspaces[0]).toEqual({
@@ -164,14 +165,14 @@ describe("whoami", () => {
   // Edge: "`whoami` arguments name another email | Ignored; identity only from the token"
   it("whoami ignores arguments that name another person", async () => {
     const server = await ctx.server();
-    const looper = await callWhoami(server, (await connect(server, { email: LOOPER })).access_token);
-    const { access_token } = await connect(server, { email: OWNER });
+    const looper = await callWhoami(server, (await connect(server, LOOPER)).access_token);
+    const { access_token } = await connect(server, OWNER);
     const { whoami } = await callWhoami(server, access_token, {
-      email: LOOPER,
+      email: LOOPER.email,
       user_id: looper.whoami.user_id,
       workspace_id: looper.whoami.workspaces[0]!.id,
     });
-    expect(whoami.email).toBe(OWNER);
+    expect(whoami.email).toBe(OWNER.email);
     expect(whoami.user_id).not.toBe(looper.whoami.user_id);
     expect(whoami.workspaces.map((w) => w.id)).not.toContain(looper.whoami.workspaces[0]!.id);
   });

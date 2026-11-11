@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CLAUDE_AI_CLIENT,
   INITIALIZE,
+  account,
   authorizeQuery,
   callWhoami,
   codeGrant,
@@ -18,10 +19,10 @@ import {
   type AuthServer,
 } from "./helpers.ts";
 
-const PERSON = email("person");
+const PERSON = account(email("person"));
 const EVIL = "https://evil.example/cb";
 
-const ctx = setup({ allowedEmails: [PERSON] });
+const ctx = setup();
 
 function expectChallenge(server: AuthServer, headers: Headers): void {
   expect(headers.get("www-authenticate") ?? "").toContain(
@@ -31,7 +32,7 @@ function expectChallenge(server: AuthServer, headers: Headers): void {
 
 /** A real access token and the user id it names. */
 async function realToken(server: AuthServer) {
-  const tokens = await connect(server, { email: PERSON });
+  const tokens = await connect(server, PERSON);
   const { whoami } = await callWhoami(server, tokens.access_token);
   return { ...tokens, sub: whoami.user_id };
 }
@@ -54,7 +55,7 @@ describe("redirect URIs", () => {
 
   it("a redirect URI not in the metadata document is refused even for a signed-in person", async () => {
     const server = await ctx.server();
-    const signedIn = await getCode(server, { email: PERSON });
+    const signedIn = await getCode(server, PERSON);
     const res = await signedIn.browser.request(
       "/api/auth/oauth2/authorize?" +
         authorizeQuery(server, { redirectUri: EVIL, challenge: pkce().challenge }),
@@ -72,7 +73,7 @@ describe("the token endpoint", () => {
   // Edge: "Missing or wrong PKCE verifier | Token endpoint refuses"
   it("a token request without the PKCE verifier is refused", async () => {
     const server = await ctx.server();
-    const c = await getCode(server, { email: PERSON });
+    const c = await getCode(server, PERSON);
     const res = await tokenRequest(server, codeGrant(c, null));
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.body?.access_token).toBeUndefined();
@@ -81,7 +82,7 @@ describe("the token endpoint", () => {
 
   it("a token request with a wrong PKCE verifier is refused", async () => {
     const server = await ctx.server();
-    const c = await getCode(server, { email: PERSON });
+    const c = await getCode(server, PERSON);
     const res = await tokenRequest(server, codeGrant(c, pkce().verifier));
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.body?.access_token).toBeUndefined();
@@ -91,7 +92,7 @@ describe("the token endpoint", () => {
   // Edge: "Reused authorization code | `invalid_grant`"
   it("a reused authorization code answers invalid_grant", async () => {
     const server = await ctx.server();
-    const c = await getCode(server, { email: PERSON });
+    const c = await getCode(server, PERSON);
     const first = await tokenRequest(server, codeGrant(c));
     expect(first.status).toBe(200);
     const again = await tokenRequest(server, codeGrant(c));
@@ -181,7 +182,7 @@ describe("/mcp refuses bad tokens", () => {
   // Edge: "Token for another audience (session JWT from `/api/auth/token`) | 401 on `/mcp`"
   it("the session JWT from GET /api/auth/token answers 401", async () => {
     const server = await ctx.server();
-    const signedIn = await getCode(server, { email: PERSON });
+    const signedIn = await getCode(server, PERSON);
     const sessionJwt = await signedIn.browser.request("/api/auth/token");
     expect(sessionJwt.status).toBe(200);
     expect(typeof sessionJwt.body?.token).toBe("string");
