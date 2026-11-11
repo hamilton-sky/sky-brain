@@ -118,7 +118,7 @@ Without all three settings the server still starts, but there is no Perminister 
 ## Verified
 
 - claude.ai whoami: returned s…@gmail.com on 2026-11-11
-  The address is masked on purpose (the repo is public); shammai confirmed it is his.
+  The address is masked on purpose, at shammai's choice (the repo is public).
 - Claude phone app: not yet tested
 - Claude Code CLI: not yet tested
 - Perminister account without `sky-brain` access: not yet tested
@@ -130,12 +130,12 @@ Without all three settings the server still starts, but there is no Perminister 
 - Codex CLI and DCR: not yet tested
 - The untested lines above are owned by shammai (they need his accounts and devices); record each
   result here and the final T0 outcome as a new decision in `docs/DECISIONS.md` (D19).
-- Deploy checks, 2026-11-11, run by shammai from his own machine after the latest push of
-  `claude/login-mcp` was deployed to production:
+- Deploy checks, 2026-11-11, run by shammai from his own machine after commit 439db5f of
+  `claude/login-mcp` was deployed to production (the /mcp and metadata code is unchanged since):
   `curl -sS -o /dev/null -w 'status %{http_code}' -X POST https://sky-brain.vercel.app/mcp`
   printed `status 401`, and
   `curl -fsS https://sky-brain.vercel.app/.well-known/oauth-protected-resource/mcp` returned
   `"resource":"https://sky-brain.vercel.app/mcp"` with authorization server
   `https://sky-brain.vercel.app/api/auth` and scopes `brain:read`, `brain:write`.
-- Temporary: for these tests Vercel's production branch is `claude/login-mcp`, not `main` as
-  `docs/PLAN.md` § 12 says. Switch it back to `main` once `claude/login-mcp` is merged.
+- Vercel's production branch was `claude/login-mcp` for these tests; it is back on `main`
+  (2026-11-11), as `docs/PLAN.md` § 12 says.
