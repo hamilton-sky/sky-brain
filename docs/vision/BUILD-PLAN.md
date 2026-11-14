@@ -3,9 +3,10 @@
 This is the one ordered plan for building the brain. It combines:
 
 - [VISION.md](VISION.md) and [spec.html](spec.html): research, 12–13 Nov;
-- [REVIEW-2026-11-14.md](REVIEW-2026-11-14.md): outside review of the architecture;
-- [REVIEW-2026-11-14-cognition.md](REVIEW-2026-11-14-cognition.md): outside review of the cognitive design;
-- the responses to both reviews.
+- two outside reviews of the architecture and the cognitive design (14 Nov, in git history);
+- the responses to both.
+
+The latest outside review, of this plan itself, is [REVIEW.md](REVIEW.md).
 
 It replaces the two build-order lists in VISION.md ("What I would build, in order" and
 "Recommended build order"). It is still a proposal: nothing here is in `docs/DECISIONS.md` yet, and
