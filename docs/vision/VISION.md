@@ -2,6 +2,10 @@
 
 Research and recommendations, 12–13 Nov 2026. Not decided yet; nothing here is built.
 
+**Current plan:** the ordered build plan is [BUILD-PLAN.md](BUILD-PLAN.md) (14 Nov). It folds in two outside reviews and replaces the build-order lists below.
+
+> sky-brain does not try to copy a human brain. It uses principles from human cognition to build a memory that is efficient, keeps evolving, and is shared by people and their AI agents.
+
 Live copies: [doc](https://claude.ai/artifact/GHqQhnKUHh1cWBq2crmACb) · visual spec: [spec.html](spec.html) ([live](https://claude.ai/artifact/ANQuhNF4JqcERjY99EG6nw))
 
 ## Bottom line
