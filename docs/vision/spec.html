@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sky-brain Spec</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (max 1040px) with diagrams and a gallery of phone-sized screens that wrap */
+:root{
+  --bg:#F5F7F8; --surface:#FFFFFF; --sunk:#EBEFF1; --fg:#141A1F; --muted:#5A6670; --line:#D5DCE0;
+  --accent:#0E7C77; --accent-soft:#DCEFEC;
+  --you:#141A1F; --po:#B4561E; --lib:#2C67AA; --doer:#5E6E1A;
+  --good:#2E7D4F; --warn:#A86A00; --crit:#B23A3A;
+  --display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1417; --surface:#172025; --sunk:#1E292F; --fg:#E6ECEF; --muted:#9AA8B1; --line:#2C3A41;
+  --accent:#3FB8AF; --accent-soft:#163A38;
+  --you:#E6ECEF; --po:#E58A52; --lib:#6FA6E6; --doer:#A9BD4E;
+  --good:#5CC28A; --warn:#E0A53A; --crit:#E57373; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1417; --surface:#172025; --sunk:#1E292F; --fg:#E6ECEF; --muted:#9AA8B1; --line:#2C3A41;
+  --accent:#3FB8AF; --accent-soft:#163A38;
+  --you:#E6ECEF; --po:#E58A52; --lib:#6FA6E6; --doer:#A9BD4E;
+  --good:#5CC28A; --warn:#E0A53A; --crit:#E57373; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,6vw,3.6rem);letter-spacing:-.02em}
+h2{font-size:1.65rem;letter-spacing:-.01em}
+h3{font-size:1.1rem}
+p{margin:0;max-width:66ch}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+header.hero{padding-block:56px 32px;display:grid;gap:18px;border-bottom:1px solid var(--line)}
+.hero .lede{font-size:1.2rem;max-width:58ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;padding-block:18px}
+nav.toc a{font-size:.82rem;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:var(--surface)}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+section{padding-block:44px;border-bottom:1px solid var(--line);display:grid;gap:18px}
+section > .head{display:grid;gap:8px}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:640px;height:auto}
+.fig figcaption{font-size:.85rem;color:var(--muted);margin-top:10px}
+svg text{font-family:var(--body)}
+.s-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.s-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.s-sunk{fill:var(--sunk);stroke:var(--line)}
+.s-line{stroke:var(--muted);stroke-width:1.3;fill:none}
+.t-name{fill:var(--fg);font-weight:600;font-size:14px}
+.t-body{fill:var(--muted);font-size:12px}
+.t-mono{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.t-acc{fill:var(--accent);font-weight:600;font-size:12px}
+.arrowhead{fill:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:8px;min-width:0}
+.card h3{font-size:1rem}
+.crumb{font-family:var(--mono);font-size:.78rem;color:var(--muted);line-height:1.8}
+.crumb b{color:var(--fg);font-weight:500}
+pre{margin:0;font-family:var(--mono);font-size:.82rem;line-height:1.55;background:var(--sunk);border-radius:10px;padding:14px 16px;overflow-x:auto;color:var(--fg)}
+pre .k{color:var(--accent)} pre .c{color:var(--muted)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td.y{color:var(--good);font-weight:600} td.n{color:var(--muted)} td.p{color:var(--warn);font-weight:600}
+.formula{font-family:var(--mono);font-size:1rem;background:var(--accent-soft);color:var(--fg);border-radius:10px;padding:14px 16px;overflow-x:auto}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid currentColor;white-space:nowrap;line-height:1.5}
+.c-you{color:var(--you)} .c-po{color:var(--po)} .c-lib{color:var(--lib)} .c-doer{color:var(--doer)} .c-acc{color:var(--accent)}
+/* phones */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:28px 20px;justify-items:center}
+.shot{display:grid;gap:10px;justify-items:center;width:100%;max-width:310px}
+.shot .cap{font-size:.86rem;text-align:left;width:100%}
+.shot .cap b{font-family:var(--display)}
+.phone{width:100%;max-width:300px;aspect-ratio:9/18.5;border-radius:34px;border:8px solid var(--fg);background:var(--bg);overflow:hidden;display:flex;flex-direction:column;font-size:12.5px;line-height:1.45}
+.bar{display:flex;justify-content:space-between;padding:8px 18px 4px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.scr{flex:1;overflow:hidden;padding:6px 12px 10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.apphead{display:flex;justify-content:space-between;align-items:baseline}
+.apphead strong{font-family:var(--display);font-size:16px}
+.apphead span{font-size:10.5px;color:var(--muted)}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:4px}
+.row .t{font-weight:600}
+.row .s{color:var(--muted);font-size:11px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.btn{font:inherit;font-size:11px;font-weight:600;border-radius:7px;padding:3px 9px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.tabs{display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:7px 4px 9px;font-size:10px;color:var(--muted);background:var(--surface)}
+.tabs .on{color:var(--accent);font-weight:600}
+.bubble{border-radius:14px;padding:8px 11px;max-width:86%}
+.me{align-self:flex-end;background:var(--accent);color:var(--bg)}
+.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.tool{align-self:flex-start;font-family:var(--mono);font-size:10px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:4px 8px}
+.input{margin-top:auto;border:1px solid var(--line);border-radius:18px;padding:8px 12px;color:var(--muted);background:var(--surface)}
+.prog{height:5px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+.sug{border-style:dashed}
+.strike{text-decoration:line-through;color:var(--muted)}
+.example{font-family:var(--mono);font-size:.74rem;color:var(--warn)}
+ol.build{margin:0;padding-left:1.3em;display:grid;gap:10px;max-width:70ch}
+ol.build b{font-family:var(--display)}
+footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
+@media (max-width:520px){h2{font-size:1.35rem} .hero .lede{font-size:1.05rem}}
+@media (prefers-reduced-motion:no-preference){nav.toc a{transition:border-color .15s,color .15s}}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <span class="eyebrow">Product spec · draft</span>
+  <h1>sky-brain</h1>
+  <p class="lede">One brain that a person and their AI agents share. It holds anything you want to remember, links it together, runs your work on a board, and keeps what matters as long-term memory.</p>
+  <div class="meta"><span>12 Nov 2026</span><span>Status: proposal, nothing here is built yet</span><span>Live today: sign-in, MCP connector, task board v1</span></div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#model">Brain model</a><a href="#hierarchy">Projects &amp; tracks</a><a href="#data">Data model</a><a href="#ontology">Ontology</a><a href="#item">An item</a><a href="#search">Search</a><a href="#growth">Growth</a><a href="#science">Brain science</a><a href="#personas">Agents</a><a href="#sharing">Sharing</a><a href="#ui">UI examples</a><a href="#blind">Blind spots</a><a href="#build">Build order</a>
+</nav>
+
+<section id="model">
+  <div class="head"><span class="eyebrow">1 · The brain model</span><h2>Three kinds of memory, one board in the middle</h2>
+  <p class="muted">Agents and people never message each other. They read and write the shared brain, and a nightly Steward, the Consolidator, decides what becomes long-term memory.</p></div>
+  <figure class="fig" style="margin:0">
+  <svg viewBox="0 0 760 450" role="img" aria-label="People and agents read and write three memory tiers; the Consolidator promotes items into deep memory">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+    <rect x="20" y="10" width="720" height="126" rx="10" class="s-sunk"/>
+    <text x="36" y="34" class="t-name">People and agents · every read and write passes one permission check</text>
+    <rect x="36" y="48" width="162" height="72" rx="8" class="s-box"/><text x="117" y="74" text-anchor="middle" class="t-name">You</text><text x="117" y="92" text-anchor="middle" class="t-body">Approve goals and rules</text><text x="117" y="108" text-anchor="middle" class="t-body">Capture from the phone</text>
+    <rect x="212" y="48" width="162" height="72" rx="8" class="s-box"/><text x="293" y="74" text-anchor="middle" class="t-name" style="fill:var(--po)">Workers</text><text x="293" y="92" text-anchor="middle" class="t-body">PO, Doer, Reviewer…</text><text x="293" y="108" text-anchor="middle" class="t-body">Do your work</text>
+    <rect x="388" y="48" width="162" height="72" rx="8" class="s-box"/><text x="469" y="74" text-anchor="middle" class="t-name" style="fill:var(--lib)">Stewards</text><text x="469" y="92" text-anchor="middle" class="t-body">Curator, Archivist…</text><text x="469" y="108" text-anchor="middle" class="t-body">Keep the brain healthy</text>
+    <rect x="564" y="48" width="162" height="72" rx="8" class="s-box"/><text x="645" y="74" text-anchor="middle" class="t-name" style="fill:var(--doer)">Gatekeeper</text><text x="645" y="92" text-anchor="middle" class="t-body">Code, not an LLM</text><text x="645" y="108" text-anchor="middle" class="t-body">Checks every write</text>
+    <line x1="134" y1="136" x2="134" y2="188" class="s-line" marker-end="url(#ah)"/><line x1="380" y1="136" x2="380" y2="188" class="s-line" marker-end="url(#ah)"/><line x1="626" y1="136" x2="626" y2="188" class="s-line" marker-end="url(#ah)"/>
+    <text x="390" y="168" class="t-body">read and write</text>
+    <rect x="20" y="190" width="228" height="100" rx="10" class="s-box"/><text x="134" y="216" text-anchor="middle" class="t-name">Floating memory · Inbox</text><text x="134" y="236" text-anchor="middle" class="t-body">Raw captures, agent notes</text><text x="134" y="254" text-anchor="middle" class="t-body">Fades unless used or kept</text><text x="134" y="272" text-anchor="middle" class="t-mono">tier = floating</text>
+    <rect x="266" y="190" width="228" height="100" rx="10" class="s-acc"/><text x="380" y="216" text-anchor="middle" class="t-name">Working memory · Board</text><text x="380" y="236" text-anchor="middle" class="t-body" style="fill:var(--fg)">Project › Track › Goal › Task</text><text x="380" y="254" text-anchor="middle" class="t-body" style="fill:var(--fg)">Claims, leases, approvals</text><text x="380" y="272" text-anchor="middle" class="t-mono" style="fill:var(--accent)">the blackboard</text>
+    <rect x="512" y="190" width="228" height="100" rx="10" class="s-box"/><text x="626" y="216" text-anchor="middle" class="t-name">Deep memory · Memory</text><text x="626" y="236" text-anchor="middle" class="t-body">Decisions, rules, lessons, people</text><text x="626" y="254" text-anchor="middle" class="t-body">Typed links with reasons</text><text x="626" y="272" text-anchor="middle" class="t-mono">tier = deep · never deleted</text>
+    <rect x="266" y="350" width="228" height="80" rx="10" class="s-box"/><text x="380" y="376" text-anchor="middle" class="t-name">Consolidator (sleep)</text><text x="380" y="396" text-anchor="middle" class="t-body">Promotes, links, flags conflicts</text><text x="380" y="414" text-anchor="middle" class="t-body">Writes your daily Digest</text>
+    <path d="M134 290V390H264" class="s-line" marker-end="url(#ah)"/><line x1="380" y1="290" x2="380" y2="348" class="s-line" marker-end="url(#ah)"/><path d="M494 390H626V292" class="s-line" marker-end="url(#ah)"/>
+    <text x="144" y="380" class="t-body">used or kept</text><text x="390" y="324" class="t-body">finished goals</text><text x="506" y="380" class="t-body">promotes, links</text>
+  </svg>
+  <figcaption>The board is the blackboard. Everything not used, kept or finished fades from the Inbox; deep items are closed with an end date instead of deleted.</figcaption>
+  </figure>
+</section>
+
+<section id="hierarchy">
+  <div class="head"><span class="eyebrow">2 · Projects &amp; tracks</span><h2>The same hierarchy fits a lawyer, a parent and a developer</h2>
+  <p class="muted">Workspace › Project › Track › Goal › Task. Track is optional: a small project can go straight to goals.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Lawyer</h3><div class="crumb"><b>Cohen family</b> › Track: <b>Inheritance case</b> › Goal: <b>File the appeal by 1 Dec</b> › Task: Collect the bank statements</div><p class="muted" style="font-size:.85rem">Memory: court dates, client preferences, past rulings. Needs the strictest privacy.</p></div>
+    <div class="card"><h3>Parent</h3><div class="crumb"><b>Household</b> › Track: <b>Kids</b> › Goal: <b>Book summer camp</b> › Task: Compare three camps by price and dates</div><p class="muted" style="font-size:.85rem">Memory: allergies, school contacts, which camp they liked last year.</p></div>
+    <div class="card"><h3>Designer</h3><div class="crumb"><b>Acme Bakery</b> › Track: <b>Spring campaign</b> › Goal: <b>Deliver the poster set</b> › Task: Three cover options</div><p class="muted" style="font-size:.85rem">Memory: brand colours, rejected ideas and why, client feedback.</p></div>
+    <div class="card"><h3>Developer</h3><div class="crumb"><b>sky-brain</b> › Track: <b>Memory</b> › Goal: <b>Hybrid search</b> › Task: Add the embeddings table</div><p class="muted" style="font-size:.85rem">Memory: decisions, rules, lessons from finished goals.</p></div>
+  </div>
+  <p class="example">Example names, not real data.</p>
+</section>
+
+<section id="data">
+  <div class="head"><span class="eyebrow">3 · Data model</span><h2>Postgres holds the truth; md is how it reads</h2>
+  <p class="muted">The tables grow from what already runs in production (entries, goals, tasks, task events, memberships).</p></div>
+  <figure class="fig" style="margin:0">
+  <svg viewBox="0 0 760 440" role="img" aria-label="Tables and how they relate">
+    <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+    <rect x="20" y="20" width="220" height="150" rx="10" class="s-box"/><text x="36" y="44" class="t-name">episodes</text><text x="36" y="62" class="t-body">raw input, never edited</text><text x="36" y="86" class="t-mono">source · source_ref</text><text x="36" y="104" class="t-mono">author · run_id</text><text x="36" y="122" class="t-mono">body · occurred_at</text><text x="36" y="140" class="t-mono">chat | task_report | import</text>
+    <rect x="270" y="20" width="220" height="210" rx="10" class="s-acc"/><text x="286" y="44" class="t-name">items (entries, extended)</text><text x="286" y="62" class="t-body" style="fill:var(--fg)">every memory, one table</text><text x="286" y="86" class="t-mono">kind · tier · status</text><text x="286" y="104" class="t-mono">body (markdown)</text><text x="286" y="122" class="t-mono">author · persona · on_behalf_of</text><text x="286" y="140" class="t-mono">confidence · importance</text><text x="286" y="158" class="t-mono">valid_from · valid_to</text><text x="286" y="176" class="t-mono">strength · last_accessed_at</text><text x="286" y="194" class="t-mono">owner (private) | project</text><text x="286" y="212" class="t-mono">search tsvector</text>
+    <rect x="520" y="20" width="220" height="210" rx="10" class="s-box"/><text x="536" y="44" class="t-name">links</text><text x="536" y="62" class="t-body">typed, with a reason</text><text x="536" y="86" class="t-mono">src → dst (any table)</text><text x="536" y="104" class="t-mono">rel: supports | contradicts</text><text x="536" y="122" class="t-mono">  about | part_of | derived_from…</text><text x="536" y="140" class="t-mono">status: proposed | accepted</text><text x="536" y="158" class="t-mono">method: human | rule | llm</text><text x="536" y="176" class="t-mono">rationale · confidence</text><text x="536" y="194" class="t-mono">valid_from · retracted_at</text><text x="536" y="212" class="t-mono">hits (used in retrieval)</text>
+    <rect x="20" y="270" width="220" height="140" rx="10" class="s-box"/><text x="36" y="294" class="t-name">embeddings</text><text x="36" y="312" class="t-body">pgvector, one row per model</text><text x="36" y="336" class="t-mono">item_id · model · vec</text><text x="36" y="354" class="t-mono">HNSW index</text><text x="36" y="372" class="t-mono">change model = re-embed,</text><text x="36" y="390" class="t-mono">not migrate</text>
+    <rect x="270" y="270" width="220" height="140" rx="10" class="s-box"/><text x="286" y="294" class="t-name">goals · tasks (live)</text><text x="286" y="312" class="t-body">the board, already built</text><text x="286" y="336" class="t-mono">status · approved_by</text><text x="286" y="354" class="t-mono">depends_on · lease · claim_seq</text><text x="286" y="372" class="t-mono">+ track_id (new, optional)</text><text x="286" y="390" class="t-mono">+ context_refs → items</text>
+    <rect x="520" y="270" width="220" height="140" rx="10" class="s-box"/><text x="536" y="294" class="t-name">events</text><text x="536" y="312" class="t-body">every change, same transaction</text><text x="536" y="336" class="t-mono">seq · table · op</text><text x="536" y="354" class="t-mono">actor · persona</text><text x="536" y="372" class="t-mono">read by cursor (no LISTEN</text><text x="536" y="390" class="t-mono">through PgBouncer)</text>
+    <line x1="240" y1="95" x2="268" y2="95" class="s-line" marker-end="url(#ah2)"/><text x="242" y="86" class="t-mono">cites</text>
+    <line x1="490" y1="125" x2="518" y2="125" class="s-line" marker-end="url(#ah2)" marker-start="url(#ah2)"/>
+    <path d="M240 340H256V160H268" class="s-line" marker-end="url(#ah2)"/>
+    <line x1="380" y1="270" x2="380" y2="232" class="s-line" marker-end="url(#ah2)"/>
+    <line x1="490" y1="340" x2="518" y2="340" class="s-line" marker-end="url(#ah2)"/>
+  </svg>
+  <figcaption>Links can join any two rows: an item to a goal, a task to the lesson it produced, a decision to the chat it came from.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card"><h3>Why one Postgres, no graph database</h3>
+      <p class="muted" style="font-size:.88rem">A person makes 10k–100k items over years. A recursive query over the indexed links table answers 1–3 hops in milliseconds at that size. Item, links, embedding and event commit in one transaction, under one permission model and one backup. If deep graph queries are ever needed, the Apache AGE extension adds Cypher inside Postgres (check Nanogres first). Revisit only for 4+ hop queries or graph algorithms on large shared brains.</p></div>
+    <div class="card"><h3>Generic tables, configured by data</h3>
+      <div class="tbl" style="border:0"><table>
+        <tr><th>Group</th><th>Tables</th></tr>
+        <tr><td>People</td><td>workspaces, members, projects, shares</td></tr>
+        <tr><td>Board</td><td>tracks, goals, tasks, task_events</td></tr>
+        <tr><td>Memory</td><td>items, types, links, episodes, embeddings</td></tr>
+        <tr><td>Agents</td><td>agents, activations, events, usage</td></tr>
+      </table></div>
+      <p class="muted" style="font-size:.85rem">People never create tables. They choose types, Workers, views and retention, all stored as rows.</p></div>
+  </div>
+</section>
+
+<section id="ontology">
+  <div class="head"><span class="eyebrow">4 · Ontology</span><h2>A small shared vocabulary that domain packs extend</h2>
+  <p class="muted">Every brain shares the core types. A project adds a domain pack, and the Curator proposes new types it sees repeat. Nobody has to pick a type to capture something.</p></div>
+  <figure class="fig" style="margin:0">
+  <svg viewBox="0 0 760 420" role="img" aria-label="Core types, domain packs that extend them, and learned types">
+    <defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+    <rect x="20" y="14" width="720" height="104" rx="10" class="s-acc"/>
+    <text x="36" y="38" class="t-name">Core types · in every brain, changed only by sky-brain releases</text>
+    <rect x="36" y="52" width="88" height="34" rx="6" class="s-box"/><text x="80" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Person</text>
+    <rect x="134" y="52" width="110" height="34" rx="6" class="s-box"/><text x="189" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Organization</text>
+    <rect x="254" y="52" width="80" height="34" rx="6" class="s-box"/><text x="294" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Place</text>
+    <rect x="344" y="52" width="80" height="34" rx="6" class="s-box"/><text x="384" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Event</text>
+    <rect x="434" y="52" width="100" height="34" rx="6" class="s-box"/><text x="484" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Document</text>
+    <rect x="544" y="52" width="80" height="34" rx="6" class="s-box"/><text x="584" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Topic</text>
+    <rect x="634" y="52" width="90" height="34" rx="6" class="s-box"/><text x="679" y="74" text-anchor="middle" class="t-name" style="font-size:12.5px">Project</text>
+    <text x="36" y="106" class="t-mono" style="fill:var(--fg)">item kinds: note · decision · rule · lesson · question · fact</text>
+    <rect x="20" y="170" width="168" height="124" rx="10" class="s-box"/><text x="36" y="194" class="t-name">Lawyer pack</text><text x="36" y="216" class="t-body">Client → Person</text><text x="36" y="234" class="t-body">Hearing → Event</text><text x="36" y="252" class="t-body">Court → Organization</text><text x="36" y="270" class="t-body">Case → Topic</text>
+    <rect x="204" y="170" width="168" height="124" rx="10" class="s-box"/><text x="220" y="194" class="t-name">Parent pack</text><text x="220" y="216" class="t-body">Child → Person</text><text x="220" y="234" class="t-body">Doctor → Person</text><text x="220" y="252" class="t-body">School → Organization</text><text x="220" y="270" class="t-body">Appointment → Event</text>
+    <rect x="388" y="170" width="168" height="124" rx="10" class="s-box"/><text x="404" y="194" class="t-name">Developer pack</text><text x="404" y="216" class="t-body">Repo → Document</text><text x="404" y="234" class="t-body">Feature → Topic</text><text x="404" y="252" class="t-body">Bug → Topic</text><text x="404" y="270" class="t-body">Release → Event</text>
+    <rect x="572" y="170" width="168" height="124" rx="10" class="s-box" style="stroke-dasharray:5 4"/><text x="588" y="194" class="t-name">Learned types</text><text x="588" y="216" class="t-body">Camp → Event</text><text x="588" y="234" class="t-body">proposed by the Curator</text><text x="588" y="252" class="t-body">after 5 similar notes;</text><text x="588" y="270" class="t-body">real once you keep it</text>
+    <line x1="104" y1="168" x2="104" y2="120" class="s-line" marker-end="url(#ah4)"/><line x1="288" y1="168" x2="288" y2="120" class="s-line" marker-end="url(#ah4)"/><line x1="472" y1="168" x2="472" y2="120" class="s-line" marker-end="url(#ah4)"/><line x1="656" y1="168" x2="656" y2="120" class="s-line" marker-end="url(#ah4)"/>
+    <text x="112" y="148" class="t-body">extends</text>
+    <rect x="20" y="326" width="720" height="78" rx="10" class="s-sunk"/>
+    <text x="36" y="350" class="t-name">Link types · core, packs add their own</text>
+    <text x="36" y="372" class="t-mono" style="fill:var(--fg)">supports · contradicts · about · part_of · derived_from · depends_on · mentions</text>
+    <text x="36" y="392" class="t-mono">lawyer pack adds: hearing_of → Case · represents → Client</text>
+  </svg>
+  <figcaption>One <code>types</code> table holds all of this: name, parent type, fields (JSON Schema), allowed links, pack. Items carry <code>type_id</code> and <code>props</code>. No table per type.</figcaption>
+  </figure>
+</section>
+
+<section id="item">
+  <div class="head"><span class="eyebrow">5 · An item</span><h2>Every write carries its own metadata</h2>
+  <p class="muted">Agents browse the brain as a folder of md files over MCP. The frontmatter is the row's columns; the body is markdown. Editing the file sends a versioned write, and a stale edit is refused instead of merged.</p></div>
+  <div class="grid2">
+<pre aria-label="Example item as markdown"><span class="c"># /brain/sky-brain/memory/postgres-no-graph-db.md</span>
+---
+<span class="k">id</span>: 8f3c2a
+<span class="k">kind</span>: decision
+<span class="k">tier</span>: deep
+<span class="k">status</span>: approved
+<span class="k">author</span>: Curator (for the owner)
+<span class="k">from</span>: task 42 · claude.ai
+<span class="k">created</span>: 2026-11-12
+<span class="k">origin</span>: agent_inferred
+<span class="k">confidence_at_encoding</span>: high
+<span class="k">uses</span>: 7 (last 2026-11-12)
+<span class="k">links</span>:
+  - supports → [[Hybrid search with RRF]]
+  - derived_from → [[Vision research, 12 Nov]]
+---
+Use Postgres for items, links and
+embeddings. No separate graph or
+vector database.</pre>
+    <div class="card"><h3>What the frontmatter answers</h3>
+      <div class="tbl" style="border:0"><table>
+        <tr><th>Question</th><th>Field</th></tr>
+        <tr><td>Who wrote it, for whom?</td><td><code>author</code>, agent role</td></tr>
+        <tr><td>Where did it come from?</td><td><code>from</code>, episode link</td></tr>
+        <tr><td>Can agents rely on it?</td><td><code>status</code>, <code>confidence</code></td></tr>
+        <tr><td>Is it still true?</td><td><code>valid_to</code>, supersedes</td></tr>
+        <tr><td>What is it connected to?</td><td><code>links</code></td></tr>
+      </table></div>
+      <p class="muted" style="font-size:.85rem">A nightly git export writes the same files, so you always own a readable copy.</p>
+    </div>
+  </div>
+</section>
+
+<section id="search">
+  <div class="head"><span class="eyebrow">6 · Search</span><h2>Word search and meaning search, fused into one score</h2>
+  <p class="muted">Both searches run in one SQL query. Reciprocal Rank Fusion combines their rankings, then links and a rerank refine the result.</p></div>
+  <figure class="fig" style="margin:0">
+  <svg viewBox="0 0 760 150" role="img" aria-label="Search pipeline in five steps">
+    <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+    <rect x="20" y="20" width="128" height="50" rx="8" class="s-box"/><text x="84" y="42" text-anchor="middle" class="t-name">Word search</text><text x="84" y="60" text-anchor="middle" class="t-body">exact names</text>
+    <rect x="20" y="84" width="128" height="50" rx="8" class="s-box"/><text x="84" y="106" text-anchor="middle" class="t-name">Vector search</text><text x="84" y="124" text-anchor="middle" class="t-body">similar meaning</text>
+    <rect x="182" y="40" width="128" height="74" rx="8" class="s-acc"/><text x="246" y="66" text-anchor="middle" class="t-name">RRF fusion</text><text x="246" y="84" text-anchor="middle" class="t-body" style="fill:var(--fg)">one score</text><text x="246" y="100" text-anchor="middle" class="t-mono" style="fill:var(--accent)">k = 60</text>
+    <rect x="344" y="40" width="128" height="74" rx="8" class="s-box"/><text x="408" y="66" text-anchor="middle" class="t-name">Follow links</text><text x="408" y="84" text-anchor="middle" class="t-body">1–2 hops, only</text><text x="408" y="100" text-anchor="middle" class="t-body">accepted links</text>
+    <rect x="506" y="40" width="108" height="74" rx="8" class="s-box"/><text x="560" y="66" text-anchor="middle" class="t-name">Add refs</text><text x="560" y="84" text-anchor="middle" class="t-body">items the task</text><text x="560" y="100" text-anchor="middle" class="t-body">names</text>
+    <rect x="636" y="40" width="104" height="74" rx="8" class="s-box"/><text x="688" y="66" text-anchor="middle" class="t-name">Rerank</text><text x="688" y="84" text-anchor="middle" class="t-body">recency,</text><text x="688" y="100" text-anchor="middle" class="t-body">importance</text>
+    <path d="M148 45H164V70H180" class="s-line" marker-end="url(#ah3)"/><path d="M148 109H164V84H180" class="s-line" marker-end="url(#ah3)"/>
+    <line x1="310" y1="77" x2="342" y2="77" class="s-line" marker-end="url(#ah3)"/><line x1="472" y1="77" x2="504" y2="77" class="s-line" marker-end="url(#ah3)"/><line x1="614" y1="77" x2="634" y2="77" class="s-line" marker-end="url(#ah3)"/>
+  </svg>
+  </figure>
+  <div class="formula">score(item) = 1 / (60 + word_rank) + 1 / (60 + vector_rank)</div>
+  <div class="tbl"><table>
+    <thead><tr><th>Item</th><th>Word rank</th><th>Vector rank</th><th>RRF score</th><th>Final order</th></tr></thead>
+    <tbody>
+      <tr><td>Decision: Postgres, no graph DB</td><td>1</td><td>3</td><td>0.0323</td><td>1</td></tr>
+      <tr><td>Lesson: embeddings in a side table</td><td>4</td><td>1</td><td>0.0320</td><td>2</td></tr>
+      <tr><td>Note: “pgvector on Nanogres?”</td><td>2</td><td class="n">not found</td><td>0.0161</td><td>3</td></tr>
+      <tr><td>Claim: graph DBs scale better</td><td class="n">not found</td><td>2</td><td>0.0161</td><td>4</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted" style="font-size:.88rem">Worked example for the query “where do we store vectors”. Items high in both lists win; ranks are used instead of raw scores, so the two scales never need tuning. Claims rank below approved items in the rerank.</p>
+</section>
+
+<section id="growth">
+  <div class="head"><span class="eyebrow">7 · Growth</span><h2>Compress meaning, not files</h2>
+  <p class="muted">Storage stays small: 50k items is about 100 MB of text, and their embeddings (1024 dimensions, half precision) about 100 MB more. The real limits are noise and how much an agent can read at once.</p></div>
+  <figure class="fig" style="margin:0">
+  <svg viewBox="0 0 760 300" role="img" aria-label="Layered summaries: agents read from the top and drill down">
+    <defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+    <text x="20" y="26" class="t-name" style="font-size:15px">Agents read from the top and drill down only as far as they need</text>
+    <rect x="250" y="44" width="260" height="44" rx="8" class="s-acc"/><text x="380" y="64" text-anchor="middle" class="t-name">About me / project card</text><text x="380" y="80" text-anchor="middle" class="t-mono" style="fill:var(--accent)">~1 page, always in context</text>
+    <rect x="170" y="104" width="420" height="44" rx="8" class="s-box"/><text x="380" y="124" text-anchor="middle" class="t-name">Track summaries</text><text x="380" y="140" text-anchor="middle" class="t-mono">one per track, rebuilt when children change</text>
+    <rect x="90" y="164" width="580" height="44" rx="8" class="s-box"/><text x="380" y="184" text-anchor="middle" class="t-name">Items: decisions, facts, lessons</text><text x="380" y="200" text-anchor="middle" class="t-mono">found by search within a token budget</text>
+    <rect x="20" y="224" width="720" height="44" rx="8" class="s-sunk"/><text x="380" y="244" text-anchor="middle" class="t-name">Raw episodes: chats, reports, imports</text><text x="380" y="260" text-anchor="middle" class="t-mono">archived to file storage after ~90 days, summary and pointer kept</text>
+    <line x1="700" y1="60" x2="700" y2="216" class="s-line" marker-end="url(#ah5)"/><text x="690" y="140" text-anchor="end" class="t-body">drill down</text>
+  </svg>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>Measure</th><th>What it does</th><th>Who runs it</th></tr></thead>
+    <tbody>
+      <tr><td>Layered summaries</td><td>Item → track summary → project card → about-me card</td><td>Archivist</td></tr>
+      <tr><td>Retention by tier</td><td>Inbox fades after N days unless used; closed deep items leave default search</td><td>Consolidator</td></tr>
+      <tr><td>Merge duplicates</td><td>Near-identical items become one, with history kept</td><td>Consolidator</td></tr>
+      <tr><td>Context budgets</td><td>Every agent request names a token budget; the server fills it with the best items</td><td>Server</td></tr>
+      <tr><td>Hard forget</td><td>Your delete removes the row, its embedding, the next export, and rebuilds summaries built on it</td><td>Server</td></tr>
+      <tr><td>Cold archive</td><td>Finished projects move out of search, and can be restored</td><td>Archivist</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="science">
+  <div class="head"><span class="eyebrow">8 · Brain science</span><h2>What human memory teaches the design</h2>
+  <p class="muted">The layout already mirrors the brain: a fast store (Inbox), a small workspace (Board), a slow integrated store (Memory) and a sleep pass. Cognitive psychology sharpens eight parts. Every score here is plain SQL on the server; no LLM needed.</p></div>
+  <div class="grid3">
+    <div class="card"><span class="eyebrow">Forgetting is a power law</span><h3>ACT-R activation replaces decay</h3><p class="muted" style="font-size:.86rem">How often something is needed again tracks its past use (Anderson &amp; Schooler 1991). Only real uses count: cited, opened, confirmed. Forgetting means ranking low, never deleting.</p></div>
+    <div class="card"><span class="eyebrow">False memories</span><h3>Provenance the brain lacks</h3><p class="muted" style="font-size:.86rem">An <code>origin</code> field (you said it, external source, agent inferred, consolidated), frozen first confidence, and corroboration by independent sources only. Search answers know, partial or don't know.</p></div>
+    <div class="card"><span class="eyebrow">About 4 chunks</span><h3>A small context packet per task</h3><p class="muted" style="font-size:.86rem">Working memory holds 3–5 chunks (Cowan). Each task gets at most 4–5 summaries with drill-down pointers, stored so you can see what the agent “had in mind”.</p></div>
+    <div class="card"><span class="eyebrow">Selective sleep</span><h3>A smarter Consolidator</h3><p class="muted" style="font-size:.86rem">Work a priority queue (future need, surprise, importance). Reload old neighbours when rewriting a summary. Fast-track items that fit a well-linked topic; propose a new type when misfits cluster.</p></div>
+    <div class="card"><span class="eyebrow">Surprise drives learning</span><h3>Score novelty at write</h3><p class="muted" style="font-size:.86rem">Near-duplicates reinforce what exists; surprising items get priority. Goals carry an expected outcome, and the gap at the end becomes a lesson.</p></div>
+    <div class="card"><span class="eyebrow">Remembering to act</span><h3>If-then intentions</h3><p class="muted" style="font-size:.86rem">“When the Cohen case comes up, ask about the bank statements.” Checked every time a context packet is built. Released tasks leave a resume note.</p></div>
+    <div class="card"><span class="eyebrow">Encoding specificity</span><h3>Context of capture</h3><p class="muted" style="font-size:.86rem">Store the project, task and agent each item was captured in, and boost it when that context returns. The Curator adds “why it matters” and 2–3 likely future questions.</p></div>
+    <div class="card"><span class="eyebrow">Spreading activation</span><h3>Links with fan damping</h3><p class="muted" style="font-size:.86rem">Activation spreads along links and weakens through busy hubs, so one popular item can't flood results. Items touched in the last hours get a short boost.</p></div>
+  </div>
+  <div class="formula">B = ln( Σ t<sub>j</sub><sup>−0.5</sup> ) &nbsp;≈&nbsp; ln(n / 0.5) − 0.5·ln(age) &nbsp;&nbsp;·&nbsp;&nbsp; spread = W · (S − ln fan) · link_confidence</div>
+  <div class="formula">final score = α·RRF + β·activation + γ·importance + δ·context match − penalty(proposed, claim)</div>
+  <div class="card"><h3>Where not to copy the brain</h3>
+    <p class="muted" style="font-size:.88rem">Humans rewrite memories when recalling them, drift toward the gist during sleep, treat repetition as truth, and grow more confident the more they recall. sky-brain never edits a source in place, keeps every summary linked to its sources, counts only independent evidence, and lets importance raise priority but never confidence.</p></div>
+</section>
+
+<section id="personas">
+  <div class="head"><span class="eyebrow">9 · Agents</span><h2>Stewards keep the brain, Workers do the work</h2>
+  <p class="muted">An agent's role is fixed when its token is issued, and the Gatekeeper checks this table on every write. A client cannot simply claim to be a Steward.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Stewards · keep the brain</h3><p class="muted" style="font-size:.88rem">Built in, run in the background: Curator (types, entities, links), Consolidator (nightly sleep, Digest), Archivist (summaries, archiving), Auditor (conflicts, stale facts). Start with one Steward doing the first two jobs.</p></div>
+    <div class="card"><h3>Workers · do your work</h3><p class="muted" style="font-size:.88rem">Defined by each person and pulled from the board: Product Owner, Doer, Reviewer, Researcher, a lawyer's paralegal. They read memory and write to the Inbox and the board.</p></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Who</th><th>Inbox</th><th>Board</th><th>Memory</th><th>Links</th><th>Approve</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip c-you">You</span></td><td class="y">write</td><td class="y">write</td><td class="y">write</td><td class="y">write</td><td class="y">yes</td></tr>
+      <tr><td colspan="6" class="n" style="font-family:var(--mono);font-size:.72rem;letter-spacing:.06em">WORKERS · DO YOUR WORK</td></tr>
+      <tr><td><span class="chip c-po">Product Owner</span></td><td class="y">write</td><td class="p">propose goals</td><td class="n">read</td><td class="p">propose</td><td class="n">no</td></tr>
+      <tr><td><span class="chip c-doer">Doer</span></td><td class="y">write</td><td class="p">claim, report</td><td class="n">read</td><td class="p">propose</td><td class="n">no</td></tr>
+      <tr><td colspan="6" class="n" style="font-family:var(--mono);font-size:.72rem;letter-spacing:.06em">STEWARDS · KEEP THE BRAIN</td></tr>
+      <tr><td><span class="chip c-lib">Curator</span></td><td class="n">read</td><td class="n">read</td><td class="y">types, entities*</td><td class="y">write*</td><td class="n">no</td></tr>
+      <tr><td><span class="chip c-lib">Consolidator</span></td><td class="y">promote, fade</td><td class="n">read</td><td class="y">write*</td><td class="y">write*</td><td class="n">no</td></tr>
+      <tr><td><span class="chip c-lib">Archivist</span></td><td class="y">archive</td><td class="n">read</td><td class="y">summaries</td><td class="n">read</td><td class="n">no</td></tr>
+      <tr><td><span class="chip c-lib">Auditor</span></td><td class="n">read</td><td class="n">read</td><td class="p">flag only</td><td class="p">propose contradicts</td><td class="n">no</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted" style="font-size:.85rem">* Becomes a proposal when confidence is low or it contradicts something you approved.</p>
+</section>
+
+<section id="sharing">
+  <div class="head"><span class="eyebrow">10 · Sharing</span><h2>Invite people to a project, not to your whole brain</h2>
+  <p class="muted">Sign-in stays invite-only through Perminister. Your personal deep memory stays private unless you share a piece of it into a project.</p></div>
+  <div class="grid3">
+    <div class="card"><h3>Viewer</h3><p class="muted" style="font-size:.88rem">Sees the project's board and shared memory. Their agents can read only.</p></div>
+    <div class="card"><h3>Editor</h3><p class="muted" style="font-size:.88rem">Adds goals and notes, claims tasks. Their agents act with the same rights.</p></div>
+    <div class="card"><h3>Admin</h3><p class="muted" style="font-size:.88rem">Invites others and approves goals in this project.</p></div>
+  </div>
+</section>
+
+<section id="ui">
+  <div class="head"><span class="eyebrow">11 · UI examples</span><h2>Six screens, phone first</h2>
+  <p class="muted">People never see the words floating, working or deep. They see Inbox, Board and Memory, and the Digest is the home screen.</p>
+  <p class="example">All screen content below is made-up example data.</p></div>
+  <div class="gallery">
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="Capture in the Claude app">
+        <div class="bar"><span>9:41</span><span>Claude</span></div>
+        <div class="scr">
+          <div class="bubble me">Remember that Noa is allergic to sesame, for the camp forms</div>
+          <div class="tool">sky-brain · capture</div>
+          <div class="bubble ai">Saved to your Inbox. The Curator will suggest where it belongs in tonight's Digest.</div>
+          <div class="bubble me">Also: the Cohen hearing moved to 3 Dec</div>
+          <div class="tool">sky-brain · capture</div>
+          <div class="bubble ai">Saved. It mentions the Cohen family project, so I linked it there as a suggestion.</div>
+          <div class="input">Reply to Claude…</div>
+        </div>
+      </div>
+      <div class="cap"><b>Capture.</b> One MCP tool in the Claude app. No forms, no project picker; sorting happens later.</div>
+    </div>
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="Daily Digest">
+        <div class="bar"><span>8:02</span><span>sky-brain</span></div>
+        <div class="scr">
+          <div class="apphead"><strong>Digest</strong><span>since yesterday · 6</span></div>
+          <div class="lbl">Needs you · 2</div>
+          <div class="row"><div><span class="chip c-po">PO</span></div><div class="t">New goal: Book summer camp</div><div class="s">Household › Kids · 3 tasks</div><div class="acts"><button class="btn pri" type="button">Approve</button><button class="btn" type="button">Open</button><button class="btn" type="button">No</button></div></div>
+          <div class="row"><div><span class="chip c-lib">Curator</span></div><div class="t">Conflict: hearing on 1 Dec or 3 Dec?</div><div class="s">Your note today vs. court letter, 2 Nov</div><div class="acts"><button class="btn" type="button">3 Dec</button><button class="btn" type="button">1 Dec</button></div></div>
+          <div class="lbl">Done, undo for 7 days · 4</div>
+          <div class="row"><div class="t" style="font-weight:500">Kept 3 notes in Memory, 9 faded</div><div class="acts"><button class="btn" type="button">See</button></div></div>
+          <div class="row"><div class="t" style="font-weight:500">Linked “sesame allergy” → Noa</div><div class="acts"><button class="btn" type="button">Wrong</button></div></div>
+        </div>
+        <div class="tabs"><span class="on">Digest</span><span>Inbox</span><span>Board</span><span>Memory</span></div>
+      </div>
+      <div class="cap"><b>Digest.</b> Built nightly by the Consolidator. Approvals first, then changes you can undo. About ten items, never more.</div>
+    </div>
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="Board">
+        <div class="bar"><span>10:15</span><span>sky-brain</span></div>
+        <div class="scr">
+          <div class="apphead"><strong>sky-brain</strong><span>project ▾</span></div>
+          <div class="acts"><span class="chip c-acc">Memory</span><span class="chip" style="color:var(--muted)">Login</span><span class="chip" style="color:var(--muted)">Web</span></div>
+          <div class="row"><div class="t">Hybrid search</div><div class="prog"><i style="width:40%"></i></div><div class="s">2 of 5 tasks · approved by you</div></div>
+          <div class="row"><div class="t">Add the embeddings table</div><div class="s"><span class="chip c-doer">Doer</span> claimed · lease 7 min left</div></div>
+          <div class="row"><div class="t">RRF query + tests</div><div class="s">waiting on: embeddings table</div></div>
+          <div class="row sug"><div class="t">Nightly git export</div><div class="s"><span class="chip c-po">PO</span> draft goal</div><div class="acts"><button class="btn pri" type="button">Approve</button><button class="btn" type="button">Edit</button></div></div>
+        </div>
+        <div class="tabs"><span>Digest</span><span>Inbox</span><span class="on">Board</span><span>Memory</span></div>
+      </div>
+      <div class="cap"><b>Board.</b> Today's task board, plus Tracks and a byline on every row. Drafts are dashed until you approve.</div>
+    </div>
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="Memory item">
+        <div class="bar"><span>10:20</span><span>sky-brain</span></div>
+        <div class="scr">
+          <div class="lbl">Decision · approved</div>
+          <div class="apphead"><strong>Postgres, no graph DB</strong></div>
+          <div class="s muted" style="font-size:11px"><span class="chip c-lib">Curator</span> from task 42 · 12 Nov</div>
+          <div class="row"><div>Use Postgres for items, links and embeddings. No separate graph or vector database.</div></div>
+          <div class="lbl">Linked · 2</div>
+          <div class="row"><div class="t" style="font-weight:500">Supports “Hybrid search with RRF”</div><div class="s">because both pick one database for search</div></div>
+          <div class="lbl">Suggested · 1</div>
+          <div class="row sug"><div class="t" style="font-weight:500">About “Nanogres hosting”</div><div class="s">pgvector support is still unknown</div><div class="acts"><button class="btn" type="button">Keep</button><button class="btn" type="button">Wrong</button><button class="btn" type="button">Change</button></div></div>
+          <div class="s"><span class="strike">Replaces: Neo4j spike</span></div>
+        </div>
+        <div class="tabs"><span>Digest</span><span>Inbox</span><span>Board</span><span class="on">Memory</span></div>
+      </div>
+      <div class="cap"><b>Memory item.</b> Links are sentences with a reason, never a percentage. Keep, Wrong or Change in one tap.</div>
+    </div>
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="What sky-brain knows about you">
+        <div class="bar"><span>21:30</span><span>sky-brain</span></div>
+        <div class="scr">
+          <div class="apphead"><strong>About me</strong><span>private</span></div>
+          <div class="input" style="margin-top:0">Search my memory…</div>
+          <div class="lbl">Family · 6</div>
+          <div class="row"><div>Noa is allergic to sesame</div><div class="s">You · 12 Nov · used 2 times</div></div>
+          <div class="lbl">Work · 14</div>
+          <div class="row"><div>Prefers short replies with the answer first</div><div class="s">Curator · from 9 chats</div><div class="acts"><button class="btn" type="button">Edit</button><button class="btn" type="button">Forget</button></div></div>
+          <div class="lbl">Health · 3</div>
+          <div class="row"><div>Dentist every 6 months, next in Jan</div><div class="s">You · 2 Oct</div></div>
+          <div class="s" style="margin-top:auto">Learning: on · <u>Pause</u> · <u>Export all</u></div>
+        </div>
+        <div class="tabs"><span>Digest</span><span>Inbox</span><span>Board</span><span class="on">Memory</span></div>
+      </div>
+      <div class="cap"><b>About me.</b> Your private memory by topic. Edit or forget anything; pause learning; export everything.</div>
+    </div>
+
+    <div class="shot">
+      <div class="phone" role="img" aria-label="Share a project">
+        <div class="bar"><span>11:05</span><span>sky-brain</span></div>
+        <div class="scr">
+          <div class="apphead"><strong>Share “Household”</strong></div>
+          <div class="input" style="margin-top:0">Email to invite…</div>
+          <div class="acts"><span class="chip c-acc">Editor ▾</span></div>
+          <div class="lbl">People · 3</div>
+          <div class="row"><div class="t">You</div><div class="s">Admin</div></div>
+          <div class="row"><div class="t">Dana</div><div class="s">Editor · her agents can claim tasks</div></div>
+          <div class="row"><div class="t">Grandma Ruth</div><div class="s">Viewer · invite pending</div></div>
+          <div class="lbl">Shared memory</div>
+          <div class="row"><div>12 items from “About me” are shared into this project</div><div class="acts"><button class="btn" type="button">Review</button></div></div>
+          <div class="s" style="margin-top:auto">Your other projects and private memory stay private.</div>
+        </div>
+        <div class="tabs"><span>Digest</span><span>Inbox</span><span class="on">Board</span><span>Memory</span></div>
+      </div>
+      <div class="cap"><b>Share.</b> Invite by project with a role. Private memory is shared only item by item, on purpose.</div>
+    </div>
+
+  </div>
+</section>
+
+<section id="blind">
+  <div class="head"><span class="eyebrow">12 · Blind spots</span><h2>Ten things that bite a cloud brain</h2></div>
+  <div class="grid3">
+    <div class="card"><h3>Hebrew search</h3><p class="muted" style="font-size:.86rem">Postgres has no Hebrew stemmer. Use the <code>simple</code> config plus trigram matching, and a multilingual embedding model.</p></div>
+    <div class="card"><h3>Who runs the AI</h3><p class="muted" style="font-size:.86rem">sky-brain calls no LLM. Stewards and Workers run in the person's own connected model (Claude, Codex) and pull jobs over MCP, so their subscription pays. A scheduled routine runs the nightly Consolidator. Only embeddings need a small server-side model, about $0.02 per million tokens.</p></div>
+    <div class="card"><h3>Forget vs never-delete</h3><p class="muted" style="font-size:.86rem">People need a real forget. Lawyers will ask for encryption, perhaps a key per workspace.</p></div>
+    <div class="card"><h3>Memory poisoning</h3><p class="muted" style="font-size:.86rem">Stored text is fed to agents later. Quarantine imported and web text and mark it as data, not instructions.</p></div>
+    <div class="card"><h3>The empty brain</h3><p class="muted" style="font-size:.86rem">Day one has nothing to recall. Imports from Obsidian, Notion, Drive and chat history are needed early.</p></div>
+    <div class="card"><h3>Files</h3><p class="muted" style="font-size:.86rem">PDFs, images and voice notes go to file storage with extracted text. Postgres holds the text, not the files.</p></div>
+    <div class="card"><h3>No quality measure</h3><p class="muted" style="font-size:.86rem">Keep a test set of questions with known answers and run it on every search change.</p></div>
+    <div class="card"><h3>Single server</h3><p class="muted" style="font-size:.86rem">Nanogres runs on one server: off-site backups and a practised restore. Vercel also limits function run time.</p></div>
+    <div class="card"><h3>Same entity, many names</h3><p class="muted" style="font-size:.86rem">“Dana” and “Dana Levi” must merge, and the merge must be undoable.</p></div>
+    <div class="card"><h3>Changing a type</h3><p class="muted" style="font-size:.86rem">Pack types need versions so old items still validate after a change.</p></div>
+  </div>
+</section>
+
+<section id="build">
+  <div class="head"><span class="eyebrow">13 · Build order</span><h2>Each step in daily use before the next</h2></div>
+  <ol class="build">
+    <li><b>Schema v2.</b> Types, extended items, links, episodes, events, and Hebrew-aware word search.</li>
+    <li><b>MCP memory tools.</b> Capture, search, get and context-for-task, plus a read-only md vault.</li>
+    <li><b>One Steward.</b> A nightly job with a budget that writes the Digest page.</li>
+    <li><b>Embeddings and RRF.</b> Once pgvector is confirmed and a multilingual model is chosen.</li>
+    <li><b>Summaries, archiving and hard forget.</b></li>
+    <li><b>Domain packs and per-project sharing.</b></li>
+    <li><b>Imports.</b> Obsidian and Notion md, Google Drive, chat history.</li>
+  </ol>
+  <p class="muted" style="font-size:.88rem">Not yet: a graph view, a whiteboard, page editing, web clippers, a separate vector or graph database.</p>
+</section>
+
+<footer>Draft spec from the persona research of 12 Nov 2026. The written findings and open questions live in the doc “What sky-brain should be: four perspectives”.</footer>
+</div>
+
+</html>
