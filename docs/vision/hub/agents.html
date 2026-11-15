@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Agents and board</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="base.css"><base target="_blank">
+</head><body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Live doc · 11 Nov 2026 · first agent design</div>
+  <h1>Sky-brain agents and board design</h1>
+  <p class="lede">The first design for agents on the board: versioned role prompts served over MCP, workflow templates that stamp out tasks, and one task DAG that Claude and Codex both pull from.</p>
+  <a class="btn" href="https://claude.ai/artifact/1Z5BxT77Pn9bSvf97BCQrc">Open the live doc ↗</a>
+</header>
+<div class="note">
+  <h3>Update note added to the doc today</h3>
+  <ul>
+    <li>sky-brain is now a shared memory plus board, not only a coordination board for coding agents.</li>
+    <li>Agents are two families: Stewards keep the brain, Workers do the work. Tester, builder and reviewer are Workers.</li>
+    <li>The context slice is now a context packet with "what we don't know" lines. Lessons go up through the trust levels, and only a person approves.</li>
+    <li><code>complete_task</code> is now <code>report_task</code> with evidence. Claims, leases and the task DAG are live.</li>
+  </ul>
+  <p class="muted" style="font-size:14px">Its four diagrams were relabelled to match: Track instead of Feature, Trust instead of Status, packet instead of slice, <code>claim_task</code> and <code>report_task</code>.</p>
+</div>
+<section>
+  <h2>What still holds</h2>
+  <div class="card"><h3>Versioned agent prompts</h3><p>An agent is a named role prompt with a scope and a version. A task records the version it ran with, and only owners can edit them.</p></div>
+  <div class="card"><h3>One graph</h3><p>Agents are labels on tasks in the task DAG. They never call each other; the board's edges decide what is ready next.</p></div>
+  <div class="card"><h3>Workflow templates</h3><p>A saved graph of roles, such as feature-flow (tester, builder, reviewer), becomes real tasks when a feature starts.</p></div>
+  <div class="card"><h3>Roles</h3><p>Owner, Member and Viewer on a workspace. Sign-in stays invite-only through Perminister.</p></div>
+</section>
+<footer>The doc keeps its comments and edit history. This tab only points to it so there is one copy.</footer>
+</div>
+</body></html>

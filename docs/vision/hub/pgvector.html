@@ -1,0 +1,227 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>pgvector on Nanogres</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a one-column runbook. Diagram first, then numbered steps with copyable commands. */
+:root{
+  --paper:#f3f5f7; --sheet:#ffffff; --ink:#17212b; --muted:#56636f; --line:#cfd6dd;
+  --accent:#1f6f8b; --accent-soft:#e1eef3;
+  --ok:#2f7d4f; --ok-soft:#e3f1e8;
+  --warn:#a8670f; --warn-soft:#f8ecd9;
+  --new:#6b56a8; --new-soft:#ece8f6;
+  --code-bg:#eef2f5;
+  --display:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a; --ok:#6cc391; --ok-soft:#16301f;
+  --warn:#e3a54a; --warn-soft:#3a2a12; --new:#a996e6; --new-soft:#27213d; --code-bg:#0c1216; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a; --ok:#6cc391; --ok-soft:#16301f;
+  --warn:#e3a54a; --warn-soft:#3a2a12; --new:#a996e6; --new-soft:#27213d; --code-bg:#0c1216; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header,section{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,6vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:17px;margin:0}
+p{margin:0;max-width:68ch}
+.lede{font-size:18px;color:var(--muted)}
+.inline{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+.fig{background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow-x:auto;padding:12px}
+.fig svg{display:block;min-width:660px;width:100%;height:auto}
+.b-ok{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.5}
+.b-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.5}
+.b-new{fill:var(--new-soft);stroke:var(--new);stroke-width:1.5;stroke-dasharray:5 4}
+.b-plain{fill:var(--sheet);stroke:var(--line);stroke-width:1.5}
+.b-zone{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:2 4}
+.tb{fill:var(--ink);font-family:var(--display);font-size:14px;font-weight:600}
+.tm{fill:var(--muted);font-family:var(--body);font-size:11.5px}
+.tmono{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.tlab{fill:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em}
+.arrow{stroke:var(--muted);stroke-width:1.5;fill:none}
+.ah{fill:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.fact{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fact .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.fact.ok .tag{color:var(--ok)} .fact.warn .tag{color:var(--warn)} .fact.new .tag{color:var(--new)}
+.fact p{font-size:14.5px}
+.fact .src{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:22px;counter-reset:s}
+.step{display:grid;grid-template-columns:34px 1fr;gap:12px}
+.step .n{font-family:var(--mono);font-size:14px;color:var(--accent);border:1.5px solid var(--accent);border-radius:50%;width:28px;height:28px;display:grid;place-items:center}
+.step .body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.code{position:relative;background:var(--code-bg);border:1px solid var(--line);border-radius:6px}
+.code pre{margin:0;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--ink)}
+.code button{position:absolute;top:6px;right:6px;font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:var(--sheet);color:var(--muted);cursor:pointer}
+.code button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-size:14px;color:var(--muted)}
+.choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.opt.rec{border-color:var(--ok)}
+.opt b{font-family:var(--display)}
+.opt span{font-size:14px;color:var(--muted)}
+.opt .pick{font-size:13px;color:var(--ok);font-weight:500}
+.donebar{background:var(--ok-soft);border:1px solid var(--ok);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.donebar b{font-family:var(--display);color:var(--ok)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">For Zakai · Nanogres · 15 Nov 2026 · done</div>
+  <h1>pgvector on Nanogres</h1>
+  <p class="lede">sky-brain wants vector search next to word search. This is what pgvector needs from the Nanogres VPS, why an app can't turn it on by itself today, and two ways to offer it.</p>
+  <div class="donebar" role="status"><b>Done, 15 Nov 2026</b><p>Zakai enabled pgvector 0.8.1 on the sky_brain database. The <span class="inline">vector</span> and <span class="inline">halfvec</span> types and HNSW indexes are available, so step 4 of the build plan (hybrid search) is no longer blocked. The steps below stay as a record and for other Nanogres databases.</p></div>
+</header>
+
+<section>
+  <h2>What already holds, and what blocks it</h2>
+  <p>I checked this against the nanogres repo (<span class="inline">vps-api/</span>) and the pgvector source.</p>
+  <div class="facts">
+    <div class="fact warn"><span class="tag">Blocks</span><p>pgvector isn't a "trusted" extension. Its control file has no <span class="inline">trusted = true</span>, so only a superuser can run <span class="inline">CREATE EXTENSION vector</span>.</p><span class="src">pgvector/vector.control, v0.8.7</span></div>
+    <div class="fact warn"><span class="tag">Blocks</span><p>Nanogres app and query roles are created <span class="inline">NOSUPERUSER</span>, and they should stay that way. So sky-brain's migration role can't enable it.</p><span class="src">api.py, ensure_organization_query_role</span></div>
+    <div class="fact ok"><span class="tag">Already fine</span><p>No restart is needed. pgvector doesn't use <span class="inline">shared_preload_libraries</span>, and PgBouncer in transaction mode works with it unchanged.</p><span class="src">pgvector README</span></div>
+    <div class="fact ok"><span class="tag">Already fine</span><p>The PGDG apt repo is already configured by <span class="inline">install-vps.sh</span> for PgBouncer, and it ships <span class="inline">postgresql-NN-pgvector</span>.</p><span class="src">install-vps.sh, lines 34–56</span></div>
+    <div class="fact ok"><span class="tag">Already fine</span><p>Ownership transfer already skips schemas that belong to extensions, and backups dump <span class="inline">CREATE EXTENSION</span> along with the data.</p><span class="src">api.py, line 213</span></div>
+    <div class="fact ok"><span class="tag">Done</span><p>pgvector 0.8.1 is installed and enabled on the sky_brain database, with halfvec and HNSW available.</p><span class="src">Zakai, 15 Nov 2026</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Where each piece lives</h2>
+  <div class="fig">
+  <svg viewBox="0 0 760 360" role="img" aria-label="pgvector install layers on the Nanogres VPS">
+    <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+    <rect x="12" y="12" width="508" height="336" rx="10" class="b-zone"/>
+    <text x="28" y="34" class="tlab">NANOGRES VPS (ZAKAI)</text>
+
+    <rect x="28" y="48" width="220" height="74" rx="6" class="b-ok"/>
+    <text x="138" y="72" text-anchor="middle" class="tb">1 · apt package</text>
+    <text x="138" y="92" text-anchor="middle" class="tmono">postgresql-NN-pgvector</text>
+    <text x="138" y="110" text-anchor="middle" class="tm">once per server, as root</text>
+
+    <rect x="284" y="48" width="220" height="74" rx="6" class="b-plain"/>
+    <text x="394" y="72" text-anchor="middle" class="tb">Postgres cluster</text>
+    <text x="394" y="92" text-anchor="middle" class="tmono">$libdir/vector.so</text>
+    <text x="394" y="110" text-anchor="middle" class="tm">now listed as available</text>
+    <line x1="250" y1="85" x2="282" y2="85" class="arrow" marker-end="url(#m)"/>
+
+    <rect x="28" y="152" width="476" height="74" rx="6" class="b-ok"/>
+    <text x="266" y="176" text-anchor="middle" class="tb">2 · enable per database, as the postgres superuser</text>
+    <text x="266" y="196" text-anchor="middle" class="tmono">CREATE EXTENSION IF NOT EXISTS vector;</text>
+    <text x="266" y="214" text-anchor="middle" class="tm">manually once, or a new "Extensions" action in the dashboard (allowlist)</text>
+    <line x1="394" y1="124" x2="394" y2="150" class="arrow" marker-end="url(#m)"/>
+
+    <rect x="28" y="256" width="226" height="76" rx="6" class="b-ok"/>
+    <text x="141" y="280" text-anchor="middle" class="tb">sky_brain database</text>
+    <text x="141" y="300" text-anchor="middle" class="tm">types vector, halfvec</text>
+    <text x="141" y="316" text-anchor="middle" class="tm">operators, HNSW index</text>
+    <line x1="141" y1="228" x2="141" y2="254" class="arrow" marker-end="url(#m)"/>
+
+    <rect x="278" y="256" width="226" height="76" rx="6" class="b-ok"/>
+    <text x="391" y="280" text-anchor="middle" class="tb">PgBouncer</text>
+    <text x="391" y="300" text-anchor="middle" class="tmono">:6432 app · :6433 migrate</text>
+    <text x="391" y="316" text-anchor="middle" class="tm">no change</text>
+    <line x1="276" y1="294" x2="256" y2="294" class="arrow" marker-end="url(#m)"/>
+
+    <rect x="560" y="152" width="188" height="180" rx="6" class="b-plain"/>
+    <text x="654" y="178" text-anchor="middle" class="tb">sky-brain on Vercel</text>
+    <text x="654" y="204" text-anchor="middle" class="tm">migration (no superuser):</text>
+    <text x="654" y="222" text-anchor="middle" class="tmono">embeddings table</text>
+    <text x="654" y="240" text-anchor="middle" class="tmono">halfvec(1024)</text>
+    <text x="654" y="258" text-anchor="middle" class="tmono">HNSW cosine index</text>
+    <text x="654" y="284" text-anchor="middle" class="tm">queries: nearest items,</text>
+    <text x="654" y="300" text-anchor="middle" class="tm">fused with word search</text>
+    <line x1="558" y1="294" x2="506" y2="294" class="arrow" marker-end="url(#m)"/>
+
+    <text x="560" y="40" class="tlab">LEGEND</text>
+    <rect x="560" y="50" width="18" height="12" rx="2" class="b-ok"/><text x="586" y="60" class="tm">done: enabled 15 Nov</text>
+    <rect x="560" y="72" width="18" height="12" rx="2" class="b-plain"/><text x="586" y="82" class="tm">existed before</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <h2>Steps</h2>
+  <div class="steps">
+    <div class="step"><div class="n">0</div><div class="body">
+      <h3>Check what's there</h3>
+      <p>Run this as the postgres user on the VPS. If <span class="inline">vector</span> shows up, skip to step 2.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre>sudo -u postgres psql -XAt -c "SHOW server_version_num;" \
+  -c "SELECT name, default_version, installed_version FROM pg_available_extensions WHERE name IN ('vector','pg_trgm');"</pre></div>
+    </div></div>
+
+    <div class="step"><div class="n">1</div><div class="body">
+      <h3>Install the package (once per server)</h3>
+      <p>Match the server's major version (the first two digits of <span class="inline">server_version_num</span>). Use the same PGDG target that <span class="inline">install-vps.sh</span> uses for PgBouncer, because that repo is pinned at low priority.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre>. /etc/os-release
+PG_MAJOR=$(sudo -u postgres psql -XAtc "SHOW server_version_num" | cut -c1-2)
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y -t "${VERSION_CODENAME}-pgdg" "postgresql-${PG_MAJOR}-pgvector"</pre></div>
+      <p class="note">No restart is needed. To make it permanent for new servers, add the same line to <span class="inline">install-vps.sh</span> next to the PgBouncer install.</p>
+    </div></div>
+
+    <div class="step"><div class="n">2</div><div class="body">
+      <h3>Turn it on for a database</h3>
+      <p>This runs as the superuser, inside the target database. On Nanogres the physical name has the organization prefix.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre>sudo -u postgres psql -X -d n206f8ae49c96592a9fb5f687_sky_brain \
+  -c "CREATE EXTENSION IF NOT EXISTS vector;" \
+  -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"</pre></div>
+      <p class="note">pg_trgm is trusted, so the database owner could add it alone. sky-brain wants it for Hebrew-friendly word search, so it's included here.</p>
+      <p>How to offer it to every Nanogres user:</p>
+      <div class="choice">
+        <div class="opt rec"><b>An "Extensions" action</b><span>A dashboard button, plus an API route gated by <span class="inline">nanogres:database:manage</span>. It runs <span class="inline">run_sql("CREATE EXTENSION …", database=physical_name)</span> for names on an allowlist, such as vector and pg_trgm.</span><span class="pick">Recommended: users stay non-superuser.</span></div>
+        <div class="opt"><b>Enable on every new database</b><span>Add the extension in <span class="inline">prepare_organization_database</span>. It's simple, but every database pays for it, used or not.</span></div>
+        <div class="opt"><b>Mark it trusted</b><span>Edit the control file or add pgextwlist. This is fragile across package upgrades.</span><span class="note">Not recommended.</span></div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="n">3</div><div class="body">
+      <h3>Smoke test</h3>
+      <p>Run this as the database's normal query role, not the superuser.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre>CREATE TEMP TABLE t (id int, e halfvec(3));
+INSERT INTO t VALUES (1,'[1,0,0]'), (2,'[0,1,0]');
+SELECT id, e &lt;=&gt; '[0.9,0.1,0]' AS cosine_distance FROM t ORDER BY 2 LIMIT 1;   -- expect id 1</pre></div>
+    </div></div>
+
+    <div class="step"><div class="n">4</div><div class="body">
+      <h3>Things to keep in mind afterwards</h3>
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;max-width:68ch">
+        <li><b>Upgrades:</b> after the apt package updates, run <span class="inline">ALTER EXTENSION vector UPDATE;</span> in each database that uses it.</li>
+        <li><b>Transfers:</b> imports restore as the superuser, so they work. Exports need the other provider to have pgvector too. Neon, Supabase and RDS do.</li>
+        <li><b>Disk quota:</b> 1024 dimensions in halfvec take about 2 KB a row, plus the HNSW index. 50k items come to roughly 100–200 MB, which counts toward the database quota.</li>
+        <li><b>Index builds:</b> HNSW builds go much faster with a higher <span class="inline">maintenance_work_mem</span> for that session. The default is fine at sky-brain's size.</li>
+      </ul>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <h2>What sky-brain does once it's on</h2>
+  <p>Step 4 of the sky-brain build plan adds one migration through the migration port. It creates an <span class="inline">embeddings</span> table with a <span class="inline">halfvec(1024)</span> column and an HNSW cosine index. The migration starts with <span class="inline">CREATE EXTENSION IF NOT EXISTS vector</span>, which is a no-op once you've enabled it. Search then fuses the nearest vectors with word search using RRF. sky-brain doesn't need anything else from Nanogres for this.</p>
+</section>
+
+<footer>Sources: github.com/zakaihamilton/nanogres (vps-api/install-vps.sh, api.py), github.com/pgvector/pgvector (vector.control at 0.8.7, README "APT" section). Nothing was run on the VPS from here. Updated 15 Nov: Zakai confirmed pgvector 0.8.1 is enabled.</footer>
+</div>
+
+<script>
+document.querySelectorAll('[data-copy]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var pre=btn.parentElement.querySelector('pre');var text=pre.innerText;
+    function sel(){var r=document.createRange();r.selectNodeContents(pre);var s=window.getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected';}
+    try{navigator.clipboard.writeText(text).then(function(){btn.textContent='Copied';},sel);}catch(e){sel();}
+    setTimeout(function(){btn.textContent='Copy';},1800);
+  });
+});
+</script>
+
+</body></html>

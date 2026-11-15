@@ -1,0 +1,506 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>sky-brain Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a blueprint sheet. One reading column, diagrams break wider in their own scroll boxes. */
+:root{
+  --paper:#f3f5f7; --sheet:#ffffff; --ink:#17212b; --muted:#56636f; --line:#cfd6dd;
+  --accent:#1f6f8b; --accent-soft:#e1eef3;
+  --built:#2f7d4f; --built-soft:#e3f1e8;
+  --partial:#a8670f; --partial-soft:#f8ecd9;
+  --plan:#6b56a8; --plan-soft:#ece8f6;
+  --display:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a;
+  --built:#6cc391; --built-soft:#16301f;
+  --partial:#e3a54a; --partial-soft:#3a2a12;
+  --plan:#a996e6; --plan-soft:#27213d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a;
+  --built:#6cc391; --built-soft:#16301f;
+  --partial:#e3a54a; --partial-soft:#3a2a12;
+  --plan:#a996e6; --plan-soft:#27213d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+header{display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:26px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:18px;margin:0}
+p{margin:0;max-width:68ch}
+.lede{font-size:18px;color:var(--muted)}
+blockquote{margin:0;padding:14px 18px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 6px 6px 0;max-width:68ch}
+section{display:flex;flex-direction:column;gap:16px}
+.sec-num{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:4px;border:1px solid transparent;white-space:nowrap}
+.chip.built{background:var(--built-soft);color:var(--built);border-color:var(--built)}
+.chip.partial{background:var(--partial-soft);color:var(--partial);border-color:var(--partial)}
+.chip.plan{background:var(--plan-soft);color:var(--plan);border:1px dashed var(--plan)}
+.fig{background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow-x:auto;padding:12px}
+.fig svg{display:block;min-width:680px;width:100%;height:auto}
+.cap{font-size:14px;color:var(--muted)}
+/* svg classes */
+.b-built{fill:var(--built-soft);stroke:var(--built);stroke-width:1.5}
+.b-partial{fill:var(--partial-soft);stroke:var(--partial);stroke-width:1.5}
+.b-plan{fill:var(--plan-soft);stroke:var(--plan);stroke-width:1.5;stroke-dasharray:5 4}
+.b-plain{fill:var(--sheet);stroke:var(--line);stroke-width:1.5}
+.b-db{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.t{fill:var(--ink);font-family:var(--body);font-size:13px}
+.tb{fill:var(--ink);font-family:var(--display);font-size:14px;font-weight:600}
+.tm{fill:var(--muted);font-family:var(--body);font-size:11.5px}
+.tmono{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.tlab{fill:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em}
+.arrow{stroke:var(--muted);stroke-width:1.5;fill:none}
+.arrow-a{stroke:var(--accent);stroke-width:1.8;fill:none}
+.ah{fill:var(--muted)} .ah-a{fill:var(--accent)}
+.grid-line{stroke:var(--line);stroke-width:1}
+/* data model */
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.group{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.group h3{font-size:15px}
+.tables{display:flex;flex-direction:column;gap:6px}
+.tbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--mono);font-size:13px}
+.tbl small{font-family:var(--body);font-size:12px;color:var(--muted);text-align:right}
+.tbl.new{color:var(--plan)} .tbl.changed{color:var(--partial)}
+.callout{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.callout code,.inline{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+/* packet mock */
+.packet{font-family:var(--mono);font-size:13px;line-height:1.55;background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+.packet .row{padding:10px 16px;border-top:1px solid var(--line);min-width:520px}
+.packet .row:first-child{border-top:0}
+.packet .k{color:var(--accent);font-weight:500}
+.packet .gap{color:var(--partial)}
+.packet .dim{color:var(--muted)}
+/* phases */
+.phases{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:10px}
+.phase{position:relative;padding:0 0 22px 24px;display:flex;flex-direction:column;gap:6px}
+.phase::before{content:"";position:absolute;left:-8px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--sheet);border:2px solid var(--accent)}
+.phase.gate::before{background:var(--accent)}
+.phase-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px}
+.phase-num{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.phase ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px;max-width:68ch}
+.done{font-size:14px;color:var(--muted)} .done b{color:var(--ink);font-weight:600}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.decide .callout{min-width:0}
+.rec{font-size:14px;color:var(--built);font-weight:500}
+table.map{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+table.map th,table.map td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.map th{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+.tablebox{overflow-x:auto;background:var(--sheet);border:1px solid var(--line);border-radius:8px}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Proposal · 15 Nov 2026 · from BUILD-PLAN.md and three outside reviews</div>
+  <h1>sky-brain architecture</h1>
+  <p class="lede">How the brain is put together, what already runs in production, and the order to build the rest. It's a proposal, and nothing new here is decided yet.</p>
+  <blockquote>sky-brain does not try to copy a human brain. It uses principles from human cognition to build a memory that is efficient, keeps evolving, and is shared by people and their AI agents.</blockquote>
+  <div class="legend">
+    <span class="chip built">built</span> live at sky-brain.vercel.app
+    <span class="chip partial">partly built</span> in the code, not exposed or not finished
+    <span class="chip plan">proposed</span> design only
+  </div>
+</header>
+
+<section>
+  <div class="sec-num">1 · System</div>
+  <h2>One server, one database, many agents</h2>
+  <p>Agents and people reach sky-brain over MCP or REST. Every request passes the Gatekeeper, which is plain server code. sky-brain never calls an LLM. The Stewards that look after memory run in your own connected model, as scheduled routines that pull their jobs like any other agent.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 560" role="img" aria-label="System layers: clients, API, Gatekeeper, services, Postgres">
+    <defs>
+      <marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+    </defs>
+    <text x="20" y="22" class="tlab">WHO CONNECTS</text>
+    <rect x="20" y="32" width="132" height="64" rx="6" class="b-built"/>
+    <text x="86" y="58" text-anchor="middle" class="tb">Claude</text>
+    <text x="86" y="78" text-anchor="middle" class="tm">claude.ai, phone app</text>
+    <rect x="164" y="32" width="132" height="64" rx="6" class="b-built"/>
+    <text x="230" y="58" text-anchor="middle" class="tb">Claude Code, Codex</text>
+    <text x="230" y="78" text-anchor="middle" class="tm">device login</text>
+    <rect x="308" y="32" width="132" height="64" rx="6" class="b-partial"/>
+    <text x="374" y="58" text-anchor="middle" class="tb">Pathly</text>
+    <text x="374" y="78" text-anchor="middle" class="tm">run tokens ready</text>
+    <rect x="452" y="32" width="132" height="64" rx="6" class="b-built"/>
+    <text x="518" y="58" text-anchor="middle" class="tb">Web app</text>
+    <text x="518" y="78" text-anchor="middle" class="tm">board + Approve</text>
+    <rect x="596" y="32" width="144" height="64" rx="6" class="b-plan"/>
+    <text x="668" y="58" text-anchor="middle" class="tb">Stewards</text>
+    <text x="668" y="78" text-anchor="middle" class="tm">scheduled, in your model</text>
+
+    <line x1="380" y1="98" x2="380" y2="124" class="arrow" marker-end="url(#m)"/>
+
+    <text x="20" y="122" class="tlab">ENTRY</text>
+    <rect x="20" y="130" width="352" height="56" rx="6" class="b-built"/>
+    <text x="196" y="153" text-anchor="middle" class="tb">MCP /mcp  ·  REST /api/v1</text>
+    <text x="196" y="173" text-anchor="middle" class="tm">10 board tools, whoami, projects, goals, tasks</text>
+    <rect x="388" y="130" width="352" height="56" rx="6" class="b-built"/>
+    <text x="564" y="153" text-anchor="middle" class="tb">Identity</text>
+    <text x="564" y="173" text-anchor="middle" class="tm">Perminister sign-in, OAuth for MCP, device flow</text>
+
+    <line x1="380" y1="188" x2="380" y2="212" class="arrow" marker-end="url(#m)"/>
+
+    <text x="20" y="210" class="tlab">CHECKS EVERY WRITE AND READ</text>
+    <rect x="20" y="218" width="720" height="62" rx="6" class="b-partial"/>
+    <text x="380" y="242" text-anchor="middle" class="tb">Gatekeeper (code, not an LLM)</text>
+    <text x="380" y="263" text-anchor="middle" class="tm">built: workspace filter, secret scan, quarantine, size caps, rate limits · proposed: trust-level rules, evidence check</text>
+
+    <line x1="380" y1="282" x2="380" y2="306" class="arrow" marker-end="url(#m)"/>
+
+    <text x="20" y="304" class="tlab">SERVICES</text>
+    <rect x="20" y="312" width="170" height="86" rx="6" class="b-built"/>
+    <text x="105" y="338" text-anchor="middle" class="tb">Board</text>
+    <text x="105" y="358" text-anchor="middle" class="tm">goals, task DAG,</text>
+    <text x="105" y="374" text-anchor="middle" class="tm">claims, leases, events</text>
+    <rect x="203" y="312" width="170" height="86" rx="6" class="b-partial"/>
+    <text x="288" y="338" text-anchor="middle" class="tb">Memory</text>
+    <text x="288" y="358" text-anchor="middle" class="tm">entries table exists,</text>
+    <text x="288" y="374" text-anchor="middle" class="tm">no API or tools yet</text>
+    <rect x="386" y="312" width="170" height="86" rx="6" class="b-partial"/>
+    <text x="471" y="338" text-anchor="middle" class="tb">Retrieval</text>
+    <text x="471" y="358" text-anchor="middle" class="tm">word index exists,</text>
+    <text x="471" y="374" text-anchor="middle" class="tm">hybrid + hops proposed</text>
+    <rect x="570" y="312" width="170" height="86" rx="6" class="b-plan"/>
+    <text x="655" y="338" text-anchor="middle" class="tb">Context packet</text>
+    <text x="655" y="358" text-anchor="middle" class="tm">sent with each claimed</text>
+    <text x="655" y="374" text-anchor="middle" class="tm">task, says what's unknown</text>
+
+    <line x1="380" y1="400" x2="380" y2="424" class="arrow" marker-end="url(#m)"/>
+
+    <text x="20" y="422" class="tlab">ONE SOURCE OF TRUTH</text>
+    <rect x="20" y="430" width="560" height="72" rx="6" class="b-db"/>
+    <text x="300" y="456" text-anchor="middle" class="tb">Postgres on Nanogres</text>
+    <text x="300" y="476" text-anchor="middle" class="tm">people · board · memory · audit, all in one transaction</text>
+    <text x="300" y="492" text-anchor="middle" class="tmono">pgvector 0.8.1 enabled · halfvec + HNSW ready</text>
+    <rect x="596" y="430" width="144" height="72" rx="6" class="b-plan"/>
+    <text x="668" y="456" text-anchor="middle" class="tb">md vault, export</text>
+    <text x="668" y="476" text-anchor="middle" class="tm">a view of the rows,</text>
+    <text x="668" y="492" text-anchor="middle" class="tm">never the truth</text>
+    <line x1="582" y1="466" x2="594" y2="466" class="arrow" marker-end="url(#m)"/>
+
+    <text x="20" y="540" class="tmono">Hard rule 1: sky-brain sends data, never commands. Agents pull work; nothing is pushed to a device.</text>
+  </svg>
+  </div>
+  <p class="cap">What runs today is the outer shell: sign-in, MCP, the board and most of the Gatekeeper. Memory has a table but no way in yet. That's the next job.</p>
+</section>
+
+<section>
+  <div class="sec-num">2 · The loop</div>
+  <h2>What an agent does with a task</h2>
+  <p>The latest review's main correction: get this whole loop working end to end before tuning search. Every arrow here is a call an agent makes, or a click you make.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 250" role="img" aria-label="Agent loop from claim to approved memory">
+    <defs>
+      <marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah-a"/></marker>
+    </defs>
+    <rect x="16" y="30" width="108" height="92" rx="6" class="b-built"/>
+    <text x="70" y="56" text-anchor="middle" class="tb">1 Claim</text>
+    <text x="70" y="78" text-anchor="middle" class="tmono">claim_task</text>
+    <text x="70" y="98" text-anchor="middle" class="tm">lease + heartbeat</text>
+
+    <rect x="140" y="30" width="108" height="92" rx="6" class="b-plan"/>
+    <text x="194" y="56" text-anchor="middle" class="tb">2 Context</text>
+    <text x="194" y="78" text-anchor="middle" class="tm">packet: decisions,</text>
+    <text x="194" y="94" text-anchor="middle" class="tm">rules, past failures,</text>
+    <text x="194" y="110" text-anchor="middle" class="tm">gaps</text>
+
+    <rect x="264" y="30" width="108" height="92" rx="6" class="b-plain"/>
+    <text x="318" y="56" text-anchor="middle" class="tb">3 Work</text>
+    <text x="318" y="78" text-anchor="middle" class="tm">in the agent's own</text>
+    <text x="318" y="94" text-anchor="middle" class="tm">model and tools,</text>
+    <text x="318" y="110" text-anchor="middle" class="tm">outside sky-brain</text>
+
+    <rect x="388" y="30" width="108" height="92" rx="6" class="b-partial"/>
+    <text x="442" y="56" text-anchor="middle" class="tb">4 Report</text>
+    <text x="442" y="78" text-anchor="middle" class="tmono">report_task</text>
+    <text x="442" y="98" text-anchor="middle" class="tm">+ evidence (new)</text>
+
+    <rect x="512" y="30" width="108" height="92" rx="6" class="b-plan"/>
+    <text x="566" y="56" text-anchor="middle" class="tb">5 Propose</text>
+    <text x="566" y="78" text-anchor="middle" class="tm">0–3 lessons,</text>
+    <text x="566" y="94" text-anchor="middle" class="tm">observations,</text>
+    <text x="566" y="110" text-anchor="middle" class="tm">questions</text>
+
+    <rect x="636" y="30" width="108" height="92" rx="6" class="b-plan"/>
+    <text x="690" y="56" text-anchor="middle" class="tb">6 You review</text>
+    <text x="690" y="78" text-anchor="middle" class="tm">Digest:</text>
+    <text x="690" y="94" text-anchor="middle" class="tm">Keep · Wrong · Undo</text>
+
+    <line x1="126" y1="76" x2="138" y2="76" class="arrow-a" marker-end="url(#ma)"/>
+    <line x1="250" y1="76" x2="262" y2="76" class="arrow-a" marker-end="url(#ma)"/>
+    <line x1="374" y1="76" x2="386" y2="76" class="arrow-a" marker-end="url(#ma)"/>
+    <line x1="498" y1="76" x2="510" y2="76" class="arrow-a" marker-end="url(#ma)"/>
+    <line x1="622" y1="76" x2="634" y2="76" class="arrow-a" marker-end="url(#ma)"/>
+
+    <path d="M690 124 V180 H194 V126" class="arrow-a" marker-end="url(#ma)"/>
+    <rect x="300" y="166" width="300" height="28" rx="4" class="b-db"/>
+    <text x="450" y="185" text-anchor="middle" class="t">kept items feed the next agent's packet</text>
+
+    <text x="16" y="228" class="tmono">An urgent need mid-task becomes a blocking question item on the board, not a message between agents.</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">3 · Trust</div>
+  <h2>Four levels of trust, and who may move an item up</h2>
+  <p>This merges the second and third reviews. Agents may record what a test or a run proved, with the evidence attached, so you don't face a queue of trivial approvals. Only you can turn anything into a binding decision or rule. Repeating something doesn't raise it a level. Only independent sources count, traced through <span class="inline">derived_from</span> links.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 300" role="img" aria-label="Trust ladder from external to approved">
+    <defs>
+      <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+    </defs>
+    <line x1="20" y1="276" x2="740" y2="276" class="grid-line"/>
+    <rect x="20" y="196" width="170" height="80" rx="6" class="b-plain"/>
+    <text x="105" y="220" text-anchor="middle" class="tb">External</text>
+    <text x="105" y="240" text-anchor="middle" class="tm">web, imports</text>
+    <text x="105" y="258" text-anchor="middle" class="tmono">quarantined, fenced</text>
+
+    <rect x="200" y="146" width="170" height="130" rx="6" class="b-partial"/>
+    <text x="285" y="170" text-anchor="middle" class="tb">Hypothesis</text>
+    <text x="285" y="190" text-anchor="middle" class="tm">an agent inferred it</text>
+    <text x="285" y="208" text-anchor="middle" class="tmono">status: proposed</text>
+
+    <rect x="380" y="96" width="170" height="180" rx="6" class="b-built"/>
+    <text x="465" y="120" text-anchor="middle" class="tb">Observation</text>
+    <text x="465" y="140" text-anchor="middle" class="tm">a test, run or tool proved it</text>
+    <text x="465" y="158" text-anchor="middle" class="tmono">needs evidence + commit</text>
+    <text x="465" y="176" text-anchor="middle" class="tmono">or a time it held</text>
+
+    <rect x="560" y="46" width="180" height="230" rx="6" class="b-db"/>
+    <text x="650" y="70" text-anchor="middle" class="tb">Approved</text>
+    <text x="650" y="90" text-anchor="middle" class="tm">fact · decision · rule</text>
+    <text x="650" y="108" text-anchor="middle" class="tmono">only a person sets it</text>
+
+    <path d="M105 194 C105 150 200 120 240 144" class="arrow" marker-end="url(#m2)"/>
+    <text x="96" y="140" class="tm">a person reviews</text>
+    <path d="M300 144 C320 100 380 80 418 94" class="arrow" marker-end="url(#m2)"/>
+    <text x="262" y="92" class="tm">evidence attached</text>
+    <path d="M500 94 C520 52 560 36 590 44" class="arrow" marker-end="url(#m2)"/>
+    <text x="458" y="46" class="tm">you approve</text>
+
+    <text x="20" y="30" class="tlab">HIGHER = MAY BE USED AS GROUND TRUTH IN A PACKET</text>
+  </svg>
+  </div>
+  <div class="tablebox">
+  <table class="map">
+    <tr><th>LEVEL</th><th>IN TODAY'S entries TABLE</th><th>WHAT'S ADDED</th></tr>
+    <tr><td>External</td><td><span class="inline">source</span> = web or import, <span class="inline">status</span> = quarantined</td><td>Nothing. This exists already.</td></tr>
+    <tr><td>Hypothesis</td><td><span class="inline">source</span> = agent, <span class="inline">status</span> = proposed</td><td>Consolidator output always lands here.</td></tr>
+    <tr><td>Observation</td><td><span class="inline">source</span> = code is there, no evidence field</td><td><span class="inline">evidence</span> (test, CI run, commit) and a time it held. The Gatekeeper refuses an observation without evidence.</td></tr>
+    <tr><td>Approved</td><td><span class="inline">status</span> = approved; agents already can't approve (hard rule 3)</td><td>A test for every write path that agents can't jump a level.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">4 · History</div>
+  <h2>Two timelines: when it was true, and when we learned it</h2>
+  <p>Append-only versions keep every change. Two dates per decision answer the question the reviews kept asking: why did we think otherwise a month ago? Real example from this project: hosting moved from Render to Vercel.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 250" role="img" aria-label="Valid time and recorded time for the hosting decision">
+    <text x="20" y="24" class="tlab">VALID TIME · WHEN IT WAS TRUE</text>
+    <line x1="120" y1="70" x2="740" y2="70" class="grid-line"/>
+    <rect x="120" y="44" width="300" height="34" rx="4" class="b-partial"/>
+    <text x="270" y="66" text-anchor="middle" class="t">Host on Render (plan)</text>
+    <rect x="420" y="44" width="320" height="34" rx="4" class="b-built"/>
+    <text x="580" y="66" text-anchor="middle" class="t">Host on Vercel (D16)</text>
+    <text x="20" y="66" class="tmono">decision</text>
+
+    <text x="20" y="124" class="tlab">RECORDED TIME · WHEN SKY-BRAIN STORED IT</text>
+    <circle cx="140" cy="160" r="6" class="b-partial"/>
+    <text x="152" y="164" class="tm">v1 recorded, 1 Nov</text>
+    <circle cx="430" cy="160" r="6" class="b-built"/>
+    <text x="442" y="164" class="tm">v2 recorded, 9 Nov · supersedes v1</text>
+    <line x1="120" y1="176" x2="740" y2="176" class="grid-line"/>
+    <text x="120" y="194" class="tmono">1 Nov</text>
+    <text x="410" y="194" class="tmono">9 Nov</text>
+    <text x="700" y="194" class="tmono">today</text>
+
+    <line x1="300" y1="36" x2="300" y2="200" class="arrow-a" stroke-dasharray="4 4"/>
+    <text x="306" y="222" class="t">as-of 5 Nov: "Render", and the version that replaced it, and why</text>
+    <text x="20" y="244" class="tmono">Each decision also carries a scope: project, environment. A packet only shows decisions in scope.</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">5 · Retrieval</div>
+  <h2>From a task to a packet</h2>
+  <p>Word search and vector search are fused with RRF, then the brain follows typed links: why something holds (<span class="inline">derived_from</span>), what it needs (<span class="inline">depends_on</span>), what replaced it (<span class="inline">supersedes</span>). The final ranking is where the cognitive signals go. Each one can be switched off and stays only if the benchmark shows it helps.</p>
+  <div class="fig">
+  <svg viewBox="0 0 760 230" role="img" aria-label="Retrieval pipeline">
+    <defs>
+      <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+    </defs>
+    <rect x="16" y="80" width="100" height="60" rx="6" class="b-plain"/>
+    <text x="66" y="106" text-anchor="middle" class="tb">Task</text>
+    <text x="66" y="124" text-anchor="middle" class="tm">+ its goal</text>
+
+    <rect x="140" y="30" width="130" height="60" rx="6" class="b-partial"/>
+    <text x="205" y="56" text-anchor="middle" class="tb">Word search</text>
+    <text x="205" y="74" text-anchor="middle" class="tm">Hebrew-aware</text>
+    <rect x="140" y="130" width="130" height="60" rx="6" class="b-plan"/>
+    <text x="205" y="156" text-anchor="middle" class="tb">Vector search</text>
+    <text x="205" y="174" text-anchor="middle" class="tm">multilingual</text>
+
+    <rect x="294" y="80" width="100" height="60" rx="6" class="b-plan"/>
+    <text x="344" y="106" text-anchor="middle" class="tb">RRF</text>
+    <text x="344" y="124" text-anchor="middle" class="tmono">k = 60</text>
+
+    <rect x="418" y="80" width="120" height="60" rx="6" class="b-plan"/>
+    <text x="478" y="106" text-anchor="middle" class="tb">Typed hops</text>
+    <text x="478" y="124" text-anchor="middle" class="tm">1–2, fan-damped</text>
+
+    <rect x="562" y="60" width="182" height="100" rx="6" class="b-plan"/>
+    <text x="653" y="84" text-anchor="middle" class="tb">Rank, then cut</text>
+    <text x="653" y="104" text-anchor="middle" class="tm">attention: goal closeness</text>
+    <text x="653" y="120" text-anchor="middle" class="tm">activation: real use + age</text>
+    <text x="653" y="136" text-anchor="middle" class="tm">trust level, scope, validity</text>
+
+    <path d="M118 104 C130 80 130 60 138 60" class="arrow" marker-end="url(#m3)"/>
+    <path d="M118 116 C130 140 130 160 138 160" class="arrow" marker-end="url(#m3)"/>
+    <path d="M272 60 C285 60 285 96 292 100" class="arrow" marker-end="url(#m3)"/>
+    <path d="M272 160 C285 160 285 124 292 120" class="arrow" marker-end="url(#m3)"/>
+    <line x1="396" y1="110" x2="416" y2="110" class="arrow" marker-end="url(#m3)"/>
+    <line x1="540" y1="110" x2="560" y2="110" class="arrow" marker-end="url(#m3)"/>
+
+    <text x="16" y="216" class="tmono">Old binding decisions never fade out of rank: activation only orders what is still valid and in scope.</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">6 · The packet</div>
+  <h2>What an agent receives with a task</h2>
+  <p>The default size is small, about 4–5 summaries, each with a pointer to the full item. It's a default, not a cap. The agent can ask for a bigger budget, and the "what we don't know" lines tell it when to. This example is made up, for a task in this repo.</p>
+  <div class="packet" role="figure" aria-label="Example context packet">
+    <div class="row"><span class="dim"># context for task</span> "Add the entries REST API" <span class="dim">· goal: memory core · budget 2,000 tokens (ask for more: budget=6000)</span></div>
+    <div class="row"><span class="k">RULES</span> <span class="dim">(approved only)</span><br>Identity comes from the token only, never the body. · Agents cannot approve, reject or delete.</div>
+    <div class="row"><span class="k">DECISIONS</span><br>D16 Host on Vercel, Postgres on Nanogres <span class="dim">· approved · valid since 9 Nov · → item 412</span><br>D20 Devices run only goals their own person approved <span class="dim">· approved · → item 455</span></div>
+    <div class="row"><span class="k">OBSERVATIONS</span><br>Any new CommonJS dependency must be external in build:vercel <span class="dim">· evidence: PR #7, bundle check in CI · → item 470</span></div>
+    <div class="row"><span class="k">PAST FAILURES</span><br>Production 500s on 11 Nov from a bundled CJS module <span class="dim">· episode 88</span></div>
+    <div class="row"><span class="gap">WHAT WE DON'T KNOW</span><br><span class="gap">·</span> No approved decision on Hebrew word search config.<br><span class="gap">·</span> No multilingual embedding model is chosen yet.<br><span class="gap">·</span> PLAN.md and BUILD-PLAN.md disagree on the entry model. Ask before writing a migration.</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">7 · Data model</div>
+  <h2>Grow the entries table instead of starting over</h2>
+  <p>The code already has an <span class="inline">entries</span> table with kind, status, author, source, <span class="inline">supersedes</span>, confidence and a quarantine reason, plus an append-only audit log. That's most of an item already. My recommendation is to extend it and add five tables, not to build a separate <span class="inline">items</span> table as BUILD-PLAN implies.</p>
+  <div class="legend"><span class="chip built">exists</span><span class="chip partial">extend</span><span class="chip plan">new</span></div>
+  <div class="groups">
+    <div class="group"><h3>People and access</h3><div class="tables">
+      <div class="tbl">workspaces <small>exists</small></div>
+      <div class="tbl">members, invites <small>exists</small></div>
+      <div class="tbl">user, session, oauth_* <small>Better Auth</small></div>
+      <div class="tbl">devices, run_tokens <small>exists</small></div>
+    </div></div>
+    <div class="group"><h3>Board</h3><div class="tables">
+      <div class="tbl">projects <small>exists</small></div>
+      <div class="tbl changed">features <small>shown as Track</small></div>
+      <div class="tbl">goals, tasks <small>live</small></div>
+      <div class="tbl">task_deps, task_events <small>append-only</small></div>
+    </div></div>
+    <div class="group"><h3>Memory</h3><div class="tables">
+      <div class="tbl changed">entries <small>+ evidence, valid from/to, scope, tier</small></div>
+      <div class="tbl new">entry_versions <small>append-only</small></div>
+      <div class="tbl new">links <small>typed, with a reason</small></div>
+      <div class="tbl new">episodes <small>raw input, immutable</small></div>
+      <div class="tbl new">embeddings <small>step 4</small></div>
+    </div></div>
+    <div class="group"><h3>Signals and audit</h3><div class="tables">
+      <div class="tbl">audit_log <small>append-only</small></div>
+      <div class="tbl new">uses <small>real uses, for activation</small></div>
+      <div class="tbl new">intentions <small>"when X, do Y"</small></div>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">8 · Build order</div>
+  <h2>Nine steps, each one measured</h2>
+  <p>This is BUILD-PLAN.md with the latest review's changes: the full loop comes before search tuning, there's a measuring step in the middle, and the benchmark includes a project the brain has never seen. Each step is in daily use before the next starts.</p>
+  <div class="phases">
+    <div class="phase gate">
+      <div class="phase-head"><span class="phase-num">0</span><h3>Benchmark</h3><span class="chip plan">first</span></div>
+      <ul><li>About 100 questions with known answers from sky-brain's history, plus tasks from Pathly, a project the brain hasn't seen.</li>
+      <li>Metrics: task success, correct retrieval, decisions kept, contradictions, tokens, latency. Three more from the review: approvals you had to give, stale or wrongly promoted items, and how often agents ask for more context.</li></ul>
+      <p class="done"><b>Done when</b> plain word search has baseline numbers.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">1</span><h3>Reliable memory</h3><span class="chip partial">table exists</span></div>
+      <ul><li>Extend <span class="inline">entries</span> and add <span class="inline">entry_versions</span>, <span class="inline">links</span> and <span class="inline">episodes</span>.</li>
+      <li>Add the trust levels and the Gatekeeper's rules for them, with an edit check so two agents can't overwrite each other.</li>
+      <li>Entries REST API and MCP tools: capture, search, get. Word search that works in Hebrew.</li></ul>
+      <p class="done"><b>Done when</b> tests prove that agents can't jump a trust level or edit in place, and that other workspaces can't read.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">2</span><h3>The full agent loop</h3><span class="chip plan">proposed</span></div>
+      <ul><li><span class="inline">claim_task</span> returns the packet, including the "what we don't know" lines, which come cheap from data already stored.</li>
+      <li><span class="inline">report_task</span> takes evidence. Lessons and observations are proposed, and question items can block a task.</li>
+      <li>A Digest page with Keep, Wrong and Undo.</li></ul>
+      <p class="done"><b>Done when</b> an agent coming back after a week answers "why" questions without reading the history.</p>
+    </div>
+    <div class="phase gate">
+      <div class="phase-head"><span class="phase-num">3</span><h3>Measure</h3><span class="chip plan">gate</span></div>
+      <ul><li>Run the benchmark three ways: plain retrieval, hierarchical memory, and sky-brain so far.</li></ul>
+      <p class="done"><b>Done when</b> sky-brain beats plain retrieval on decisions kept. If it doesn't, fix the loop before adding anything.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">4</span><h3>Hybrid search</h3><span class="chip plan">proposed</span><span class="chip built">pgvector ready</span></div>
+      <ul><li>pgvector 0.8.1 is enabled on the sky_brain Nanogres database (15 Nov), so <span class="inline">halfvec(1024)</span> and an HNSW index are available. Still to do: a multilingual embedding model, RRF, and typed, fan-damped hops.</li></ul>
+      <p class="done"><b>Done when</b> recall, precision and latency beat word search alone.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">5</span><h3>Cognitive signals, one at a time</h3><span class="chip plan">proposed</span></div>
+      <ul><li>Attention weight, then activation (needs the <span class="inline">uses</span> log), then the capture-context boost.</li>
+      <li>Each signal gets a run with it and a run without it.</li></ul>
+      <p class="done"><b>Done when</b> each signal shows a gain, or is switched off.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">6</span><h3>Consolidator</h3><span class="chip plan">proposed</span></div>
+      <ul><li>One Steward, run as a scheduled routine in your model. It merges duplicates, writes the Digest, schedules "still true?" checks and produces a weekly contradiction report.</li>
+      <li>It only proposes, and it counts sources by lineage.</li></ul>
+      <p class="done"><b>Done when</b> a month of nightly runs adds no contradictions.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">7</span><h3>Growth and export</h3><span class="chip plan">proposed</span></div>
+      <ul><li>Layered summaries, retention by tier, hard forget through summaries and embeddings, cold archive, the md vault and a git export.</li></ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><span class="phase-num">8</span><h3>Beyond code</h3><span class="chip plan">later</span></div>
+      <ul><li>Domain packs with versioned types, sharing per project, imports, files, and other audiences.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-num">9 · Before any migration</div>
+  <h2>Three things to settle first</h2>
+  <p>The latest review found that the repo describes two generations of design. These three choices fix that. Each one would become an entry in DECISIONS.md.</p>
+  <div class="decide">
+    <div class="callout"><h3>Extend entries, or a new items table?</h3><p>Extending keeps the trust rules and tests that already exist.</p><p class="rec">Recommend: extend entries.</p></div>
+    <div class="callout"><h3>One plan in the repo</h3><p>PLAN.md and ROADMAP still list Pages, Views and Templates as layers. The README still says login isn't in. Mark the older parts as replaced by BUILD-PLAN.md, and fix the README.</p><p class="rec">Recommend: one docs PR.</p></div>
+    <div class="callout"><h3>Track</h3><p>The <span class="inline">features</span> table already is the middle level. Only the UI and the docs change.</p><p class="rec">Recommend: rename in the UI only, and keep it optional.</p></div>
+  </div>
+</section>
+
+<footer>Updated 15 Nov 2026: pgvector 0.8.1 is now enabled on Nanogres (halfvec and HNSW). Sources: docs/vision/BUILD-PLAN.md, VISION.md, spec.html, the latest outside review (PR #9), and the code on main at 12fbda7 (schema.ts, enums.ts, app.ts routes, the guards and the MCP board tools). Status chips reflect that code, not a test run.</footer>
+
+</div>
+
+</body></html>
