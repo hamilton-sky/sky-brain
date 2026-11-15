@@ -10,17 +10,17 @@ or Vercel. The ticket text is kept as the record of what was asked._
 | T0 | Done for claude.ai and the phone app (D18, D19); Claude Code and Codex not yet tried |
 | T1 | Done, with `vercel.json` instead of `render.yaml` |
 | T2 | Done (migrations 0000–0004) |
-| T3 | Done with Perminister: one workspace per person; invites are accepted at sign-in, but no route sends one yet |
+| T3 | Partly done: Perminister sign-in and one workspace per person work; invites are accepted at sign-in, but nothing creates one yet |
 | T4 | Not started as an API. The table and the write guards exist (brain-core tickets 01–04); tickets 05–11 are open |
 | T5 | Not started |
 | T6 | Partly done: `/mcp` serves `whoami` and the ten task board tools, no entry tools |
-| T7 | Done (device flow, `sbd_` device tokens, `sbr_` run tokens) |
+| T7 | Partly done: the device flow API, `sbd_` device tokens and `sbr_` run tokens work; the browser page where a person approves a device code is not built |
 | T8 | Partly done: the board page; no entries page |
 | T9 | Deploy done; connecting every client and read logging are open |
 | T10 | Not started |
 
-The next step is proposed in [../vision/BUILD-PLAN.md](../vision/BUILD-PLAN.md): its step 1,
-"memory core with provenance", takes over T4 and T5 with a wider entry model.
+What comes next is the build order in the [README](../../README.md#what-we-build-next) (D21):
+its step 1, "reliable memory", takes over T4, and step 2, "the full agent loop", takes over T5.
 
 Order matters. T0 goes first because login is the riskiest part: if it fails, the fallback
 changes how T3 and T6 are built.

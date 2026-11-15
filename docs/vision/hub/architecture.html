@@ -257,6 +257,7 @@ a{color:var(--accent)}
 <section>
   <div class="sec-num">3 · Trust</div>
   <h2>Four levels of trust, and who may move an item up</h2>
+  <p class="callout"><b>Settled 15 Nov (D22):</b> the ladder below became two separate fields. <b>Kind</b> is what sort of statement an item is: fact, decision, hypothesis, observation (needs evidence) or external. <b>Trust level</b> is how far you have vetted it: quarantined, proposed or approved. Agents and Stewards write at proposed (external text at quarantined); only you raise trust or change a kind, and nothing is promoted automatically. The ladder still shows how much an agent may rely on each kind.</p>
   <p>This merges the second and third reviews. Agents may record what a test or a run proved, with the evidence attached, so you don't face a queue of trivial approvals. Only you can turn anything into a binding decision or rule. Repeating something doesn't raise it a level. Only independent sources count, traced through <span class="inline">derived_from</span> links.</p>
   <div class="fig">
   <svg viewBox="0 0 760 300" role="img" aria-label="Trust ladder from external to approved">
@@ -434,6 +435,7 @@ a{color:var(--accent)}
   <div class="sec-num">8 · Build order</div>
   <h2>Nine steps, each one measured</h2>
   <p>This is BUILD-PLAN.md with the latest review's changes: the full loop comes before search tuning, there's a measuring step in the middle, and the benchmark includes a project the brain has never seen. Each step is in daily use before the next starts.</p>
+  <p class="callout"><b>Decided 15 Nov (D21):</b> this is the one build order. BUILD-PLAN.md now lists the same nine steps.</p>
   <div class="phases">
     <div class="phase gate">
       <div class="phase-head"><span class="phase-num">0</span><h3>Benchmark</h3><span class="chip plan">first</span></div>
@@ -494,7 +496,7 @@ a{color:var(--accent)}
   <p>The latest review found that the repo describes two generations of design. These three choices fix that. Each one would become an entry in DECISIONS.md.</p>
   <div class="decide">
     <div class="callout"><h3>Extend entries, or a new items table?</h3><p>Extending keeps the trust rules and tests that already exist.</p><p class="rec">Recommend: extend entries.</p></div>
-    <div class="callout"><h3>One plan in the repo</h3><p>PLAN.md and ROADMAP still list Pages, Views and Templates as layers. The README still says login isn't in. Mark the older parts as replaced by BUILD-PLAN.md, and fix the README.</p><p class="rec">Recommend: one docs PR.</p></div>
+    <div class="callout"><h3>One plan in the repo</h3><p>Done 15 Nov: the README opens with the goal, what is built and this build order; ROADMAP marks Layers 2 to 5 as waiting (D21), and the README no longer says login is missing.</p><p class="rec">Done: PRs #11 and #12.</p></div>
     <div class="callout"><h3>Track</h3><p>The <span class="inline">features</span> table already is the middle level. Only the UI and the docs change.</p><p class="rec">Recommend: rename in the UI only, and keep it optional.</p></div>
   </div>
 </section>

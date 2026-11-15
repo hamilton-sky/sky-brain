@@ -3,18 +3,20 @@
 _Written 2026-11-01. This is a living document: when the code changes what it describes,
 update it in the same commit._
 
-**What is built (15 Nov 2026):** sign-in (§ 9), the MCP endpoint with `whoami` and the task
-board tools (§ 8), device login and run tokens, the Vercel deploy (§ 12), the schema of § 5
-and the write guards. **Not built yet:** the entries API, the entry MCP tools of § 8 and the
+**What is built (15 Nov 2026):** the [README](../README.md#the-contract) holds the goal, the
+built/partly built table and the build order; this plan explains how the built parts work. Built:
+sign-in (§ 9), the MCP endpoint with `whoami` and the task board tools (§ 8), the device flow and
+run tokens as an API (no approval page yet), the Vercel deploy (§ 12), the schema of § 5 and the
+write guards. **Not built yet:** the entries API, the entry MCP tools of § 8 and the
 `context` packet (§ 7). Sections that describe them are the contract for that work.
 
-**Proposed next:** [vision/BUILD-PLAN.md](vision/BUILD-PLAN.md) and the architecture page in
-[vision/hub/](vision/hub/README.md) propose growing the memory: extend the `entries` table
-(trust levels, evidence, validity dates, a tier) and add `entry_versions`, `links`, `episodes`,
-`uses` and `intentions`; Stewards (Curator, Consolidator, Archivist, Auditor) that run in the
-person's own model; and the Gatekeeper as server code checking every write. sky-brain calls no
-LLM except for embeddings. None of this is decided yet. When a part is accepted, it gets a
-decision in [DECISIONS.md](DECISIONS.md) and this plan changes with the code.
+**Next:** the memory, in the order of D21 ([vision/BUILD-PLAN.md](vision/BUILD-PLAN.md)):
+extend the `entries` table (kind and trust level as two fields, D22; evidence, validity dates, a
+tier) and add `entry_versions`, `links`, `episodes`, `uses` and `intentions`; Stewards (Curator,
+Consolidator, Archivist, Auditor) that run in the person's own model and only propose; and the
+Gatekeeper as server code checking every write. sky-brain calls no LLM except for embeddings.
+The order and the trust model are decided; the rest of the design is a proposal until its step
+is built, and this plan changes with the code.
 
 ## 1. What it is
 
@@ -139,6 +141,9 @@ Text is never edited after approval. A change is a new entry that supersedes the
 Every status change goes through the API and lands in the audit log.
 
 ## 6. Trust rules
+
+_Not built as an API yet. Step 1 of the build order (D21) replaces this table with two fields,
+kind and trust level (D22); the rules below about agents, quarantine and secrets carry over._
 
 | Kind | People write it as | Agents write it as | Who can move it on |
 |---|---|---|---|

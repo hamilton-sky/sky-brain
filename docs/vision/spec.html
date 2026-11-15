@@ -120,7 +120,7 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
   <h1>sky-brain</h1>
   <p class="lede">One brain that a person and their AI agents share. It holds anything you want to remember, links it together, runs your work on a board, and keeps what matters as long-term memory.</p>
   <div class="meta"><span>12 Nov 2026 · updated 15 Nov</span><span>Status: product view of the proposal</span><span>Live today: sign-in, MCP connector, task board v1</span></div>
-  <div class="update" role="note"><b>Updated 15 Nov to match the architecture proposal</b><ul><li>Build order, data model and trust rules now come from the Architecture page. This page keeps the product view: memory model, ontology, search, growth and screens.</li><li>Memory grows the existing <code>entries</code> table (plus <code>entry_versions</code>, <code>links</code>, <code>episodes</code>, <code>embeddings</code>, <code>uses</code>, <code>intentions</code>) instead of a new items table.</li><li>Four trust levels: external, hypothesis, observation (needs evidence), approved. Only a person approves.</li><li>sky-brain never calls an LLM except for embeddings. Stewards run as scheduled routines in your own connected model.</li><li>pgvector 0.8.1 is enabled on Nanogres, so halfvec and HNSW are ready for hybrid search.</li></ul></div>
+  <div class="update" role="note"><b>Updated 15 Nov to match the architecture proposal</b><ul><li>Build order, data model and trust rules now come from the Architecture page. This page keeps the product view: memory model, ontology, search, growth and screens.</li><li>Memory grows the existing <code>entries</code> table (plus <code>entry_versions</code>, <code>links</code>, <code>episodes</code>, <code>embeddings</code>, <code>uses</code>, <code>intentions</code>) instead of a new items table.</li><li>Two fields per item (D22): <b>kind</b> (fact, decision, hypothesis, observation with evidence, external) and <b>trust level</b> (quarantined, proposed, approved). Only a person raises trust; agents and Stewards only propose, and nothing is promoted automatically.</li><li>One build order (D21): the full agent loop and a measure gate come before search tuning.</li><li>sky-brain never calls an LLM except for embeddings. Stewards run as scheduled routines in your own connected model.</li><li>pgvector 0.8.1 is enabled on Nanogres, so halfvec and HNSW are ready for hybrid search.</li></ul></div>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -129,9 +129,9 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
 
 <section id="model">
   <div class="head"><span class="eyebrow">1 · The brain model</span><h2>Three kinds of memory, one board in the middle</h2>
-  <p class="muted">Agents and people never message each other. They read and write the shared brain, and a nightly Steward, the Consolidator, decides what becomes long-term memory.</p></div>
+  <p class="muted">Agents and people never message each other. They read and write the shared brain, and a nightly Steward, the Consolidator, proposes what becomes long-term memory. You decide in the Digest.</p></div>
   <figure class="fig" style="margin:0">
-  <svg viewBox="0 0 760 450" role="img" aria-label="People and agents read and write three memory tiers; the Consolidator promotes items into deep memory">
+  <svg viewBox="0 0 760 450" role="img" aria-label="People and agents read and write three memory tiers; the Consolidator proposes items for deep memory and you keep them">
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
     <rect x="20" y="10" width="720" height="126" rx="10" class="s-sunk"/>
     <text x="36" y="34" class="t-name">People and agents · every read and write passes one permission check</text>
@@ -144,9 +144,9 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
     <rect x="20" y="190" width="228" height="100" rx="10" class="s-box"/><text x="134" y="216" text-anchor="middle" class="t-name">Floating memory · Inbox</text><text x="134" y="236" text-anchor="middle" class="t-body">Raw captures, agent notes</text><text x="134" y="254" text-anchor="middle" class="t-body">Fades unless used or kept</text><text x="134" y="272" text-anchor="middle" class="t-mono">tier = floating</text>
     <rect x="266" y="190" width="228" height="100" rx="10" class="s-acc"/><text x="380" y="216" text-anchor="middle" class="t-name">Working memory · Board</text><text x="380" y="236" text-anchor="middle" class="t-body" style="fill:var(--fg)">Project › Track › Goal › Task</text><text x="380" y="254" text-anchor="middle" class="t-body" style="fill:var(--fg)">Claims, leases, approvals</text><text x="380" y="272" text-anchor="middle" class="t-mono" style="fill:var(--accent)">the blackboard</text>
     <rect x="512" y="190" width="228" height="100" rx="10" class="s-box"/><text x="626" y="216" text-anchor="middle" class="t-name">Deep memory · Memory</text><text x="626" y="236" text-anchor="middle" class="t-body">Decisions, rules, lessons, people</text><text x="626" y="254" text-anchor="middle" class="t-body">Typed links with reasons</text><text x="626" y="272" text-anchor="middle" class="t-mono">tier = deep · never deleted</text>
-    <rect x="266" y="350" width="228" height="80" rx="10" class="s-box"/><text x="380" y="376" text-anchor="middle" class="t-name">Consolidator (sleep)</text><text x="380" y="396" text-anchor="middle" class="t-body">Promotes, links, flags conflicts</text><text x="380" y="414" text-anchor="middle" class="t-body">Writes your daily Digest</text>
+    <rect x="266" y="350" width="228" height="80" rx="10" class="s-box"/><text x="380" y="376" text-anchor="middle" class="t-name">Consolidator (sleep)</text><text x="380" y="396" text-anchor="middle" class="t-body">Proposes, links, flags conflicts</text><text x="380" y="414" text-anchor="middle" class="t-body">Writes your daily Digest</text>
     <path d="M134 290V390H264" class="s-line" marker-end="url(#ah)"/><line x1="380" y1="290" x2="380" y2="348" class="s-line" marker-end="url(#ah)"/><path d="M494 390H626V292" class="s-line" marker-end="url(#ah)"/>
-    <text x="144" y="380" class="t-body">used or kept</text><text x="390" y="324" class="t-body">finished goals</text><text x="506" y="380" class="t-body">promotes, links</text>
+    <text x="144" y="380" class="t-body">used or kept</text><text x="390" y="324" class="t-body">finished goals</text><text x="506" y="380" class="t-body">you keep, it links</text>
   </svg>
   <figcaption>The board is the blackboard. Everything not used, kept or finished fades from the Inbox; deep items are closed with an end date instead of deleted.</figcaption>
   </figure>
@@ -358,12 +358,12 @@ vector database.</pre>
       <tr><td><span class="chip c-doer">Doer</span></td><td class="y">write</td><td class="p">claim, report</td><td class="n">read</td><td class="p">propose</td><td class="n">no</td></tr>
       <tr><td colspan="6" class="n" style="font-family:var(--mono);font-size:.72rem;letter-spacing:.06em">STEWARDS · KEEP THE BRAIN</td></tr>
       <tr><td><span class="chip c-lib">Curator</span></td><td class="n">read</td><td class="n">read</td><td class="y">types, entities*</td><td class="y">write*</td><td class="n">no</td></tr>
-      <tr><td><span class="chip c-lib">Consolidator</span></td><td class="y">promote, fade</td><td class="n">read</td><td class="y">write*</td><td class="y">write*</td><td class="n">no</td></tr>
+      <tr><td><span class="chip c-lib">Consolidator</span></td><td class="p">propose keep, fade</td><td class="n">read</td><td class="y">write*</td><td class="y">write*</td><td class="n">no</td></tr>
       <tr><td><span class="chip c-lib">Archivist</span></td><td class="y">archive</td><td class="n">read</td><td class="y">summaries</td><td class="n">read</td><td class="n">no</td></tr>
       <tr><td><span class="chip c-lib">Auditor</span></td><td class="n">read</td><td class="n">read</td><td class="p">flag only</td><td class="p">propose contradicts</td><td class="n">no</td></tr>
     </tbody>
   </table></div>
-  <p class="muted" style="font-size:.85rem">* Becomes a proposal when confidence is low or it contradicts something you approved.</p>
+  <p class="muted" style="font-size:.85rem">* Always as a proposal (trust level <code>proposed</code>). Nothing a Steward writes is used as ground truth until you keep it, however confident it is (D22).</p>
 </section>
 
 <section id="sharing">
