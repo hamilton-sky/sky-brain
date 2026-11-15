@@ -9,8 +9,10 @@ This is the one ordered plan for building the brain. It combines:
 The latest outside review, of this plan itself, is [REVIEW.md](REVIEW.md).
 
 It replaces the two build-order lists in VISION.md ("What I would build, in order" and
-"Recommended build order"). It is still a proposal: nothing here is in `docs/DECISIONS.md` yet, and
-the task board v1 (live) is the only part that exists.
+"Recommended build order"). It is still a proposal: nothing here is in `docs/DECISIONS.md` yet.
+What runs today is the outer shell: Perminister sign-in, the MCP connector, the task board v1
+and the Gatekeeper's base checks (workspace filter, secret scan, quarantine, size caps, rate
+limits). The `entries` table exists with no API or tools. `docs/PLAN.md` lists what is built.
 
 ## What sky-brain is
 
@@ -109,7 +111,8 @@ or raise a `fact` or a `decision`, and it cannot edit an item in place.
 
 ### 3. Hybrid search
 
-- **Vectors:** pgvector (confirm first that Nanogres has it) and a multilingual embedding model.
+- **Vectors:** pgvector (enabled on Nanogres, version 0.8.1 with `halfvec` and HNSW, 15 Nov) and a
+  multilingual embedding model.
 - **Fusion:** RRF (k = 60) over word search and vector search.
 - **Associative hops:** 1–2 hops over accepted links. Hops prefer causal and time links
   (`derived_from`, `depends_on`, `supersedes`), with fan damping (S − ln(fan)).

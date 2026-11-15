@@ -9,10 +9,17 @@ Five layers. Each one is usable on its own.
 
 Times are rough estimates for one person building with Claude.
 
+**Where it stands (15 Nov 2026).** Layer 1 is partly built: sign-in, the MCP connector, device
+login and the deploy are live; the entries API and its MCP tools are not. Layer 1b (task board
+v1) is live. The next step is the memory, in the order of the proposal
+[vision/BUILD-PLAN.md](vision/BUILD-PLAN.md), which replaces the rest of Layer 1 (entries API,
+`context` packet) with a wider memory core. That plan puts Layers 2 and 3 (Pages, Views) under
+"Not now". The layers below are kept as written until the proposal is decided.
+
 | Layer | What you get | Rough time |
 |---|---|---|
-| 1. Brain core | Google sign-in, projects, typed entries, MCP connector, a simple web page, live on Render | 2–3 weeks |
-| 1b. Task board | Goals and a task DAG in the cloud: agents propose, you approve on the web page, devices and MCP clients pull and claim | 1–2 weeks |
+| 1. Brain core | Perminister sign-in, projects, typed entries, MCP connector, a simple web page, live on Vercel | Partly built |
+| 1b. Task board | Goals and a task DAG in the cloud: agents propose, you approve on the web page, devices and MCP clients pull and claim | Built, live |
 | Two-week test | Use it every day; decide go or stop | 2 weeks |
 | 2. Pages | Block editor, live co-editing, comments, history; agents read and propose edits | 3–4 weeks |
 | 3. Views and templates | Table, kanban and calendar views; saved views; templates | 2–3 weeks |
@@ -25,16 +32,18 @@ Times are rough estimates for one person building with Claude.
 
 **Goal:** one brain that you, Claude Code, Codex, claude.ai and Pathly all read and write.
 
-**Ships:**
-- Google sign-in, invites, one workspace, projects and features.
-- The `entries` table with full-text search, trust rules, secret scan and an audit log.
-- The REST API and six MCP tools: `context`, `search`, `get`, `post`, `supersede`, `ask`.
-- OAuth for the claude.ai connector, and device login with short-lived run tokens for headless
-  agents.
-- A web page: browse by scope, kind and status; answer questions; approve, reject, release,
-  supersede.
-- Deployed on Render from `render.yaml`.
-- Pathly connected: its fragments copy decisions, questions and lessons up, and every run
+**Ships** (✅ built, 🟡 partly built, ⬜ not built):
+- 🟡 Perminister sign-in (D17), one workspace per person and projects are built. Pending invites
+  are accepted at sign-in, but no route sends one yet. Features exist in the schema only.
+- 🟡 The `entries` table with full-text search, trust rules, secret scan and an audit log. The
+  table, the guards and the audit log are built; the trust rules have no write path yet.
+- ⬜ The REST API and six MCP tools: `context`, `search`, `get`, `post`, `supersede`, `ask`.
+  BUILD-PLAN step 2 proposes `capture`, `search`, `get` and `context_for_task` instead.
+- ✅ OAuth for the claude.ai connector (D18), and device login with short-lived run tokens for
+  headless agents.
+- 🟡 A web page: the board page is built; browsing and approving entries is not.
+- ✅ Deployed on Vercel with Postgres on Nanogres (D16).
+- ⬜ Pathly connected: its fragments copy decisions, questions and lessons up, and every run
   pulls rules and decisions down.
 
 **Done when:**
@@ -52,6 +61,8 @@ Tickets: [layer-1/TICKETS.md](layer-1/TICKETS.md).
 ## Layer 1b: Task board
 
 **Goal:** one board of goals and tasks that every machine and agent works from (D20).
+
+**Status:** built and live (task board v1, 11 Nov 2026). The Pathly client is still to do.
 
 **Ships:**
 - Goals (draft, approved, cancelled) and a task DAG with dependencies and file lists, per project.
@@ -151,6 +162,8 @@ proves it.
 ## Later, only when there is a real need
 
 - Vector search with pgvector, when full-text search starts missing things in real use.
+  pgvector 0.8.1 is already enabled on Nanogres (15 Nov 2026), and BUILD-PLAN step 3 proposes
+  hybrid search as part of the memory.
 - A verifier that re-checks decisions that point at code against the latest commit.
 - Merging near-duplicate entries, ported from Pathly's consolidation pass.
 - Notion export, for people who live in Notion.

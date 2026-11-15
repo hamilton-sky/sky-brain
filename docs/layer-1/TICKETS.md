@@ -1,14 +1,36 @@
 # Layer 1: tickets
 
+_Status on 15 Nov 2026. These tickets were written on 1 Nov, before two changes: sign-in is
+Perminister, not Google (D17), and hosting is Vercel with Postgres on Nanogres, not Render
+(D16; `render.yaml` is removed). Where a ticket below says Google or Render, read Perminister
+or Vercel. The ticket text is kept as the record of what was asked._
+
+| # | State |
+|---|---|
+| T0 | Done for claude.ai and the phone app (D18, D19); Claude Code and Codex not yet tried |
+| T1 | Done, with `vercel.json` instead of `render.yaml` |
+| T2 | Done (migrations 0000–0004) |
+| T3 | Done with Perminister: one workspace per person; invites are accepted at sign-in, but no route sends one yet |
+| T4 | Not started as an API. The table and the write guards exist (brain-core tickets 01–04); tickets 05–11 are open |
+| T5 | Not started |
+| T6 | Partly done: `/mcp` serves `whoami` and the ten task board tools, no entry tools |
+| T7 | Done (device flow, `sbd_` device tokens, `sbr_` run tokens) |
+| T8 | Partly done: the board page; no entries page |
+| T9 | Deploy done; connecting every client and read logging are open |
+| T10 | Not started |
+
+The next step is proposed in [../vision/BUILD-PLAN.md](../vision/BUILD-PLAN.md): its step 1,
+"memory core with provenance", takes over T4 and T5 with a wider entry model.
+
 Order matters. T0 goes first because login is the riskiest part: if it fails, the fallback
 changes how T3 and T6 are built.
 
 | # | Ticket | Depends on | Size |
 |---|---|---|---|
 | T0 | Auth spike: claude.ai connector login end to end | — | S |
-| T1 | Monorepo scaffold, CI, `render.yaml` | — | S |
+| T1 | Monorepo scaffold, CI, `render.yaml` (now `vercel.json`, D16) | — | S |
 | T2 | Database schema and migrations | T1 | M |
-| T3 | People: Google sign-in, workspace, invites | T0, T2 | M |
+| T3 | People: Google sign-in (now Perminister, D17), workspace, invites | T0, T2 | M |
 | T4 | Entries API with trust rules | T2, T3 | L |
 | T5 | The `context` packet | T4 | M |
 | T6 | MCP server | T0, T4, T5 | M |
