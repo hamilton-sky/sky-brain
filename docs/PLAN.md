@@ -3,6 +3,19 @@
 _Written 2026-11-01. This is a living document: when the code changes what it describes,
 update it in the same commit._
 
+**What is built (15 Nov 2026):** sign-in (§ 9), the MCP endpoint with `whoami` and the task
+board tools (§ 8), device login and run tokens, the Vercel deploy (§ 12), the schema of § 5
+and the write guards. **Not built yet:** the entries API, the entry MCP tools of § 8 and the
+`context` packet (§ 7). Sections that describe them are the contract for that work.
+
+**Proposed next:** [vision/BUILD-PLAN.md](vision/BUILD-PLAN.md) and the architecture page in
+[vision/hub/](vision/hub/README.md) propose growing the memory: extend the `entries` table
+(trust levels, evidence, validity dates, a tier) and add `entry_versions`, `links`, `episodes`,
+`uses` and `intentions`; Stewards (Curator, Consolidator, Archivist, Auditor) that run in the
+person's own model; and the Gatekeeper as server code checking every write. sky-brain calls no
+LLM except for embeddings. None of this is decided yet. When a part is accepted, it gets a
+decision in [DECISIONS.md](DECISIONS.md) and this plan changes with the code.
+
 ## 1. What it is
 
 sky-brain is a shared brain for people and AI agents. It is one place in the cloud where
@@ -170,6 +183,9 @@ artifact summary with links) and `supersede` when it found something newer than 
 
 ## 8. MCP tools and REST API (Layer 1)
 
+The six entry tools below are **planned, not built**. BUILD-PLAN step 2 proposes `capture`,
+`search`, `get` and `context_for_task` in their place.
+
 | MCP tool | Does |
 |---|---|
 | `context` | the ranked, fenced packet for a scope and a task |
@@ -271,8 +287,8 @@ All of this is in place before real project data goes in:
 - **Language:** TypeScript everywhere, Node 22 LTS, pnpm workspaces.
 - **Server:** Express 5, the MCP TypeScript SDK (streamable HTTP), Better Auth (`mcp`, `cimd`,
   `jwt`, device authorization, generic OAuth for Perminister sign-in), Drizzle ORM with drizzle-kit migrations, zod.
-- **Database:** Postgres on Nanogres (D16). Full-text search with `tsvector` now; pgvector
-  later.
+- **Database:** Postgres on Nanogres (D16). Full-text search with `tsvector` now. pgvector
+  0.8.1 is enabled on the database (`halfvec`, HNSW indexes) and not used yet.
 - **Web:** React and Vite, TanStack Query. Components from Pathly Studio are copied in where
   they fit, not imported.
 - **Tests:** Vitest. PGlite (Postgres running inside the test process) so tests need no Docker.

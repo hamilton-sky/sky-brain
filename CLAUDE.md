@@ -34,7 +34,7 @@ These come from the security review behind the plan. Do not weaken them.
 - Tests: Vitest, with PGlite for the database. A change to permissions or trust rules needs a
   test for the allowed case and for the refused case.
 
-## Layout (planned)
+## Layout
 
 ```
 apps/server      API (/api/v1), MCP (/mcp), auth (/api/auth), serves the web build
