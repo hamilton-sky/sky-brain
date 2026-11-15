@@ -40,6 +40,7 @@ These come from the security review behind the plan. Do not weaken them.
 apps/server      API (/api/v1), MCP (/mcp), auth (/api/auth), serves the web build
 apps/web         React app
 packages/shared  entry types and zod schemas
+docs/PACKAGES.md planned package split (memory, board) and the border rules
 docs/            plan, roadmap, decisions, tickets
 vercel.json      Vercel project (build, function, rewrites)
 ```
