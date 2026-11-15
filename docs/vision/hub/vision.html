@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Vision research</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="base.css"><base target="_blank">
+</head><body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Live doc · 12–13 Nov 2026 · research</div>
+  <h1>What sky-brain should be: four perspectives</h1>
+  <p class="lede">The research behind the brain: a Product Owner, a data specialist, an architect and a designer each studied the idea, plus web research on memory systems and human memory.</p>
+  <a class="btn" href="https://claude.ai/artifact/GHqQhnKUHh1cWBq2crmACb">Open the live doc ↗</a>
+</header>
+<div class="note">
+  <h3>Update note added to the doc today</h3>
+  <ul>
+    <li>sky-brain calls no LLM except embeddings, so the server sleep job through Vercel Cron and the Claude API is dropped. Stewards run as scheduled routines in your own model.</li>
+    <li>The Librarian became the Steward family; Workers are PO, Doer, Reviewer and your own.</li>
+    <li>Extend <code>entries</code> instead of a new items table. Four trust levels. pgvector 0.8.1 is enabled.</li>
+    <li>The build order there is replaced by the nine steps on the Architecture tab.</li>
+  </ul>
+  <p class="muted" style="font-size:14px">Its brain diagram was relabelled to match: Workers, Stewards, Gatekeeper, Consolidator.</p>
+</div>
+<section>
+  <h2>What still holds from the research</h2>
+  <div class="card"><h3>The brain model</h3><p>Three kinds of memory: an Inbox that fades, the Board as shared working memory, and deep Memory with typed links. People never see tier names; the Digest is the home screen.</p></div>
+  <div class="card"><h3>Postgres is the truth, md is the view</h3><p>Pathly's own history showed md files drifting from the database. Items have markdown bodies, frontmatter is the row, and a git export keeps the brain yours.</p></div>
+  <div class="card"><h3>Links on a leash</h3><p>Agents propose typed links with a reason and a source. They become real when you keep them or retrieval uses them.</p></div>
+  <div class="card"><h3>Brain science</h3><p>ACT-R activation instead of decay, provenance against false memories, a packet of about four chunks, selective sleep, if-then intentions and fan-damped spreading.</p></div>
+</section>
+<footer>The doc keeps its comments and edit history. This tab only points to it so there is one copy.</footer>
+</div>
+</body></html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>sky-brain Brain Docs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+/* Layout: an app shell. A slim header with one tab per brain doc; the chosen doc fills the rest of the screen in its own frame. */
+:root{
+  --paper:#f3f5f7; --sheet:#ffffff; --ink:#17212b; --muted:#56636f; --line:#cfd6dd;
+  --accent:#1f6f8b; --accent-soft:#e1eef3;
+  --display:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1519; --sheet:#151d23; --ink:#e4eaef; --muted:#9aa8b4; --line:#2c3943;
+  --accent:#5fb3cf; --accent-soft:#16303a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--display);display:flex;flex-direction:column;overflow:hidden}
+.top{background:var(--sheet);border-bottom:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 0;display:flex;flex-direction:column;gap:6px;flex:none}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand b{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.brand span{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-inline:-4px}
+nav::-webkit-scrollbar{display:none}
+nav a{flex:none;display:flex;flex-direction:column;gap:1px;padding:8px 12px 9px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+nav a .n{font-size:14.5px;font-weight:600}
+nav a .d{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em}
+nav a:hover{color:var(--ink);background:var(--paper)}
+nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+nav a[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav a[aria-selected="true"] .d{color:var(--accent)}
+main{flex:1;min-height:0;position:relative}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--paper)}
+</style>
+</head><body>
+
+<header class="top">
+  <div class="brand"><b>sky-brain</b><span>brain docs · checked 15 Nov 2026</span></div>
+  <nav role="tablist" aria-label="Brain docs">
+    <a href="#overview" role="tab" data-src="overview.html"><span class="n">Overview</span><span class="d">start here</span></a>
+    <a href="#architecture" role="tab" data-src="architecture.html"><span class="n">Architecture</span><span class="d">current proposal</span></a>
+    <a href="#spec" role="tab" data-src="../spec.html"><span class="n">Product spec</span><span class="d">what people get</span></a>
+    <a href="#pgvector" role="tab" data-src="pgvector.html"><span class="n">pgvector</span><span class="d">search plumbing</span></a>
+    <a href="#vision" role="tab" data-src="vision.html"><span class="n">Vision research</span><span class="d">why · live doc</span></a>
+    <a href="#agents" role="tab" data-src="agents.html"><span class="n">Agents and board</span><span class="d">first design · live doc</span></a>
+  </nav>
+</header>
+<main><iframe id="view" title="Brain doc" src="overview.html"></iframe></main>
+
+<script>
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var frame = document.getElementById('view');
+  function show(){
+    var name = (location.hash || '#overview').slice(1);
+    var tab = tabs.filter(function(t){ return t.getAttribute('href') === '#' + name; })[0] || tabs[0];
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t === tab ? 'true' : 'false'); });
+    var src = tab.getAttribute('data-src');
+    if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+    frame.title = tab.querySelector('.n').textContent;
+    try { tab.scrollIntoView({block:'nearest', inline:'nearest'}); } catch(e) {}
+  }
+  window.addEventListener('hashchange', show);
+  show();
+})();
+</script>
+</body></html>

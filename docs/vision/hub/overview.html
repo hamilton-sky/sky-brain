@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Overview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="base.css"><base target="_blank">
+<style>
+.map{overflow-x:auto;background:var(--sheet);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:14.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+td b{font-family:var(--display)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+</style></head><body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">sky-brain · all brain docs · 15 Nov 2026</div>
+  <h1>The brain, one tab per aspect</h1>
+  <p class="lede">Each tab is one of the sky-brain pages. The Architecture tab is the current proposal; the others were checked against it today and updated where they had fallen behind.</p>
+</header>
+
+<section>
+  <h2>What each tab explains</h2>
+  <div class="map"><table>
+    <tr><th>Tab</th><th>Aspect of the brain</th><th>Date</th><th>State</th></tr>
+    <tr><td><b>Architecture</b></td><td>How it's built: system layers, the agent loop, trust levels, two timelines, retrieval, the context packet, data model and the nine-step build order.</td><td>15 Nov</td><td><span class="chip cur">current proposal</span></td></tr>
+    <tr><td><b>Product spec</b></td><td>What people get: memory tiers, projects and tracks, ontology, search, growth, brain science, sharing and six phone screens.</td><td>12 Nov</td><td><span class="chip upd">updated today</span></td></tr>
+    <tr><td><b>pgvector</b></td><td>The vector-search plumbing on Nanogres, for Zakai.</td><td>15 Nov</td><td><span class="chip upd">marked done</span></td></tr>
+    <tr><td><b>Vision research</b></td><td>Why: four persona perspectives, md vs database, links, personas, brain science and the open questions.</td><td>12–13 Nov</td><td><span class="chip hist">history + update note</span></td></tr>
+    <tr><td><b>Agents and board</b></td><td>The first agent design: versioned role prompts, workflow templates and one task DAG.</td><td>11 Nov</td><td><span class="chip hist">history + update note</span></td></tr>
+  </table></div>
+  <p class="muted" style="font-size:14px">Vision research and Agents and board are live docs you can edit and comment on, so their tabs link out to them instead of copying them.</p>
+</section>
+
+<section>
+  <h2>The current direction in six lines</h2>
+  <div class="facts">
+    <div class="card"><h3>One database</h3><p>Postgres on Nanogres holds everything. No graph or vector database. Markdown is a view and an export, never the truth.</p></div>
+    <div class="card"><h3>No server LLM</h3><p>sky-brain never calls an LLM, except server-side embeddings. Agents run in the model each person connects.</p></div>
+    <div class="card"><h3>Stewards and Workers</h3><p>Stewards (Curator, Consolidator, Archivist, Auditor) keep the brain healthy. Workers (PO, Doer, Reviewer, your own) do the work. The Gatekeeper is plain server code.</p></div>
+    <div class="card"><h3>Four trust levels</h3><p>External, hypothesis, observation with evidence, approved. Only a person approves.</p></div>
+    <div class="card"><h3>Grow entries</h3><p>Extend the existing <code>entries</code> table and add versions, links, episodes, embeddings, uses and intentions.</p></div>
+    <div class="card"><h3>pgvector is on</h3><p>Zakai enabled pgvector 0.8.1 on the sky_brain database, so halfvec and HNSW are ready for step 4.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>What changed today</h2>
+  <ul>
+    <li><b>Architecture:</b> pgvector moved from "to confirm" to enabled, in the system diagram, the example packet and build step 4.</li>
+    <li><b>Product spec:</b> an update box at the top; the data model diagram now extends <code>entries</code> with evidence, scope and trust; Stewards run in your own model; the search diagram uses typed hops and the final rank; the old seven-step build order is replaced by the nine measured steps.</li>
+    <li><b>pgvector:</b> a Done banner, the "unverified" card is now "done", and the diagram shows both steps as finished.</li>
+    <li><b>Vision research doc:</b> an update note at the top, and its brain diagram now shows Workers, Stewards, the Gatekeeper and the Consolidator instead of PO, Librarian, Doer and a server sleep agent.</li>
+    <li><b>Agents doc:</b> an update note at the top; diagrams now say Track instead of Feature, Trust instead of Status, context packet instead of slice, and <code>claim_task</code> and <code>report_task</code>.</li>
+  </ul>
+</section>
+
+<footer>Sources: the five sky-brain artifacts, docs/vision/BUILD-PLAN.md and the review in PR #9 (hamilton-sky/sky-brain). The Architecture page was the reference for every update.</footer>
+</div>
+</body></html>

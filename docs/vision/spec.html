@@ -1,5 +1,4 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>sky-brain Spec</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,6 +104,9 @@ td.y{color:var(--good);font-weight:600} td.n{color:var(--muted)} td.p{color:var(
 .sug{border-style:dashed}
 .strike{text-decoration:line-through;color:var(--muted)}
 .example{font-family:var(--mono);font-size:.74rem;color:var(--warn)}
+.update{margin-top:24px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:16px 18px;display:grid;gap:8px}
+.update ul{margin:0;padding-left:1.2em;display:grid;gap:4px;max-width:72ch;font-size:.92rem}
+.update b{font-family:var(--display)}
 ol.build{margin:0;padding-left:1.3em;display:grid;gap:10px;max-width:70ch}
 ol.build b{font-family:var(--display)}
 footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
@@ -117,7 +119,8 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
   <span class="eyebrow">Product spec · draft</span>
   <h1>sky-brain</h1>
   <p class="lede">One brain that a person and their AI agents share. It holds anything you want to remember, links it together, runs your work on a board, and keeps what matters as long-term memory.</p>
-  <div class="meta"><span>12 Nov 2026</span><span>Status: proposal, nothing here is built yet</span><span>Live today: sign-in, MCP connector, task board v1</span></div>
+  <div class="meta"><span>12 Nov 2026 · updated 15 Nov</span><span>Status: product view of the proposal</span><span>Live today: sign-in, MCP connector, task board v1</span></div>
+  <div class="update" role="note"><b>Updated 15 Nov to match the architecture proposal</b><ul><li>Build order, data model and trust rules now come from the Architecture page. This page keeps the product view: memory model, ontology, search, growth and screens.</li><li>Memory grows the existing <code>entries</code> table (plus <code>entry_versions</code>, <code>links</code>, <code>episodes</code>, <code>embeddings</code>, <code>uses</code>, <code>intentions</code>) instead of a new items table.</li><li>Four trust levels: external, hypothesis, observation (needs evidence), approved. Only a person approves.</li><li>sky-brain never calls an LLM except for embeddings. Stewards run as scheduled routines in your own connected model.</li><li>pgvector 0.8.1 is enabled on Nanogres, so halfvec and HNSW are ready for hybrid search.</li></ul></div>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -126,7 +129,7 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
 
 <section id="model">
   <div class="head"><span class="eyebrow">1 · The brain model</span><h2>Three kinds of memory, one board in the middle</h2>
-  <p class="muted">Agents and people never message each other outside the board: an urgent need becomes a question item on it. They read and write the shared brain, and a nightly Steward, the Consolidator, decides what becomes long-term memory.</p></div>
+  <p class="muted">Agents and people never message each other. They read and write the shared brain, and a nightly Steward, the Consolidator, decides what becomes long-term memory.</p></div>
   <figure class="fig" style="margin:0">
   <svg viewBox="0 0 760 450" role="img" aria-label="People and agents read and write three memory tiers; the Consolidator promotes items into deep memory">
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
@@ -168,9 +171,9 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
   <svg viewBox="0 0 760 440" role="img" aria-label="Tables and how they relate">
     <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
     <rect x="20" y="20" width="220" height="150" rx="10" class="s-box"/><text x="36" y="44" class="t-name">episodes</text><text x="36" y="62" class="t-body">raw input, never edited</text><text x="36" y="86" class="t-mono">source · source_ref</text><text x="36" y="104" class="t-mono">author · run_id</text><text x="36" y="122" class="t-mono">body · occurred_at</text><text x="36" y="140" class="t-mono">chat | task_report | import</text>
-    <rect x="270" y="20" width="220" height="210" rx="10" class="s-acc"/><text x="286" y="44" class="t-name">items (entries, extended)</text><text x="286" y="62" class="t-body" style="fill:var(--fg)">every memory, one table</text><text x="286" y="86" class="t-mono">kind · tier · status</text><text x="286" y="104" class="t-mono">body (markdown)</text><text x="286" y="122" class="t-mono">author · persona · on_behalf_of</text><text x="286" y="140" class="t-mono">confidence · importance</text><text x="286" y="158" class="t-mono">valid_from · valid_to</text><text x="286" y="176" class="t-mono">strength · last_accessed_at</text><text x="286" y="194" class="t-mono">owner (private) | project</text><text x="286" y="212" class="t-mono">search tsvector</text>
+    <rect x="270" y="20" width="220" height="210" rx="10" class="s-acc"/><text x="286" y="44" class="t-name">entries (extended)</text><text x="286" y="62" class="t-body" style="fill:var(--fg)">every memory, one table</text><text x="286" y="86" class="t-mono">kind · tier · status</text><text x="286" y="104" class="t-mono">body (markdown)</text><text x="286" y="122" class="t-mono">author · persona · on_behalf_of</text><text x="286" y="140" class="t-mono">confidence · importance</text><text x="286" y="158" class="t-mono">valid_from · valid_to</text><text x="286" y="176" class="t-mono">evidence · scope · trust level</text><text x="286" y="194" class="t-mono">owner (private) | project</text><text x="286" y="212" class="t-mono">search tsvector</text>
     <rect x="520" y="20" width="220" height="210" rx="10" class="s-box"/><text x="536" y="44" class="t-name">links</text><text x="536" y="62" class="t-body">typed, with a reason</text><text x="536" y="86" class="t-mono">src → dst (any table)</text><text x="536" y="104" class="t-mono">rel: supports | contradicts</text><text x="536" y="122" class="t-mono">  about | part_of | derived_from…</text><text x="536" y="140" class="t-mono">status: proposed | accepted</text><text x="536" y="158" class="t-mono">method: human | rule | llm</text><text x="536" y="176" class="t-mono">rationale · confidence</text><text x="536" y="194" class="t-mono">valid_from · retracted_at</text><text x="536" y="212" class="t-mono">hits (used in retrieval)</text>
-    <rect x="20" y="270" width="220" height="140" rx="10" class="s-box"/><text x="36" y="294" class="t-name">embeddings</text><text x="36" y="312" class="t-body">pgvector, one row per model</text><text x="36" y="336" class="t-mono">item_id · model · vec</text><text x="36" y="354" class="t-mono">HNSW index</text><text x="36" y="372" class="t-mono">change model = re-embed,</text><text x="36" y="390" class="t-mono">not migrate</text>
+    <rect x="20" y="270" width="220" height="140" rx="10" class="s-box"/><text x="36" y="294" class="t-name">embeddings</text><text x="36" y="312" class="t-body">pgvector 0.8.1, one row per model</text><text x="36" y="336" class="t-mono">entry_id · halfvec(1024)</text><text x="36" y="354" class="t-mono">HNSW index</text><text x="36" y="372" class="t-mono">change model = re-embed,</text><text x="36" y="390" class="t-mono">not migrate</text>
     <rect x="270" y="270" width="220" height="140" rx="10" class="s-box"/><text x="286" y="294" class="t-name">goals · tasks (live)</text><text x="286" y="312" class="t-body">the board, already built</text><text x="286" y="336" class="t-mono">status · approved_by</text><text x="286" y="354" class="t-mono">depends_on · lease · claim_seq</text><text x="286" y="372" class="t-mono">+ track_id (new, optional)</text><text x="286" y="390" class="t-mono">+ context_refs → items</text>
     <rect x="520" y="270" width="220" height="140" rx="10" class="s-box"/><text x="536" y="294" class="t-name">events</text><text x="536" y="312" class="t-body">every change, same transaction</text><text x="536" y="336" class="t-mono">seq · table · op</text><text x="536" y="354" class="t-mono">actor · persona</text><text x="536" y="372" class="t-mono">read by cursor (no LISTEN</text><text x="536" y="390" class="t-mono">through PgBouncer)</text>
     <line x1="240" y1="95" x2="268" y2="95" class="s-line" marker-end="url(#ah2)"/><text x="242" y="86" class="t-mono">cites</text>
@@ -189,8 +192,8 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
         <tr><th>Group</th><th>Tables</th></tr>
         <tr><td>People</td><td>workspaces, members, projects, shares</td></tr>
         <tr><td>Board</td><td>tracks, goals, tasks, task_events</td></tr>
-        <tr><td>Memory</td><td>items, types, links, episodes, embeddings</td></tr>
-        <tr><td>Agents</td><td>agents, activations, events, usage</td></tr>
+        <tr><td>Memory</td><td>entries (extended), entry_versions, links, episodes, embeddings, types</td></tr>
+        <tr><td>Signals</td><td>audit_log, uses, intentions</td></tr>
       </table></div>
       <p class="muted" style="font-size:.85rem">People never create tables. They choose types, Workers, views and retention, all stored as rows.</p></div>
   </div>
@@ -237,7 +240,7 @@ footer{padding-block:28px;font-size:.85rem;color:var(--muted)}
 <span class="k">kind</span>: decision
 <span class="k">tier</span>: deep
 <span class="k">status</span>: approved
-<span class="k">author</span>: Curator (for the owner)
+<span class="k">author</span>: Curator (for shammai)
 <span class="k">from</span>: task 42 · claude.ai
 <span class="k">created</span>: 2026-11-12
 <span class="k">origin</span>: agent_inferred
@@ -266,16 +269,16 @@ vector database.</pre>
 
 <section id="search">
   <div class="head"><span class="eyebrow">6 · Search</span><h2>Word search and meaning search, fused into one score</h2>
-  <p class="muted">Both searches run in one SQL query. Reciprocal Rank Fusion combines their rankings, then links and a rerank refine the result.</p></div>
+  <p class="muted">Both searches run in one SQL query. Reciprocal Rank Fusion combines their rankings, then typed link hops and a final rank refine the result. Each ranking signal stays only if the benchmark shows it helps.</p></div>
   <figure class="fig" style="margin:0">
   <svg viewBox="0 0 760 150" role="img" aria-label="Search pipeline in five steps">
     <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
     <rect x="20" y="20" width="128" height="50" rx="8" class="s-box"/><text x="84" y="42" text-anchor="middle" class="t-name">Word search</text><text x="84" y="60" text-anchor="middle" class="t-body">exact names</text>
     <rect x="20" y="84" width="128" height="50" rx="8" class="s-box"/><text x="84" y="106" text-anchor="middle" class="t-name">Vector search</text><text x="84" y="124" text-anchor="middle" class="t-body">similar meaning</text>
     <rect x="182" y="40" width="128" height="74" rx="8" class="s-acc"/><text x="246" y="66" text-anchor="middle" class="t-name">RRF fusion</text><text x="246" y="84" text-anchor="middle" class="t-body" style="fill:var(--fg)">one score</text><text x="246" y="100" text-anchor="middle" class="t-mono" style="fill:var(--accent)">k = 60</text>
-    <rect x="344" y="40" width="128" height="74" rx="8" class="s-box"/><text x="408" y="66" text-anchor="middle" class="t-name">Follow links</text><text x="408" y="84" text-anchor="middle" class="t-body">1–2 hops, only</text><text x="408" y="100" text-anchor="middle" class="t-body">accepted links</text>
+    <rect x="344" y="40" width="128" height="74" rx="8" class="s-box"/><text x="408" y="66" text-anchor="middle" class="t-name">Typed hops</text><text x="408" y="84" text-anchor="middle" class="t-body">1–2, fan-damped,</text><text x="408" y="100" text-anchor="middle" class="t-body">accepted links</text>
     <rect x="506" y="40" width="108" height="74" rx="8" class="s-box"/><text x="560" y="66" text-anchor="middle" class="t-name">Add refs</text><text x="560" y="84" text-anchor="middle" class="t-body">items the task</text><text x="560" y="100" text-anchor="middle" class="t-body">names</text>
-    <rect x="636" y="40" width="104" height="74" rx="8" class="s-box"/><text x="688" y="66" text-anchor="middle" class="t-name">Rerank</text><text x="688" y="84" text-anchor="middle" class="t-body">recency,</text><text x="688" y="100" text-anchor="middle" class="t-body">importance</text>
+    <rect x="636" y="40" width="104" height="74" rx="8" class="s-box"/><text x="688" y="66" text-anchor="middle" class="t-name">Rank, cut</text><text x="688" y="84" text-anchor="middle" class="t-body">attention,</text><text x="688" y="100" text-anchor="middle" class="t-body">use, trust</text>
     <path d="M148 45H164V70H180" class="s-line" marker-end="url(#ah3)"/><path d="M148 109H164V84H180" class="s-line" marker-end="url(#ah3)"/>
     <line x1="310" y1="77" x2="342" y2="77" class="s-line" marker-end="url(#ah3)"/><line x1="472" y1="77" x2="504" y2="77" class="s-line" marker-end="url(#ah3)"/><line x1="614" y1="77" x2="634" y2="77" class="s-line" marker-end="url(#ah3)"/>
   </svg>
@@ -343,7 +346,7 @@ vector database.</pre>
   <div class="head"><span class="eyebrow">9 · Agents</span><h2>Stewards keep the brain, Workers do the work</h2>
   <p class="muted">An agent's role is fixed when its token is issued, and the Gatekeeper checks this table on every write. A client cannot simply claim to be a Steward.</p></div>
   <div class="grid2">
-    <div class="card"><h3>Stewards · keep the brain</h3><p class="muted" style="font-size:.88rem">Built in, run in the background: Curator (types, entities, links), Consolidator (nightly sleep, Digest), Archivist (summaries, archiving), Auditor (conflicts, stale facts). Start with one Steward doing the first two jobs.</p></div>
+    <div class="card"><h3>Stewards · keep the brain</h3><p class="muted" style="font-size:.88rem">Built in. They run as scheduled routines in your own connected model and pull their jobs like any agent; sky-brain itself calls no LLM: Curator (types, entities, links), Consolidator (nightly sleep, Digest), Archivist (summaries, archiving), Auditor (conflicts, stale facts). Start with one Steward doing the first two jobs.</p></div>
     <div class="card"><h3>Workers · do your work</h3><p class="muted" style="font-size:.88rem">Defined by each person and pulled from the board: Product Owner, Doer, Reviewer, Researcher, a lawyer's paralegal. They read memory and write to the Inbox and the board.</p></div>
   </div>
   <div class="tbl"><table>
@@ -439,7 +442,7 @@ vector database.</pre>
           <div class="lbl">Linked · 2</div>
           <div class="row"><div class="t" style="font-weight:500">Supports “Hybrid search with RRF”</div><div class="s">because both pick one database for search</div></div>
           <div class="lbl">Suggested · 1</div>
-          <div class="row sug"><div class="t" style="font-weight:500">About “Nanogres hosting”</div><div class="s">pgvector support is still unknown</div><div class="acts"><button class="btn" type="button">Keep</button><button class="btn" type="button">Wrong</button><button class="btn" type="button">Change</button></div></div>
+          <div class="row sug"><div class="t" style="font-weight:500">About “Nanogres hosting”</div><div class="s">pgvector 0.8.1 enabled on 15 Nov</div><div class="acts"><button class="btn" type="button">Keep</button><button class="btn" type="button">Wrong</button><button class="btn" type="button">Change</button></div></div>
           <div class="s"><span class="strike">Replaces: Neo4j spike</span></div>
         </div>
         <div class="tabs"><span>Digest</span><span>Inbox</span><span>Board</span><span class="on">Memory</span></div>
@@ -507,19 +510,22 @@ vector database.</pre>
 
 <section id="build">
   <div class="head"><span class="eyebrow">13 · Build order</span><h2>Each step in daily use before the next</h2></div>
-  <ol class="build">
-    <li><b>Schema v2.</b> Types, extended items, links, episodes, events, and Hebrew-aware word search.</li>
-    <li><b>MCP memory tools.</b> Capture, search, get and context-for-task, plus a read-only md vault.</li>
-    <li><b>One Steward.</b> A nightly job with a budget that writes the Digest page.</li>
-    <li><b>Embeddings and RRF.</b> Once pgvector is confirmed and a multilingual model is chosen.</li>
-    <li><b>Summaries, archiving and hard forget.</b></li>
-    <li><b>Domain packs and per-project sharing.</b></li>
-    <li><b>Imports.</b> Obsidian and Notion md, Google Drive, chat history.</li>
+  <p class="muted">Replaced on 15 Nov by the nine measured steps on the Architecture page. In short:</p>
+  <ol class="build" start="0">
+    <li><b>Benchmark.</b> About 100 questions with known answers, plus a project the brain hasn't seen.</li>
+    <li><b>Reliable memory.</b> Extend entries, add versions, links and episodes, trust levels, Hebrew-aware word search, entries API and MCP tools.</li>
+    <li><b>The full agent loop.</b> claim_task returns the context packet; report_task takes evidence; a Digest with Keep, Wrong and Undo.</li>
+    <li><b>Measure.</b> Beat plain retrieval on decisions kept before adding anything.</li>
+    <li><b>Hybrid search.</b> pgvector (enabled), a multilingual embedding model, RRF and typed hops.</li>
+    <li><b>Cognitive signals, one at a time.</b> Attention, then activation, then capture context.</li>
+    <li><b>Consolidator.</b> One Steward as a scheduled routine; it only proposes.</li>
+    <li><b>Growth and export.</b> Summaries, retention, hard forget, md vault, git export.</li>
+    <li><b>Beyond code.</b> Domain packs, sharing per project, imports, files.</li>
   </ol>
   <p class="muted" style="font-size:.88rem">Not yet: a graph view, a whiteboard, page editing, web clippers, a separate vector or graph database.</p>
 </section>
 
-<footer>Draft spec from the persona research of 12 Nov 2026. The written findings and open questions live in the doc “What sky-brain should be: four perspectives”.</footer>
+<footer>Draft spec from the persona research of 12 Nov 2026, updated 15 Nov to match the architecture proposal. The written findings and open questions live in the doc “What sky-brain should be: four perspectives”.</footer>
 </div>
 
-</html>
+</body></html>
