@@ -312,3 +312,52 @@ place is now sky-brain's Postgres (a conditional update under a per-project advi
 - A mirror with local accept (cloud proposes, each laptop confirms): a second copy of the board
   to keep in sync, and the confirmation is the approval the person already gave in the cloud.
 - Approved-or-assigned eligibility: another editor's approval would run work on your machines.
+
+### D21. One build order for the memory: the full loop and a measure gate before search tuning
+**Chosen (2026-11-15):** the build order of the memory is the nine steps on the architecture page
+(`docs/vision/hub/architecture.html` § 8), now written out in `docs/vision/BUILD-PLAN.md`:
+
+0. Benchmark.
+1. Reliable memory (extend `entries`, versions, links, episodes, trust, entries API and MCP tools).
+2. The full agent loop (packet on claim, evidence on report, proposed lessons, question items, Digest).
+3. Measure gate (beat plain retrieval on decisions kept, or fix the loop first).
+4. Hybrid search.
+5. Cognitive signals, one at a time.
+6. The Consolidator.
+7. Growth and export.
+8. Beyond code.
+
+The memory core extends the existing `entries` table rather than adding an `items` table.
+**Why:** the latest outside review (`docs/vision/REVIEW.md`) found that the loop between board and
+memory is what proves the brain useful, and search tuning is wasted until it runs. shammai accepted
+this order on 2026-11-15.
+**Supersedes:** the 14 Nov order in BUILD-PLAN.md (hybrid search as step 3, before the loop) and
+the build-order lists in VISION.md. Layers 2 to 5 in `docs/ROADMAP.md` (Pages, Views, Sharing,
+Reach) wait until this sequence reaches step 8; each needs its own decision then.
+**Rejected:** hybrid search before the loop. It tunes retrieval before anything shows that
+retrieval is what limits the agents.
+
+### D22. Two separate fields on a memory item: kind and trust level
+**Chosen (2026-11-15):**
+- **`kind`** says what sort of statement the item is: `fact`, `decision`, `hypothesis`,
+  `observation` or `external`. An `observation` must carry evidence (a test, a CI run, a commit)
+  and the time it held, or the Gatekeeper refuses it. `external` is anything imported or from the
+  web.
+- **Trust level** says how far a person has vetted it: `quarantined`, `proposed` or `approved`.
+  External and instruction-like text starts `quarantined`. Everything an agent writes starts at
+  `proposed`, whatever its kind.
+- **Only a person raises trust**, and only a person changes an item's kind. Agents, Workers and
+  Stewards (the Consolidator included) only propose. Nothing is raised automatically: not by
+  repetition, not by use, not by importance, and not by a Steward's confidence. Only an approved
+  item is used as ground truth in a context packet; the rest is shown as labelled information.
+- What the item is about (rule, question, answer, lesson, note, artifact) stays a separate
+  property. Step 1 of D21 settles the column names and maps today's `entries.kind` values onto
+  this model (today's `claim` is a `hypothesis`; today's `status` carries the trust level).
+**Why:** the reviews mixed two questions in one ladder: what an item is, and whether a person
+checked it. Keeping them apart lets an agent record an evidence-backed observation without being
+able to make it binding, and keeps hard rule 3 simple to test: no agent write path reaches
+`approved`.
+**Supersedes:** the single four-level ladder (external, hypothesis, observation, approved) on the
+architecture page and in BUILD-PLAN.md, and the spec's "the Consolidator promotes" wording.
+**Rejected:** automatic promotion by confidence or repetition; a Steward that writes approved
+memory.

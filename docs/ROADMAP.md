@@ -9,12 +9,12 @@ Five layers. Each one is usable on its own.
 
 Times are rough estimates for one person building with Claude.
 
-**Where it stands (15 Nov 2026).** Layer 1 is partly built: sign-in, the MCP connector, device
-login and the deploy are live; the entries API and its MCP tools are not. Layer 1b (task board
-v1) is live. The next step is the memory, in the order of the proposal
-[vision/BUILD-PLAN.md](vision/BUILD-PLAN.md), which replaces the rest of Layer 1 (entries API,
-`context` packet) with a wider memory core. That plan puts Layers 2 and 3 (Pages, Views) under
-"Not now". The layers below are kept as written until the proposal is decided.
+**Where it stands (15 Nov 2026).** The goal, what is built and what comes next are in the
+[README](../README.md#the-contract), which is the source of truth. In short: Layer 1 is partly
+built (sign-in, the MCP connector and the deploy are live; the entries API and its MCP tools are
+not), and Layer 1b (task board v1) is live. The rest of Layer 1 is replaced by the memory build
+order (D21, [vision/BUILD-PLAN.md](vision/BUILD-PLAN.md)). Layers 2 to 5 wait until that order
+reaches its last step, and each needs its own decision then. They are kept below as written.
 
 | Layer | What you get | Rough time |
 |---|---|---|
@@ -39,8 +39,9 @@ v1) is live. The next step is the memory, in the order of the proposal
   table, the guards and the audit log are built; the trust rules have no write path yet.
 - ⬜ The REST API and six MCP tools: `context`, `search`, `get`, `post`, `supersede`, `ask`.
   BUILD-PLAN step 2 proposes `capture`, `search`, `get` and `context_for_task` instead.
-- ✅ OAuth for the claude.ai connector (D18), and device login with short-lived run tokens for
-  headless agents.
+- ✅ OAuth for the claude.ai connector (D18).
+- 🟡 Device login with short-lived run tokens for headless agents: the API works; the browser page
+  to approve a device code is not built.
 - 🟡 A web page: the board page is built; browsing and approving entries is not.
 - ✅ Deployed on Vercel with Postgres on Nanogres (D16).
 - ⬜ Pathly connected: its fragments copy decisions, questions and lessons up, and every run
