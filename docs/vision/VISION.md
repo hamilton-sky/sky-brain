@@ -4,6 +4,14 @@ Research and recommendations, 12–13 Nov 2026. Not decided yet; nothing here is
 
 **Current plan:** the ordered build plan is [BUILD-PLAN.md](BUILD-PLAN.md) (order settled 15 Nov, D21; trust model D22). It folds in two outside reviews and replaces the build-order lists below. The latest review is [REVIEW.md](REVIEW.md). How human memory retrieves and preserves, and what that means for the memory layers, is in [HUMAN-MEMORY.md](HUMAN-MEMORY.md).
 
+**What changed since this research (23 Nov).** The memory model is now the proposal in [schema/MEMORY-SCHEMA.md](schema/MEMORY-SCHEMA.md), from a red/blue team review. Where this page differs, that one wins:
+
+- The three tiers (floating, working, deep) became four layers held in **memories**, which are containers: one **About me** (core) per person, and as many **Inboxes** (short), **Notebooks** (long) and **Boards** (working, one per project) as you like. A `tier` column on entries is replaced by the memory's fixed layer.
+- Entries never move between layers. Keeping or consolidating writes a new entry with a `derived_from` link.
+- The agent that writes an entry also writes its summary. The server embeds the summary; keyword search runs on the full body. Both in Postgres with pgvector.
+- Sharing is **per memory**, not per project: you invite someone to one memory as viewer, contributor or editor. About me is never shared.
+- The fixed 1/7/30/90-day "still true?" ladder is dropped for checks raised when something changes.
+
 > sky-brain does not try to copy a human brain. It uses principles from human cognition to build a memory that is efficient, keeps evolving, and is shared by people and their AI agents.
 
 Live copies: [doc](https://claude.ai/artifact/GHqQhnKUHh1cWBq2crmACb) · visual spec: [spec.html](spec.html) ([live](https://claude.ai/artifact/ANQuhNF4JqcERjY99EG6nw))
@@ -168,7 +176,7 @@ Use Postgres for everything…
 
 Build it well for one kind of person first, then widen. Lawyers and health data need stronger privacy: encryption, export, and real deletion.
 
-**5. Inviting others to your brain.** Share by project, not the whole brain. You invite someone to a project as viewer, editor or admin, roles Perminister already has. Your personal deep memory stays private unless you choose to share part of it. Another person's agents can only do what that person is allowed to do.
+**5. Inviting others to your brain.** *(Superseded 23 Nov: sharing is now per memory, with roles viewer, contributor and editor; see [schema/MEMORY-SCHEMA.md § 6](schema/MEMORY-SCHEMA.md#6-sharing).)* Share by project, not the whole brain. You invite someone to a project as viewer, editor or admin, roles Perminister already has. Your personal deep memory stays private unless you choose to share part of it. Another person's agents can only do what that person is allowed to do.
 
 ## Ontology: a light shared vocabulary
 
@@ -295,7 +303,7 @@ The four mostly agree. Here are the real differences and how I'd settle them.
 | Topic | The tension | My recommendation |
 | --- | --- | --- |
 | Approval | The PO wants only you to approve rules and decisions. The designer wants most agent changes to apply at once with undo. | Both: rules, decisions and goals need you; notes and links apply with a 7-day undo. |
-| Floating memory | The PO says no separate floating store in v1. The designer wants an Inbox. | A `tier` column on the existing entries, shown as the Inbox. No new store. |
+| Floating memory | The PO says no separate floating store in v1. The designer wants an Inbox. | A `tier` column on the existing entries, shown as the Inbox. No new store. *(23 Nov: replaced by Inbox memories with a fixed layer.)* |
 | Name for the middle level | "Stream" clashes with feeds and event streams. The PO liked Area or Track; the designer argued against Area (in PARA it means a responsibility that never ends). | **Track**, and make it optional so small projects stay Project > Goal > Task. |
 | Server-side agents | The architect says the sleep agent needs the server and the Claude API, which reverses D1. | Start on the pull side: the agent that reports a goal's last task also proposes its lessons. Add a server sleep job later as its own decision. |
 | How many personas | The PO says start with two roles; the vision has four or more. | Start with Doer and Librarian, then add the PO once goals are proposed often. |
@@ -305,7 +313,7 @@ The four mostly agree. Here are the real differences and how I'd settle them.
 
 - [ ] Do you accept "Postgres is the truth, md is the view and export"?
 - [ ] Rename the middle level to Track, and make it optional?
-- [ ] Is deep memory private per person while the board is shared per project?
+- [x] Is deep memory private per person while the board is shared per project? *(23 Nov: everything is private until you share one memory at a time.)*
 - [ ] Should sky-brain run agents on its own server (reversing D1) now, or later?
 
 ## Recommended build order
