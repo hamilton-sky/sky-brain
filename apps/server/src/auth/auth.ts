@@ -31,7 +31,7 @@ export interface CreateAuthOptions {
   fetchClientMetadataResource: ClientMetadataResourceFetch;
 }
 
-export const MCP_SCOPES = [
+const MCP_SCOPES = [
   "openid",
   "profile",
   "email",
