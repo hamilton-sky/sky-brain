@@ -5,7 +5,12 @@ import type express from "express";
 import type { Auth } from "./auth.ts";
 import { stripStateSuffix } from "./perminister-oidc.ts";
 import * as consentPage from "./pages/consent.ts";
-import * as signInPage from "./pages/sign-in.ts";
+// Named imports, so dead-code checks see each part of the page in use.
+import {
+  html as signInHtml,
+  script as signInScript,
+  style as signInStyle,
+} from "./pages/sign-in.ts";
 
 interface Page {
   html: string;
@@ -15,7 +20,7 @@ interface Page {
 }
 
 const pages: Record<string, Page> = {
-  "sign-in": signInPage,
+  "sign-in": { html: signInHtml, script: signInScript, style: signInStyle },
   consent: consentPage,
 };
 

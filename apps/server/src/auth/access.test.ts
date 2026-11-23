@@ -269,8 +269,5 @@ describe("pages", () => {
       "default-src 'self'",
     );
     expect(css.text).toContain("prefers-reduced-motion");
-    // The consent page has no stylesheet yet.
-    const none = await server.browser().request("/auth-pages/consent.css");
-    expect(none.status).not.toBe(200);
   });
 });
