@@ -2,7 +2,7 @@
 
 Research and recommendations, 12–13 Nov 2026. Not decided yet; nothing here is built.
 
-**Current plan:** the ordered build plan is [BUILD-PLAN.md](BUILD-PLAN.md) (order settled 15 Nov, D21; trust model D22). It folds in two outside reviews and replaces the build-order lists below. The latest review is [REVIEW.md](REVIEW.md).
+**Current plan:** the ordered build plan is [BUILD-PLAN.md](BUILD-PLAN.md) (order settled 15 Nov, D21; trust model D22). It folds in two outside reviews and replaces the build-order lists below. The latest review is [REVIEW.md](REVIEW.md). How human memory retrieves and preserves, and what that means for the memory layers, is in [HUMAN-MEMORY.md](HUMAN-MEMORY.md).
 
 > sky-brain does not try to copy a human brain. It uses principles from human cognition to build a memory that is efficient, keeps evolving, and is shared by people and their AI agents.
 
