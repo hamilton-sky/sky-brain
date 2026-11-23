@@ -66,7 +66,8 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Gatekeeper base checks: workspace filter, secret scan, quarantine, size caps, rate limits, audit log | 🟡 Partly built: the rate limit is per server instance, not shared |
 | Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | ✅ Built and live (PR #19) |
 | Memory loop, thin step 2: a fenced context packet on `claim_task` (About me, rules, relevant entries, what is not known) and up to 3 proposed lessons on `report_task` | ✅ Built and live (PR #20). No Digest page yet; the two-week measurement is in [docs/MEASURE-STEP2.md](docs/MEASURE-STEP2.md) |
-| Agents: identity per agent, permissions per agent, skills per agent, board triggers | 🟡 Partly: every agent call is recorded as `mcp/<client>` for its person, and agents cannot approve (hard rule 3). Profiles, scopes, skills and triggers are proposed in [docs/vision/AGENTS.md](docs/vision/AGENTS.md) (D25, open) |
+| Agents: identity per agent (D26): you name roles (Product owner, Doer, Reviewer…) on the Agents tab and bind each connected app to one; everything it writes is signed `mcp/<app>/<role>` | ✅ Built and live |
+| Agents: permissions, skills and board triggers per agent | ⬜ Proposed in [docs/vision/AGENTS.md](docs/vision/AGENTS.md) (D25, open) |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
 | Benchmark (step 0): 50 questions and a keyword-search baseline in [bench/](bench/README.md) | ✅ Baseline set: Recall@5 0.66, MRR 0.50 |

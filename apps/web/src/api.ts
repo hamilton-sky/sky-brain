@@ -49,6 +49,19 @@ export interface Task {
   position: number;
 }
 
+export interface AgentProfile {
+  id: string;
+  slug: string;
+  display_name: string;
+  kind: "worker" | "steward";
+}
+
+export interface ConnectedApp {
+  client_id: string;
+  name: string | null;
+  profile_id: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -60,7 +73,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   path: string,
   body?: unknown,
 ): Promise<T> {
@@ -119,6 +132,25 @@ export const api = {
     request<{ goal: Goal }>("POST", `/api/v1/goals/${goalId}/${action}`),
   releaseTaskText: (taskId: string) =>
     request<unknown>("POST", `/api/v1/tasks/${taskId}/release-text`),
+  agents: () =>
+    request<{ profiles: AgentProfile[]; apps: ConnectedApp[] }>(
+      "GET",
+      "/api/v1/agents",
+    ),
+  createAgentProfile: (
+    slug: string,
+    display_name: string,
+    kind: AgentProfile["kind"],
+  ) =>
+    request<{ profile: AgentProfile }>("POST", "/api/v1/agents/profiles", {
+      slug,
+      display_name,
+      kind,
+    }),
+  deleteAgentProfile: (id: string) =>
+    request<null>("DELETE", `/api/v1/agents/profiles/${id}`),
+  bindApp: (client_id: string, profile_id: string | null) =>
+    request<unknown>("POST", "/api/v1/agents/bind", { client_id, profile_id }),
   signOut: () =>
     fetch("/api/auth/sign-out", {
       method: "POST",

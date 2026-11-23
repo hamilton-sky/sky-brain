@@ -1,7 +1,7 @@
 # Agents in sky-brain: identity, permissions, skills and board triggers
 
-**Status:** proposal (23 Nov 2026), decision D25 in [`docs/DECISIONS.md`](../DECISIONS.md) is open.
-Nothing in this file is built yet unless the "Today" column says so.
+**Status:** part 1 (identity) is built and live (D26, 23 Nov 2026). Parts 2 to 4 (scopes, skills,
+triggers) are still a proposal under D25 in [`docs/DECISIONS.md`](../DECISIONS.md).
 
 sky-brain is a brain shared by a person (or an organization) and the AI agents they connect.
 For agents to share it safely, the server has to know four things about each one: **who it is**,
@@ -14,7 +14,7 @@ same four pieces for team documents.
 
 | Piece | Today (code) | Gap |
 | --- | --- | --- |
-| **Identity** | An `Actor` is `human` or `agent` (`packages/shared/src/actor.ts`). An MCP caller becomes `agent_id = mcp/<client host>` acting for the token's person (`apps/server/src/mcp/actor.ts`). Audit rows and `task_events` record it (`apps/server/src/actor/keys.ts`). | The id names the **app**, not the agent. A PO, a Doer and a Reviewer in claude.ai all show up as `mcp/claude.ai`. A byline such as "Librarian" cannot be shown or trusted. |
+| **Identity** | **Built (D26).** A person creates profiles and binds each connected app to one (`apps/server/src/agents/`). A bound MCP caller is `mcp/<client host>/<slug>` with a `profile` on its actor, recorded by audit rows, task events and entry authors; `whoami` shows it. An unbound app is the Guest agent. | One role per app per person; run tokens (devices) have no profile yet; bylines are not yet drawn as chips on the board. |
 | **Permissions** | Server rules for every agent: no approve, reject, release, delete or global writes (hard rule 3, `actor/require-human.ts`). Run tokens carry verbs (`read`, `plan`, `claim`, `report`) and a role capped at `editor` (`packages/shared/src/run-tokens.ts`, `run-tokens/run-scope.ts`). | Same rights for every agent. No way to say "the Doer may write only to the board of the task it holds" or "the Librarian may read Notebooks but never the board". |
 | **Skills** | None. Instructions live in each client (`CLAUDE.md`, `.claude/agents/*.md`, `AGENTS.md`). | No shared, versioned "how this agent works", so two models doing the same role drift apart. |
 | **Board triggers** | Every task change writes an append-only `task_events` row (`tasks/task-events.ts`), and every entry change writes an append-only `entry_versions` row (`db/memory-schema.ts`). | Nothing reacts to them, and memory has no event log yet. An agent learns about new work only when a person asks it to call `next_task`. |
@@ -27,14 +27,15 @@ that holds identity, scope, skills and triggers together. Agents never create or
 
 ### 1. Identity: who wrote this
 
-- Table `agent_profiles`: `id`, `workspace_id`, `slug` (`po`, `doer`, `librarian`...),
-  `display_name`, `kind` (`worker` or `steward`), `status` (`active`, `paused`), `created_by`,
-  timestamps. Unique on `(workspace_id, slug)`.
-- **The profile is bound when the token is issued, never claimed per call** (VISION.md "Binding
-  personas"). The consent page gains a "Connect as" choice listing the person's profiles; the
-  chosen profile id goes into the access token as a claim. Run tokens get the same field.
-- `Actor` gains an optional `profile_id`. `agent_id` stays the client (`mcp/claude.ai`), so an
-  audit row reads "Librarian via claude.ai, for shammai".
+- As built (D26): table `agent_profiles` (`id`, `user_id`, `slug`, `display_name`, `kind`
+  worker or steward), unique on `(user_id, slug)`; a profile belongs to a person, not a
+  workspace. Table `agent_bindings` (`user_id`, `client_id`, `profile_id`).
+- **The profile is bound by the person, never claimed by the agent** (VISION.md "Binding
+  personas"). The binding is kept on the server per connected app and looked up on every call,
+  rather than written into the token on the consent page: it takes effect at once and does not
+  touch the sign-in flow. Run tokens get the same later.
+- `Actor` gains an optional `profile`, and `agent_id` becomes `mcp/<client host>/<slug>`, so
+  every existing author column names the role: "po via claude.ai, for shammai".
 - Every entry, version, task event and audit row records the profile. The web shows it as the
   byline chip (You, PO, Librarian, Doer · task 42).
 - A token without a profile gets the built-in **Guest agent**: today's rights, nothing more.

@@ -1,7 +1,8 @@
 // The board page: who is signed in, a project picker, and the project's goals.
 import { useCallback, useEffect, useState } from "react";
-import { FormFooter } from "./FormFooter.tsx";
+import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
+import { Agents } from "./Agents.tsx";
 import { Board } from "./Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
@@ -60,9 +61,28 @@ export function App() {
       </Shell>
     );
   }
+  return <SignedIn me={me} />;
+}
+
+function SignedIn({ me }: { me: Me }) {
+  const [page, setPage] = useState<"board" | "agents">("board");
   return (
     <Shell me={me}>
-      <Projects me={me} />
+      <nav className="toolbar">
+        <button
+          className={page === "board" ? "button primary" : "button"}
+          onClick={() => setPage("board")}
+        >
+          Board
+        </button>
+        <button
+          className={page === "agents" ? "button primary" : "button"}
+          onClick={() => setPage("agents")}
+        >
+          Agents
+        </button>
+      </nav>
+      {page === "board" ? <Projects me={me} /> : <Agents />}
     </Shell>
   );
 }
@@ -174,19 +194,13 @@ function NewProject(props: {
 }) {
   const [name, setName] = useState("");
   const [workspace, setWorkspace] = useState(props.workspaces[0]!.id);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, submit } = useFormSubmit();
   return (
     <form
       className="card form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setBusy(true);
-        api.createProject(workspace, name).then(props.onDone, (err: Error) => {
-          setError(err.message);
-          setBusy(false);
-        });
-      }}
+      onSubmit={(e) =>
+        submit(e, () => api.createProject(workspace, name).then(props.onDone))
+      }
     >
       <h2>New project</h2>
       {props.workspaces.length > 1 && (

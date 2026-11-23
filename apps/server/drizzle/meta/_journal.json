@@ -64,6 +64,13 @@
       "when": 1795447746790,
       "tag": "0008_memory-guards",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795471161252,
+      "tag": "0009_agent-profiles",
+      "breakpoints": true
     }
   ]
 }

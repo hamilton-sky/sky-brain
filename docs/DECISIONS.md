@@ -397,3 +397,23 @@ nothing wakes an agent when the board changes. Notion's Custom Agents (Nov 2026)
 four pieces, which confirms the need.
 **Keeps:** hard rules 1 and 3 (no pushed runs; agents never approve), D1, D20 and D22.
 **Open:** build identity now, during the step 3 measurement, or wait until step 6.
+
+### D26. Agent identity first: profiles bound per connected app (D25 part 1)
+
+**Date:** 2026-11-23. **Decided by:** shammai ("build identity now", then "merge to main").
+**Decision:** build the identity part of D25 now, during the step 3 measurement. A person creates
+agent profiles and binds each app they connected (OAuth client, the token's `azp`) to one. The
+server resolves the binding on every `/mcp` call and the agent id becomes
+`mcp/<client host>/<slug>`, so every existing author and audit column records the role. Unbound
+apps stay the Guest agent. Profiles carry no rights yet.
+**Why:** the measurement can then tell which role wrote which lesson or entry, and later parts
+(scopes, skills, triggers) need an identity to hang on. It changes no permission, so it does not
+disturb what is measured.
+**Rejected:** a profile claim inside the access token chosen on the consent page. It would need a
+change to the Better Auth MCP flow that sign-in depends on (D24 broke sign-in the same day), and a
+token would keep its role until it expires. A binding on the server takes effect at once and can
+be undone. Limit: one role per app per person; to run two roles side by side, connect two apps
+(for example claude.ai as the Product owner, Claude Code as the Doer).
+**Open:** D25 parts 2 to 4 (scopes with step 6, then skills, then triggers); run tokens for
+devices get a profile when Pathly's client exists.
+

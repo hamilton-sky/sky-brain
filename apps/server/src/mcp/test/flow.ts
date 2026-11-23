@@ -238,6 +238,10 @@ export interface WhoamiResult {
   email: string;
   user_id: string;
   workspaces: { id: string; name: string; role: string }[];
+  agent?: {
+    agent_id: string;
+    profile: { id: string; slug: string; display_name: string } | null;
+  };
 }
 
 /** `initialize`, then `tools/call whoami`; returns its structuredContent. */
