@@ -63,6 +63,7 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Memory: the `entries` table | 🟡 Table only: no API, no MCP tools, no context packet. The new schema (above) is a proposal with SQL tested on PostgreSQL 16, not built |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
+| Benchmark (step 0): 50 questions and a keyword-search baseline in [bench/](bench/README.md) | ✅ Baseline set: Recall@5 0.66, MRR 0.50 |
 
 ### What we build next
 
