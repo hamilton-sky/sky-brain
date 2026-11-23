@@ -4,20 +4,21 @@
 export const baseStyle = `[hidden] { display: none !important; }
 /* Constellation Night: the colours, sky, type and buttons every auth page shares. */
 :root {
+  /* Light is a dawn star chart: a cool clear sky with ink stars and a crisp brain. */
   color-scheme: light;
-  --sky-top: #c9d3f2; --sky-mid: #e6e3f4; --sky-low: #f8e6dc;
-  --glow: rgba(120, 132, 220, 0.22);
-  --star: rgba(52, 58, 128, 0.42); --star-dim: rgba(52, 58, 128, 0.22);
-  --line: rgba(60, 66, 150, 0.30);
-  --node: #3d4396; --node-core: #2b2f7a; --node-halo: rgba(80, 90, 200, 0.18);
-  --signal: #5b4fe0;
+  --sky-top: #dce3f7; --sky-mid: #eceff9; --sky-low: #f5f6fb;
+  --glow: rgba(91, 79, 224, 0.10);
+  --star: rgba(30, 34, 96, 0.60); --star-dim: rgba(30, 34, 96, 0.28);
+  --line: rgba(30, 34, 96, 0.20);
+  --node: #2b2f7a; --node-core: #14174a; --node-halo: rgba(91, 79, 224, 0.06);
+  --signal: #6a4bff;
   --text: #171a3a; --muted: #4a4e72;
-  --card-bg: rgba(255, 255, 255, 0.62); --card-border: rgba(255, 255, 255, 0.85);
-  --card-edge: rgba(40, 46, 110, 0.10);
-  --accent: #3a3f9a; --accent-hover: #2f3384; --on-accent: #ffffff;
-  --ghost-border: rgba(40, 46, 110, 0.28); --ghost-hover: rgba(40, 46, 110, 0.06);
-  --ring: #3a3f9a; --rule: rgba(40, 46, 110, 0.12);
-  --l-core: #b7791f; --l-work: #0f8a7e; --l-short: #6d55d8; --l-long: #2f5fd0;
+  --card-bg: rgba(255, 255, 255, 0.80); --card-border: rgba(255, 255, 255, 0.95);
+  --card-edge: rgba(23, 26, 58, 0.08);
+  --accent: #3d3fb8; --accent-hover: #30329a; --on-accent: #ffffff;
+  --ghost-border: rgba(23, 26, 58, 0.22); --ghost-hover: rgba(23, 26, 58, 0.05);
+  --ring: #3d3fb8; --rule: rgba(23, 26, 58, 0.12);
+  --l-core: #8a5a12; --l-work: #0b6b62; --l-short: #6d55d8; --l-long: #2f5fd0;
   --plane-a: 0.22; --plane-on: 0.5;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {

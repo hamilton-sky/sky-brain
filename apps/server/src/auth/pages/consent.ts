@@ -4,6 +4,7 @@
 // page's look (D27): its stylesheet is /auth-pages/consent.css and a small star brain sits
 // above the card.
 import { brainScript } from "./brain-script.ts";
+import { themeScript } from "./theme-script.ts";
 import { style } from "./consent-style.ts";
 
 export const html = `<!doctype html>
@@ -133,4 +134,4 @@ const consentScript = `"use strict";
 
 export { style };
 // The small star brain above the card comes first, so the page keeps a single script.
-export const script = [brainScript, consentScript].join("\n");
+export const script = [themeScript, brainScript, consentScript].join("\n");

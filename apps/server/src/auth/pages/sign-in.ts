@@ -4,6 +4,7 @@
 // inline script or style (the stylesheet is /auth-pages/sign-in.css), and text is set only
 // with textContent.
 import { brainScript } from "./brain-script.ts";
+import { themeScript } from "./theme-script.ts";
 import { entryScript } from "./entry-script.ts";
 import { style } from "./sign-in-style.ts";
 export const html = `<!doctype html>
@@ -267,4 +268,9 @@ const signInScript = `"use strict";
 `;
 
 export { style };
-export const script = [brainScript, entryScript, signInScript].join("\n");
+export const script = [
+  themeScript,
+  brainScript,
+  entryScript,
+  signInScript,
+].join("\n");

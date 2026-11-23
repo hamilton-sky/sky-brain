@@ -1,7 +1,8 @@
 /* sky-brain's theme, Constellation Night (D27), the same colours as the sign-in and consent
    pages (apps/server/src/auth/pages/base-style.ts). It sets panel-frame-ui's --pf-* tokens, and
-   the app's own tokens that styles.css uses. Light or dark follows the device unless the
-   theme picker chose one (data-theme on <html>, set by public/theme-init.js). */
+   the app's own tokens that styles.css uses. Dark applies when <html> has data-theme="dark":
+   public/theme-init.js and ThemeProvider (systemMode "resolved") set it from the picker's
+   choice, or from the device setting when the choice is System. */
 :root {
   color-scheme: light;
   /* Light is a dawn star chart: a cool clear sky with ink stars, not a faded night. */
@@ -38,35 +39,6 @@
   --pf-radius-md: 14px;
   --pf-radius-lg: 18px;
   --pf-content-width: 980px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --sky-top: #03040c;
-    --sky-mid: #0a0d26;
-    --sky-low: #161a44;
-    --glow: rgba(120, 140, 255, 0.14);
-    --star: rgba(226, 232, 255, 0.85);
-    --star-dim: rgba(200, 210, 255, 0.38);
-    --glass: rgba(18, 22, 56, 0.58);
-    --glass-strong: rgba(22, 27, 66, 0.94);
-    --l-core: #f3c677;
-    --l-work: #5fd3c4;
-    --l-short: #b3a6ff;
-    --l-long: #86a8ff;
-    --pf-text: #eef1ff;
-    --pf-muted: #a9b0d6;
-    --pf-border: rgba(190, 200, 255, 0.16);
-    --pf-accent: #b9c6ff;
-    --pf-accent-contrast: #0b0e2a;
-    --pf-danger: #ff8a7e;
-    --pf-danger-surface: rgba(120, 30, 30, 0.35);
-    --pf-success: #7fd3a0;
-    --pf-success-surface: rgba(30, 90, 55, 0.35);
-    --pf-warning: #f0c46a;
-    --pf-warning-surface: rgba(110, 80, 20, 0.35);
-    --pf-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.7);
-  }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;

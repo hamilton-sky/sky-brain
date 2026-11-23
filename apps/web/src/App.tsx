@@ -41,7 +41,7 @@ function remember(id: string): void {
 
 export function App() {
   return (
-    <ThemeProvider persistence={THEME}>
+    <ThemeProvider persistence={THEME} systemMode="resolved">
       <Root />
     </ThemeProvider>
   );

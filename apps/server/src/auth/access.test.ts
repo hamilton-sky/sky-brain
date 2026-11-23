@@ -250,6 +250,8 @@ describe("pages", () => {
     expect(script.text).toContain("/api/auth/sign-in/social");
     expect(script.text).toContain("textContent");
     expect(script.text).not.toContain("innerHTML");
+    // The theme the person picked in the web app applies here too.
+    expect(script.text).toContain("sky-brain-theme");
   });
 
   it("pages: the entry page links its own stylesheet and has no inline style", async () => {
