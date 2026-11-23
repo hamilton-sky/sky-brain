@@ -12,9 +12,11 @@
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
     "dev": "pnpm --filter @sky-brain/web build && pnpm --filter @sky-brain/server dev",
-    "health": "repnix check"
+    "health": "repnix check",
+    "bench": "node bench/run.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.14",
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
     "eslint": "10.14.0",

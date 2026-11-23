@@ -1,0 +1,733 @@
+{
+  "label": "keyword-baseline-2026-11-23",
+  "run_at": "2026-11-23T15:23:27.938Z",
+  "corpus": {
+    "files": 75,
+    "chunks": 1248
+  },
+  "questions": 50,
+  "modes": {
+    "and": {
+      "recall@1": 0.22,
+      "recall@3": 0.3,
+      "recall@5": 0.34,
+      "recall@10": 0.38,
+      "mrr": 0.272,
+      "no_results": 24,
+      "p50_ms": 5.28,
+      "per_question": [
+        {
+          "id": "q01",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 7.63
+        },
+        {
+          "id": "q02",
+          "type": "why",
+          "rank": 0,
+          "returned": 3,
+          "ms": 12.78
+        },
+        {
+          "id": "q03",
+          "type": "why",
+          "rank": 1,
+          "returned": 1,
+          "ms": 9.54
+        },
+        {
+          "id": "q04",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 12.14
+        },
+        {
+          "id": "q05",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.77
+        },
+        {
+          "id": "q06",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.72
+        },
+        {
+          "id": "q07",
+          "type": "what",
+          "rank": 3,
+          "returned": 4,
+          "ms": 4.61
+        },
+        {
+          "id": "q08",
+          "type": "why",
+          "rank": 1,
+          "returned": 1,
+          "ms": 4.74
+        },
+        {
+          "id": "q09",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 3.76
+        },
+        {
+          "id": "q10",
+          "type": "why",
+          "rank": 0,
+          "returned": 1,
+          "ms": 4.21
+        },
+        {
+          "id": "q11",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.28
+        },
+        {
+          "id": "q12",
+          "type": "status",
+          "rank": 2,
+          "returned": 2,
+          "ms": 4.21
+        },
+        {
+          "id": "q13",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.27
+        },
+        {
+          "id": "q14",
+          "type": "why",
+          "rank": 6,
+          "returned": 7,
+          "ms": 7.46
+        },
+        {
+          "id": "q15",
+          "type": "what",
+          "rank": 4,
+          "returned": 10,
+          "ms": 7.78
+        },
+        {
+          "id": "q16",
+          "type": "what",
+          "rank": 0,
+          "returned": 1,
+          "ms": 4.07
+        },
+        {
+          "id": "q17",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.5
+        },
+        {
+          "id": "q18",
+          "type": "why",
+          "rank": 1,
+          "returned": 3,
+          "ms": 3.48
+        },
+        {
+          "id": "q19",
+          "type": "what",
+          "rank": 1,
+          "returned": 1,
+          "ms": 4.46
+        },
+        {
+          "id": "q20",
+          "type": "what",
+          "rank": 1,
+          "returned": 5,
+          "ms": 4.55
+        },
+        {
+          "id": "q21",
+          "type": "what",
+          "rank": 0,
+          "returned": 1,
+          "ms": 5.78
+        },
+        {
+          "id": "q22",
+          "type": "why",
+          "rank": 1,
+          "returned": 5,
+          "ms": 5.89
+        },
+        {
+          "id": "q23",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 6.21
+        },
+        {
+          "id": "q24",
+          "type": "what",
+          "rank": 1,
+          "returned": 1,
+          "ms": 5
+        },
+        {
+          "id": "q25",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.3
+        },
+        {
+          "id": "q26",
+          "type": "why",
+          "rank": 1,
+          "returned": 4,
+          "ms": 6.06
+        },
+        {
+          "id": "q27",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.46
+        },
+        {
+          "id": "q28",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.43
+        },
+        {
+          "id": "q29",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.31
+        },
+        {
+          "id": "q30",
+          "type": "what",
+          "rank": 1,
+          "returned": 1,
+          "ms": 5.3
+        },
+        {
+          "id": "q31",
+          "type": "status",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.44
+        },
+        {
+          "id": "q32",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.28
+        },
+        {
+          "id": "q33",
+          "type": "what",
+          "rank": 5,
+          "returned": 10,
+          "ms": 5.84
+        },
+        {
+          "id": "q34",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.51
+        },
+        {
+          "id": "q35",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 5.9
+        },
+        {
+          "id": "q36",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 5.76
+        },
+        {
+          "id": "q37",
+          "type": "why",
+          "rank": 6,
+          "returned": 10,
+          "ms": 4.03
+        },
+        {
+          "id": "q38",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 4.61
+        },
+        {
+          "id": "q39",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.16
+        },
+        {
+          "id": "q40",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 4.39
+        },
+        {
+          "id": "q41",
+          "type": "what",
+          "rank": 1,
+          "returned": 8,
+          "ms": 4.37
+        },
+        {
+          "id": "q42",
+          "type": "why",
+          "rank": 2,
+          "returned": 10,
+          "ms": 4.82
+        },
+        {
+          "id": "q43",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.35
+        },
+        {
+          "id": "q44",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 3.82
+        },
+        {
+          "id": "q45",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 3.17
+        },
+        {
+          "id": "q46",
+          "type": "why",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.77
+        },
+        {
+          "id": "q47",
+          "type": "what",
+          "rank": 0,
+          "returned": 1,
+          "ms": 4.28
+        },
+        {
+          "id": "q48",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 4.2
+        },
+        {
+          "id": "q49",
+          "type": "what",
+          "rank": 0,
+          "returned": 0,
+          "ms": 23.88
+        },
+        {
+          "id": "q50",
+          "type": "what",
+          "rank": 2,
+          "returned": 8,
+          "ms": 10.46
+        }
+      ]
+    },
+    "or": {
+      "recall@1": 0.38,
+      "recall@3": 0.54,
+      "recall@5": 0.66,
+      "recall@10": 0.78,
+      "mrr": 0.495,
+      "no_results": 0,
+      "p50_ms": 12.79,
+      "per_question": [
+        {
+          "id": "q01",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 11.29
+        },
+        {
+          "id": "q02",
+          "type": "why",
+          "rank": 5,
+          "returned": 10,
+          "ms": 18.1
+        },
+        {
+          "id": "q03",
+          "type": "why",
+          "rank": 6,
+          "returned": 10,
+          "ms": 13.35
+        },
+        {
+          "id": "q04",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 9.15
+        },
+        {
+          "id": "q05",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 18.57
+        },
+        {
+          "id": "q06",
+          "type": "why",
+          "rank": 0,
+          "returned": 10,
+          "ms": 13.98
+        },
+        {
+          "id": "q07",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 11.61
+        },
+        {
+          "id": "q08",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 10.03
+        },
+        {
+          "id": "q09",
+          "type": "what",
+          "rank": 2,
+          "returned": 10,
+          "ms": 23.16
+        },
+        {
+          "id": "q10",
+          "type": "why",
+          "rank": 0,
+          "returned": 10,
+          "ms": 9.71
+        },
+        {
+          "id": "q11",
+          "type": "what",
+          "rank": 7,
+          "returned": 10,
+          "ms": 16.73
+        },
+        {
+          "id": "q12",
+          "type": "status",
+          "rank": 6,
+          "returned": 10,
+          "ms": 19.61
+        },
+        {
+          "id": "q13",
+          "type": "why",
+          "rank": 5,
+          "returned": 10,
+          "ms": 11.86
+        },
+        {
+          "id": "q14",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 25.47
+        },
+        {
+          "id": "q15",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 11.91
+        },
+        {
+          "id": "q16",
+          "type": "what",
+          "rank": 2,
+          "returned": 10,
+          "ms": 11.13
+        },
+        {
+          "id": "q17",
+          "type": "why",
+          "rank": 3,
+          "returned": 10,
+          "ms": 12.19
+        },
+        {
+          "id": "q18",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 12.64
+        },
+        {
+          "id": "q19",
+          "type": "what",
+          "rank": 5,
+          "returned": 10,
+          "ms": 15.62
+        },
+        {
+          "id": "q20",
+          "type": "what",
+          "rank": 5,
+          "returned": 10,
+          "ms": 12.79
+        },
+        {
+          "id": "q21",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 8.52
+        },
+        {
+          "id": "q22",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 11.61
+        },
+        {
+          "id": "q23",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 8.49
+        },
+        {
+          "id": "q24",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 17.8
+        },
+        {
+          "id": "q25",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 10.02
+        },
+        {
+          "id": "q26",
+          "type": "why",
+          "rank": 2,
+          "returned": 10,
+          "ms": 33.04
+        },
+        {
+          "id": "q27",
+          "type": "what",
+          "rank": 5,
+          "returned": 10,
+          "ms": 17.68
+        },
+        {
+          "id": "q28",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 12.8
+        },
+        {
+          "id": "q29",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 12.53
+        },
+        {
+          "id": "q30",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 10.51
+        },
+        {
+          "id": "q31",
+          "type": "status",
+          "rank": 1,
+          "returned": 10,
+          "ms": 20.96
+        },
+        {
+          "id": "q32",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 13.56
+        },
+        {
+          "id": "q33",
+          "type": "what",
+          "rank": 4,
+          "returned": 10,
+          "ms": 10.3
+        },
+        {
+          "id": "q34",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 12.45
+        },
+        {
+          "id": "q35",
+          "type": "what",
+          "rank": 2,
+          "returned": 10,
+          "ms": 17.65
+        },
+        {
+          "id": "q36",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 15.87
+        },
+        {
+          "id": "q37",
+          "type": "why",
+          "rank": 0,
+          "returned": 10,
+          "ms": 13.56
+        },
+        {
+          "id": "q38",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 9.9
+        },
+        {
+          "id": "q39",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 17.29
+        },
+        {
+          "id": "q40",
+          "type": "what",
+          "rank": 9,
+          "returned": 10,
+          "ms": 10.59
+        },
+        {
+          "id": "q41",
+          "type": "what",
+          "rank": 7,
+          "returned": 10,
+          "ms": 12.27
+        },
+        {
+          "id": "q42",
+          "type": "why",
+          "rank": 8,
+          "returned": 10,
+          "ms": 19.26
+        },
+        {
+          "id": "q43",
+          "type": "why",
+          "rank": 1,
+          "returned": 10,
+          "ms": 15.34
+        },
+        {
+          "id": "q44",
+          "type": "what",
+          "rank": 1,
+          "returned": 10,
+          "ms": 8.97
+        },
+        {
+          "id": "q45",
+          "type": "what",
+          "rank": 3,
+          "returned": 10,
+          "ms": 11.62
+        },
+        {
+          "id": "q46",
+          "type": "why",
+          "rank": 2,
+          "returned": 10,
+          "ms": 19.81
+        },
+        {
+          "id": "q47",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 14.05
+        },
+        {
+          "id": "q48",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 11.97
+        },
+        {
+          "id": "q49",
+          "type": "what",
+          "rank": 0,
+          "returned": 10,
+          "ms": 19.81
+        },
+        {
+          "id": "q50",
+          "type": "what",
+          "rank": 2,
+          "returned": 10,
+          "ms": 5.29
+        }
+      ]
+    }
+  }
+}

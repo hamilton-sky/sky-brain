@@ -97,6 +97,10 @@ use before the next one starts. "Done when" is the exit test.
 
 **Done when:** plain RAG has baseline numbers. Every later step reports against them.
 
+**Started 23 Nov:** 50 questions and a plain keyword-search baseline (Recall@5 0.66, MRR 0.50)
+are in [bench/](../../bench/README.md). The unseen-project and long-running sets, and the
+answer-quality runs, come with step 2.
+
 ### 1. Reliable memory
 
 This is brain-core tickets 05–11, widened. The proposed schema for all four memory levels (core,
