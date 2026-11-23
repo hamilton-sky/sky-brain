@@ -1,6 +1,6 @@
 // The `whoami` tool (spec.md Interfaces -> whoami): the caller's email and every workspace they
 // are a member of. Identity comes from the verified token only, never from the arguments.
-import type { Actor } from "@sky-brain/shared/actor";
+import type { Actor, AgentProfileRef } from "@sky-brain/shared/actor";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { asc, eq } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
@@ -11,6 +11,8 @@ export interface Whoami {
   email: string;
   user_id: string;
   workspaces: { id: string; name: string; role: string }[];
+  /** For an agent: its id and the profile its person bound it to (null: the Guest agent). */
+  agent?: { agent_id: string; profile: AgentProfileRef | null };
 }
 
 export async function whoami(db: Db, actor: Actor): Promise<Whoami> {
@@ -28,7 +30,15 @@ export async function whoami(db: Db, actor: Actor): Promise<Whoami> {
     .orderBy(asc(workspaces.createdAt), asc(workspaces.id));
   // A token outliving its user names nobody: an error, not an empty identity.
   if (!row) throw new Error("No such user.");
-  return { email: row.email, user_id: person, workspaces: rows };
+  const result: Whoami = {
+    email: row.email,
+    user_id: person,
+    workspaces: rows,
+  };
+  if (actor.kind === "agent") {
+    result.agent = { agent_id: actor.agent_id, profile: actor.profile ?? null };
+  }
+  return result;
 }
 
 export function registerWhoami(server: McpServer, db: Db, actor: Actor): void {
@@ -38,7 +48,8 @@ export function registerWhoami(server: McpServer, db: Db, actor: Actor): void {
       title: "Who am I",
       description:
         "Connection check: returns the email of the person this connection acts for and " +
-        "every sky-brain workspace they belong to, with their role in each. Takes no arguments.",
+        "every sky-brain workspace they belong to, with their role in each, and the agent profile " +
+        "(role) the person bound this app to, or null for the Guest agent. Takes no arguments.",
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async () => {

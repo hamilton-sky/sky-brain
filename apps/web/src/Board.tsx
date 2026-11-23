@@ -1,7 +1,7 @@
 // One project's goals: newest first, each with its task counts; open one to see its tasks and
 // approve, cancel or release it. Only a person can do those, so they live here, not in MCP.
 import { useCallback, useEffect, useState } from "react";
-import { FormFooter } from "./FormFooter.tsx";
+import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import {
   api,
   type Goal,
@@ -291,22 +291,17 @@ function NewGoal(props: {
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, submit } = useFormSubmit();
   return (
     <form
       className="card form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setBusy(true);
-        api.createGoal(props.projectId, title, body).then(
-          () => props.onDone(true),
-          (err: Error) => {
-            setError(err.message);
-            setBusy(false);
-          },
-        );
-      }}
+      onSubmit={(e) =>
+        submit(e, () =>
+          api
+            .createGoal(props.projectId, title, body)
+            .then(() => props.onDone(true)),
+        )
+      }
     >
       <label>
         <span className="muted">Title</span>

@@ -203,6 +203,23 @@ yet; MCP clients can.
 clients work too); today it has `whoami`, the connection check, and the task board tools below. An MCP caller is the
 agent `mcp/<client host>` acting for the token's subject, across all of that person's workspaces.
 
+**Agent profiles (D25 part 1, D26).** A person names the roles their agents play (Product owner,
+Doer, Reviewer, Librarian, or any other) on the web page's Agents tab, and picks which role each
+connected app acts as. The binding is stored on the server (`agent_profiles`, `agent_bindings`,
+keyed by the person and the token's `azp`), so an agent never chooses its own role (hard rule 2).
+On every `/mcp` call the server looks the binding up; a bound app becomes the agent
+`mcp/<client host>/<slug>` with a `profile` on its actor, so audit rows, task events, claims and
+entry authors name the role with no other schema change. An unbound app is the Guest agent, as
+before. `whoami` returns `agent: { agent_id, profile }`. Changing a binding takes effect at the
+next call; a task claimed under the old role must be reported under it, so it waits for its lease.
+Profiles give no extra rights yet: scopes, skills and triggers are D25 parts 2 to 4
+([docs/vision/AGENTS.md](vision/AGENTS.md)).
+
+People only, under `/api/v1/agents`: `GET /` (profiles and connected apps), `POST /profiles`
+(`slug`, `display_name`, `kind` worker or steward), `DELETE /profiles/:id` (its bindings go with
+it) and `POST /bind` (`client_id`, `profile_id` or null). A person sees and binds only their own
+profiles and only apps they allowed on the consent page.
+
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
 
