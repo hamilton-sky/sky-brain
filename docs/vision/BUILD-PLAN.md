@@ -74,7 +74,9 @@ use before the next one starts. "Done when" is the exit test.
 
 ### 1. Reliable memory
 
-This is brain-core tickets 05–11, widened.
+This is brain-core tickets 05–11, widened. The proposed schema for all four memory levels (core,
+long, short, working), from the 23 Nov red/blue team review, is
+[schema/MEMORY-SCHEMA.md](schema/MEMORY-SCHEMA.md).
 
 - **Extend `entries`:** `kind` and trust level (D22), evidence, valid from/to, scope, `tier`
   (inbox / deep), origin and a source.
