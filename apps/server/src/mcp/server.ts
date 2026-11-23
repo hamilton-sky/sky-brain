@@ -1,5 +1,6 @@
 // The MCP server factory: one fresh McpServer per request (createMcpHandler), with the tools
-// the caller may use: whoami, and the board tools (board-tools.ts) bound to the caller's actor.
+// the caller may use: whoami, the board tools (board-tools.ts) and the memory tools
+// (memory-tools.ts), bound to the caller's actor.
 import { ActorSchema } from "@sky-brain/shared/actor";
 import {
   McpServer,
@@ -9,6 +10,7 @@ import type { Db } from "../db/client.ts";
 import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
 import { boardDispatcher } from "./board-dispatch.ts";
 import { registerBoardTools } from "./board-tools.ts";
+import { registerMemoryTools } from "./memory-tools.ts";
 import { registerWhoami } from "./whoami.ts";
 
 export interface McpServerOptions {
@@ -27,7 +29,9 @@ export function mcpServerFactory(db: Db, options: McpServerOptions = {}) {
     const actor = ActorSchema.parse(ctx.authInfo?.extra?.actor);
     const server = new McpServer({ name: "sky-brain", version: "0.0.0" });
     registerWhoami(server, db, actor);
-    registerBoardTools(server, board.forActor(actor));
+    const call = board.forActor(actor);
+    registerBoardTools(server, call);
+    registerMemoryTools(server, call);
     return server;
   };
 }

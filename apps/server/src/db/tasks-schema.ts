@@ -5,7 +5,6 @@
 // This module loads before schema.ts finishes (schema.ts re-exports it), so anything from
 // schema.ts is used only inside callbacks. That is why `author_kind` is text with a check here,
 // not schema.ts's `author_kind` enum (undefined at table-build time).
-import type { AuthorKind } from "@sky-brain/shared/enums";
 import {
   GOAL_EXECUTORS,
   GOAL_STATUSES,
@@ -25,26 +24,16 @@ import {
   pgTable,
   primaryKey,
   text,
-  timestamp,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { at, createdBy, id } from "./columns.ts";
 import { features, projects, workspaces } from "./schema.ts";
 
 export const goalExecutorEnum = pgEnum("goal_executor", GOAL_EXECUTORS);
 export const goalStatusEnum = pgEnum("goal_status", GOAL_STATUSES);
 export const taskStatusEnum = pgEnum("task_status", TASK_STATUSES);
 export const taskEventKindEnum = pgEnum("task_event_kind", TASK_EVENT_KINDS);
-
-const id = () => uuid("id").primaryKey().defaultRandom();
-const at = (name: string) => timestamp(name, { withTimezone: true });
-
-/** Who wrote the row, as for entries. */
-const createdBy = () => ({
-  authorKind: text("author_kind").$type<AuthorKind>().notNull(),
-  author: text("author").notNull(),
-  onBehalfOf: text("on_behalf_of").notNull(),
-});
 
 export const goals = pgTable(
   "goals",

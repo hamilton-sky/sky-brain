@@ -5,6 +5,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.ts";
 import { invites, members, user, workspaces } from "../db/schema.ts";
+import { createDefaultMemories } from "../memory/memories.ts";
 
 export async function onSignIn(
   db: Db,
@@ -30,6 +31,8 @@ export async function onSignIn(
       await tx
         .insert(members)
         .values({ workspaceId: ws!.id, userId: who.userId, role: "owner" });
+      // About me, the default Inbox and the default Notebook (MEMORY-SCHEMA.md § 9).
+      await createDefaultMemories(tx, ws!.id);
     }
 
     const pending = await tx

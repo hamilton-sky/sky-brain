@@ -13,12 +13,11 @@ import {
 import { closeTestDb, createTestDb, type Db } from "../testing/harness.ts";
 import { boardDispatcher } from "./board-dispatch.ts";
 import {
+  callTool,
   CIMD_DOCUMENTS,
   decodeJwt,
-  mcpInitialize,
-  mcpPost,
-  rpcResult,
   signInAndGetToken,
+  toolNames,
 } from "./test/flow.ts";
 
 let db: Db;
@@ -64,27 +63,14 @@ afterAll(async () => {
 
 /** `tools/call` as `who`; returns isError and the parsed result. */
 async function tool(who: string, name: string, args: Record<string, unknown>) {
-  const token = people[who]!.token;
-  const init = await mcpInitialize(server, token);
-  expect(init.status).toBe(200);
-  const res = await mcpPost(server, token, "tools/call", {
-    name,
-    arguments: args,
-  });
+  const res = await callTool(server, people[who]!.token, name, args);
   expect(res.status).toBe(200);
-  const result = rpcResult(res).result;
-  const text = result.content?.[0]?.text ?? "null";
-  return { isError: result.isError ?? false, body: JSON.parse(text) };
+  return { isError: res.isError, body: res.body };
 }
 
 describe("mcp board tools", () => {
   it("lists the board tools beside whoami", async () => {
-    const token = people.ann!.token;
-    await mcpInitialize(server, token);
-    const res = await mcpPost(server, token, "tools/list", {});
-    const names = (
-      rpcResult(res).result as unknown as { tools: { name: string }[] }
-    ).tools.map((t) => t.name);
+    const names = await toolNames(server, people.ann!.token);
     expect(names).toEqual(
       expect.arrayContaining([
         "whoami",
