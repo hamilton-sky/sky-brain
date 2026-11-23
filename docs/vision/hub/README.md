@@ -13,6 +13,7 @@ https://claude.ai/artifact/PehQqu9bT9T67xKjVpsJgR.
 | Vision research | `vision.html` (summary) | https://claude.ai/artifact/GHqQhnKUHh1cWBq2crmACb (live doc) |
 | Agents and board | `agents.html` (summary) | https://claude.ai/artifact/1Z5BxT77Pn9bSvf97BCQrc (live doc) |
 | Human memory research | `../HUMAN-MEMORY.md` (not a tab yet) | https://claude.ai/artifact/XeikKAahzyCFfoRv8wdoRZ (live doc) |
+| Project assessment (23 Nov) | not a tab | https://claude.ai/artifact/2bda2E5yhXT66jiQdSNoUV (live doc) |
 
 All pages were checked against the Architecture page on 15 Nov 2026. The two live docs
 are edited in Claude Docs, so their tabs here are a summary and a link.

@@ -14,6 +14,11 @@ What runs today is the outer shell: Perminister sign-in, the MCP connector, the 
 and the Gatekeeper's base checks (workspace filter, secret scan, quarantine, size caps, rate
 limits). The `entries` table exists with no API or tools. `docs/PLAN.md` lists what is built.
 
+Update, 23 Nov: step 0 has not started. Two design pieces landed since 15 Nov:
+[HUMAN-MEMORY.md](HUMAN-MEMORY.md) (merged) and the memory schema proposal for the four layers
+(core, long, short, working) with per-memory sharing (PR #15, open). Step 1 should build from
+that schema once it is accepted.
+
 ## What sky-brain is
 
 > sky-brain does not try to copy a human brain. It uses principles from human cognition to build

@@ -23,7 +23,7 @@ Three rules shape everything:
   the server uses is for embeddings.
 - **Postgres is the truth.** Markdown is how an item reads and how the brain exports.
 
-### What we have (15 Nov 2026)
+### What we have (23 Nov 2026)
 
 Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 
@@ -36,13 +36,16 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Device login and run tokens for headless agents (Pathly) | 🟡 Partly built: the API works, but there is no browser page to approve a device code |
 | Gatekeeper base checks: workspace filter, secret scan, quarantine, size caps, rate limits, audit log | 🟡 Partly built: the rate limit is per server instance, not shared |
 | Memory: the `entries` table | 🟡 Table only: no API, no MCP tools, no context packet |
+| Memory design: four layers (About me, Inbox, Notebooks, Board), per-memory sharing | 🟡 Designed, not built: proposal with tested SQL in PR #15 (not merged) |
+| Benchmark (step 0) | ⬜ Not started |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
 
 ### What we build next
 
 One sequence (D21). Each step is in daily use, and passes its test, before the next starts.
-Details: [docs/vision/BUILD-PLAN.md](docs/vision/BUILD-PLAN.md).
+Details: [docs/vision/BUILD-PLAN.md](docs/vision/BUILD-PLAN.md). As of 23 Nov, no step has
+started: the time since 15 Nov went into design (human memory research, memory schema review).
 
 | # | Step | Done when |
 |---|---|---|
@@ -59,6 +62,14 @@ Details: [docs/vision/BUILD-PLAN.md](docs/vision/BUILD-PLAN.md).
 **Trust (D22).** Every memory item has a **kind** (fact, decision, hypothesis, observation with
 evidence, external) and a **trust level** (quarantined, proposed, approved). Agents and Stewards
 write at `proposed`. Only you raise trust; nothing is promoted automatically.
+
+**Memory layers (proposal, PR #15).** Each person has one brain. It holds one **About me**
+(core: small, always loaded, only you write it), many **Inboxes** (short: recent captures that
+fade unless used or kept), many **Notebooks** (long: gists you approved) and one **Board** per
+project (working: scratch for a goal, cleared when it closes). Entries never move between
+layers: consolidation writes a new entry linked to its source. Search uses words on the full
+body and a vector of a short summary. You share one memory at a time, never About me. See
+[MEMORY-SCHEMA.md on the PR branch](https://github.com/hamilton-sky/sky-brain/blob/docs/memory-schema-review/docs/vision/schema/MEMORY-SCHEMA.md).
 
 **Not now:** Pages, Views, Sharing and Reach (Layers 2–5 in the roadmap), a graph database, and
 sky-brain calling an LLM on its own.
@@ -94,6 +105,9 @@ Setup and the verified list: [docs/CONNECT.md](docs/CONNECT.md).
 - [docs/vision/hub/](docs/vision/hub/README.md): the architecture page and the other design pages
 - [docs/vision/VISION.md](docs/vision/VISION.md) and [docs/vision/REVIEW.md](docs/vision/REVIEW.md):
   the research and the latest outside review
+- [docs/vision/HUMAN-MEMORY.md](docs/vision/HUMAN-MEMORY.md): how human memory encodes, keeps and
+  retrieves, and the design principles taken from it
+- Memory schema proposal (core, long, short, working memory, sharing): PR #15, not merged yet
 
 **What is built, and why:**
 
