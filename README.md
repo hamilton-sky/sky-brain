@@ -1,7 +1,8 @@
 # sky-brain
 
-Your digital self: one brain that you and every AI model you connect read and write, each by
-its role.
+A digital brain for a person or an organization: one memory that you, your team and every AI
+model you connect read and write, each by its role. Its design follows research on how human
+memory encodes, keeps and retrieves ([docs/vision/HUMAN-MEMORY.md](docs/vision/HUMAN-MEMORY.md)).
 
 ## The contract
 
@@ -9,8 +10,11 @@ This section is the source of truth for where sky-brain stands. The other docs p
 
 ### Goal
 
-sky-brain is a personal brain for anything you want to remember and work on, not only code. Each
-person has one brain. It holds a board of work (projects, goals, tasks) and memories (decisions,
+sky-brain turns how a human brain remembers into a digital brain, built on findings from
+cognitive psychology (memory layers, consolidation, cue-based retrieval, source of each memory).
+It serves one person or a whole organization, for anything you want to remember and work on, not
+only code. Each person has one brain, and an organization shares memories and boards between its
+members. It holds a board of work (projects, goals, tasks) and memories (decisions,
 facts, lessons, questions) with links it finds itself. Any model you connect (Claude, Codex, claude.ai) works from it over
 MCP: Workers such as a product owner, a doer or a reviewer do your work, and Stewards keep the
 memory healthy. You hold the top authority: agents propose, and only you approve.
@@ -60,8 +64,9 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Task board v1 (D20): goals, task DAG, claims with leases, ten MCP board tools, web page with Approve | ✅ Built |
 | Device login and run tokens for headless agents (Pathly) | 🟡 Partly built: the API works, but there is no browser page to approve a device code |
 | Gatekeeper base checks: workspace filter, secret scan, quarantine, size caps, rate limits, audit log | 🟡 Partly built: the rate limit is per server instance, not shared |
-| Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | 🟡 Built on a branch, waiting to merge |
-| Memory loop, thin step 2: a fenced context packet on `claim_task` (About me, rules, relevant entries, what is not known) and up to 3 proposed lessons on `report_task` | 🟡 Built on a branch, waiting to merge. No Digest page yet |
+| Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | ✅ Built and live (PR #19) |
+| Memory loop, thin step 2: a fenced context packet on `claim_task` (About me, rules, relevant entries, what is not known) and up to 3 proposed lessons on `report_task` | ✅ Built and live (PR #20). No Digest page yet; the two-week measurement is in [docs/MEASURE-STEP2.md](docs/MEASURE-STEP2.md) |
+| Agents: identity per agent, permissions per agent, skills per agent, board triggers | 🟡 Partly: every agent call is recorded as `mcp/<client>` for its person, and agents cannot approve (hard rule 3). Profiles, scopes, skills and triggers are proposed in [docs/vision/AGENTS.md](docs/vision/AGENTS.md) (D25, open) |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
 | Benchmark (step 0): 50 questions and a keyword-search baseline in [bench/](bench/README.md) | ✅ Baseline set: Recall@5 0.66, MRR 0.50 |
@@ -124,6 +129,8 @@ Setup and the verified list: [docs/CONNECT.md](docs/CONNECT.md).
   schema (core, long, short, working), its SQL and tests, and the red/blue team review behind it
 - [docs/vision/HUMAN-MEMORY.md](docs/vision/HUMAN-MEMORY.md): how human memory retrieves and
   preserves, and what sky-brain takes from it
+- [docs/vision/AGENTS.md](docs/vision/AGENTS.md): agent profiles: who each agent is, what it may
+  touch, its skills, and the board events that wake it (proposed, D25)
 - [docs/vision/hub/](docs/vision/hub/README.md): the architecture page and the other design pages
 - [docs/vision/VISION.md](docs/vision/VISION.md) and [docs/vision/REVIEW.md](docs/vision/REVIEW.md):
   the research and the latest outside review

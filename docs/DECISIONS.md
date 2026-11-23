@@ -382,3 +382,18 @@ request shape only for two named products. sky-brain now sends what it asks for:
 **Why:** the old `POST /api/auth/consumer/token` request is refused for new products.
 **Rejected:** using Better Auth's discovery mode, because its 32-character state and nonce are
 still refused; an extra redirect hop of our own, because the after-hook keeps one URL.
+
+### D25. Agent profiles: identity, scopes, skills and board triggers per agent (open)
+
+**Date:** 2026-11-23. **Status:** proposed, waiting for shammai.
+**Proposal:** add an agent profile that the person creates and binds when a token is issued
+(never claimed per call). It carries an identity shown on every row the agent writes, scopes that
+start from nothing and can only lower the person's rights, versioned skills served as MCP prompts
+and `get_skills`, and triggers that turn board and memory events into activations an agent claims
+with a lease. Full design: `docs/vision/AGENTS.md`.
+**Why:** today every agent from one app is the same `mcp/<client host>` with the same rights, so a
+byline like "Librarian" cannot be trusted, the Consolidator (step 6) cannot be narrowed, and
+nothing wakes an agent when the board changes. Notion's Custom Agents (Nov 2026) ship these same
+four pieces, which confirms the need.
+**Keeps:** hard rules 1 and 3 (no pushed runs; agents never approve), D1, D20 and D22.
+**Open:** build identity now, during the step 3 measurement, or wait until step 6.
