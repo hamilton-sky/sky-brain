@@ -243,7 +243,8 @@ Approve, Cancel and Release buttons.
 
 Better Auth runs inside the server.
 
-- **People** sign in with Perminister, which is invite-only for this product. Anyone it signs in
+- **People** sign in with Perminister's OpenID Connect flow (D24), which is invite-only for this
+  product. Anyone it signs in
   with access to the `sky-brain` product may enter (`mayEnter`, D17). Each person gets their own
   workspace, as `owner`, at their first sign-in. A sky-brain invite adds such a person to another
   owner's workspace and is accepted at their next sign-in. Everyone else sees "No access".

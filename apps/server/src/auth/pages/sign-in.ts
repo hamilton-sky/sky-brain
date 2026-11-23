@@ -56,12 +56,14 @@ export const script = `"use strict";
   button.addEventListener("click", function () {
     button.disabled = true;
     status.textContent = "";
+    var oauthQuery = location.search.slice(1);
+    // A refusal comes back to this page with the client's request kept, so "Try another
+    // account" can still finish the connection.
     var body = {
       provider: "perminister",
       callbackURL: "/",
-      errorCallbackURL: "/sign-in"
+      errorCallbackURL: oauthQuery ? "/sign-in?" + oauthQuery : "/sign-in"
     };
-    var oauthQuery = location.search.slice(1);
     if (oauthQuery) body.oauth_query = oauthQuery;
     fetch("/api/auth/sign-in/social", {
       method: "POST",

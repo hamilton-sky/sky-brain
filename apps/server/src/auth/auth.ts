@@ -6,12 +6,14 @@ import { mcp } from "@better-auth/mcp";
 import type { ClientMetadataResourceFetch } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { genericOAuth, jwt } from "better-auth/plugins";
 import type { Db } from "../db/client.ts";
 import * as schema from "../db/schema.ts";
 import { mayEnter, productIdsOf } from "./access.ts";
 import { onSessionCreated } from "./on-sign-in.ts";
 import { perministerProvider } from "./perminister.ts";
+import { toPerministerAuthorizeUrl } from "./perminister-oidc.ts";
 
 export interface CreateAuthOptions {
   db: Db;
@@ -64,6 +66,30 @@ export function createAuth(options: CreateAuthOptions) {
           : { error: "no_access" },
     },
     // Every sign-in: an own workspace when the person has none, then pending invites.
+    // Perminister's OIDC authorize request needs a scope, a nonce and a 43-character state that
+    // Better Auth does not make itself (perminister-oidc.ts).
+    hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        if (!perminister || ctx.path !== "/sign-in/social") return;
+        const returned: unknown = ctx.context.returned;
+        if (
+          typeof returned !== "object" ||
+          returned === null ||
+          typeof (returned as { url?: unknown }).url !== "string"
+        ) {
+          return;
+        }
+        const answer = returned as { url: string; redirect?: boolean };
+        return ctx.json({
+          ...answer,
+          url: toPerministerAuthorizeUrl(
+            answer.url,
+            perminister.baseUrl,
+            options.secret,
+          ),
+        });
+      }),
+    },
     databaseHooks: {
       session: { create: { after: onSessionCreated(options.db) } },
     },
@@ -72,7 +98,13 @@ export function createAuth(options: CreateAuthOptions) {
       ...(perminister
         ? [
             genericOAuth({
-              config: [perministerProvider({ ...perminister, publicUrl })],
+              config: [
+                perministerProvider({
+                  ...perminister,
+                  publicUrl,
+                  nonceKey: options.secret,
+                }),
+              ],
             }),
           ]
         : []),
