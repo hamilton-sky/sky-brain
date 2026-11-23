@@ -13,6 +13,7 @@ import { writeAudit } from "../db/audit.ts";
 import type { Db, DbOrTx } from "../db/client.ts";
 import { tasks } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
+import { buildPacket } from "../memory/packet.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { overlaps } from "./file-overlap.ts";
@@ -138,12 +139,20 @@ export function claimHandler(options: {
     const t = now();
     const row = await db.transaction((tx) => claimTask(tx, req, id, t));
     const deps = await dependsOnMany(db, [row.id]);
+    // The context packet (BUILD-PLAN step 2): data about the person and the task, never a command.
+    const context = await buildPacket(
+      db,
+      actorOf(req),
+      { workspaceId: row.workspaceId, title: row.title, body: row.body },
+      t,
+    );
     res.status(200).json({
       task: toWireTask(row, deps.get(row.id)!, t),
       lease: {
         claim_seq: row.claimSeq,
         expires_at: row.leaseExpiresAt!.toISOString(),
       },
+      context,
     });
   };
 }

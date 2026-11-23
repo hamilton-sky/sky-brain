@@ -60,7 +60,8 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Task board v1 (D20): goals, task DAG, claims with leases, ten MCP board tools, web page with Approve | ✅ Built |
 | Device login and run tokens for headless agents (Pathly) | 🟡 Partly built: the API works, but there is no browser page to approve a device code |
 | Gatekeeper base checks: workspace filter, secret scan, quarantine, size caps, rate limits, audit log | 🟡 Partly built: the rate limit is per server instance, not shared |
-| Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | 🟡 Built on a branch, waiting to merge. No context packet or Digest yet (step 2) |
+| Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | 🟡 Built on a branch, waiting to merge |
+| Memory loop, thin step 2: a fenced context packet on `claim_task` (About me, rules, relevant entries, what is not known) and up to 3 proposed lessons on `report_task` | 🟡 Built on a branch, waiting to merge. No Digest page yet |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
 | Benchmark (step 0): 50 questions and a keyword-search baseline in [bench/](bench/README.md) | ✅ Baseline set: Recall@5 0.66, MRR 0.50 |

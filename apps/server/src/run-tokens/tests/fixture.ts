@@ -159,6 +159,7 @@ export async function world(db: Db) {
     projectA: a.id,
     projectB: b.id,
     projectC: c.id,
+    otherWorkspaceId: other.id,
     owner,
     editor,
     viewer,

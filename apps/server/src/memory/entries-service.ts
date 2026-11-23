@@ -138,13 +138,24 @@ async function captureTarget(
   };
 }
 
-export async function captureEntry(
-  db: Db,
+/** Join condition: the caller's membership row in the entry's workspace (hard rule 4). */
+export const memberOfEntryWorkspace = (actor: Actor) =>
+  and(
+    eq(members.workspaceId, entries.workspaceId),
+    eq(members.userId, personOf(actor)),
+  );
+
+/**
+ * Checks a capture and stores it, in the caller's transaction: the target and the caller's
+ * rights (404, 403), the summary and evidence rules (400), secrets (422), then quarantine.
+ */
+export async function captureInTx(
+  tx: DbOrTx,
   actor: Actor,
   body: CaptureRequest,
   now: Date,
 ): Promise<EntryRow> {
-  const { memory, role } = await captureTarget(db, actor, body);
+  const { memory, role } = await captureTarget(tx, actor, body);
   assertMayWrite(actor, memory, role);
   if (actor.kind === "agent" && memory.layer !== "short") {
     throw new HttpError(
@@ -189,43 +200,51 @@ export async function captureEntry(
       ? new Date(now.getTime() + INBOX_TTL_DAYS * 24 * 3600 * 1000)
       : null;
 
-  return db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(entries)
-      .values({
-        workspaceId: memory.workspaceId,
-        memoryId: memory.id,
-        layer: memory.layer,
-        kind: body.kind,
-        topic: body.topic ?? null,
-        trust,
-        title: body.title,
-        body: body.body,
-        summary,
-        summarySource: body.summary === undefined ? "fallback" : "writer",
-        questions,
-        refs,
-        authorKind: actor.kind,
-        author,
-        onBehalfOf: personOf(actor),
-        source,
-        quarantinedBecause: reason ?? null,
-        expiresAt,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-    await tx.insert(entryVersions).values(versionOf(row!, now));
-    const who = auditActor(actor);
-    await writeAudit(tx, {
+  const [row] = await tx
+    .insert(entries)
+    .values({
       workspaceId: memory.workspaceId,
-      actor: who.actor,
-      action: "entry.capture",
-      targetId: row!.id,
-      details: { ...who.details, memory_id: memory.id, trust, kind: body.kind },
-    });
-    return row!;
+      memoryId: memory.id,
+      layer: memory.layer,
+      kind: body.kind,
+      topic: body.topic ?? null,
+      trust,
+      title: body.title,
+      body: body.body,
+      summary,
+      summarySource: body.summary === undefined ? "fallback" : "writer",
+      questions,
+      refs,
+      authorKind: actor.kind,
+      author,
+      onBehalfOf: personOf(actor),
+      source,
+      quarantinedBecause: reason ?? null,
+      expiresAt,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  await tx.insert(entryVersions).values(versionOf(row!, now));
+  const who = auditActor(actor);
+  await writeAudit(tx, {
+    workspaceId: memory.workspaceId,
+    actor: who.actor,
+    action: "entry.capture",
+    targetId: row!.id,
+    details: { ...who.details, memory_id: memory.id, trust, kind: body.kind },
   });
+  return row!;
+}
+
+/** One capture in its own transaction. */
+export function captureEntry(
+  db: Db,
+  actor: Actor,
+  body: CaptureRequest,
+  now: Date,
+): Promise<EntryRow> {
+  return db.transaction((tx) => captureInTx(tx, actor, body, now));
 }
 
 function versionOf(
@@ -433,12 +452,14 @@ export async function searchEntries(
   actor: Actor,
   query: SearchQuery,
   now: Date,
+  /** What agents may read, whoever asks: the context packet uses it. */
+  servedOnly = false,
 ): Promise<{ entry: EntryRow; rank: number }[]> {
   if (query.workspace_id) await workspaceRoles(db, actor, query.workspace_id);
   const tsquery = sql`to_tsquery('simple', replace(plainto_tsquery('simple', sb_norm(${query.q}))::text, '&', '|'))`;
   const rank = sql<number>`ts_rank_cd(${entries.search}, ${tsquery})`;
   const trustFilter =
-    actor.kind === "agent"
+    actor.kind === "agent" || servedOnly
       ? and(
           inArray(entries.trust, AGENT_READABLE),
           query.trust ? eq(entries.trust, query.trust) : undefined,
@@ -451,13 +472,7 @@ export async function searchEntries(
     .select({ entry: entries, rank })
     .from(entries)
     .innerJoin(memories, eq(memories.id, entries.memoryId))
-    .innerJoin(
-      members,
-      and(
-        eq(members.workspaceId, entries.workspaceId),
-        eq(members.userId, personOf(actor)),
-      ),
-    )
+    .innerJoin(members, memberOfEntryWorkspace(actor))
     .where(
       and(
         sql`${entries.search} @@ ${tsquery}`,

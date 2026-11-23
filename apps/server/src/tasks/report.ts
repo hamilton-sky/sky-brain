@@ -11,6 +11,7 @@ import {
   LeaseRequestSchema,
   type Proof,
 } from "@sky-brain/shared/tasks";
+import type { Lesson } from "@sky-brain/shared/memory";
 import { and, eq, gt, inArray, sql, type SQL } from "drizzle-orm";
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import type { Request, RequestHandler } from "express";
@@ -21,6 +22,7 @@ import { writeAudit } from "../db/audit.ts";
 import type { Db, DbOrTx } from "../db/client.ts";
 import { goals, taskDeps, tasks } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
+import { captureInTx } from "../memory/entries-service.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { LEASE_SECONDS } from "./claim.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
@@ -170,6 +172,35 @@ async function newlyReady(tx: DbOrTx, req: Request, taskId: string, t: Date) {
   return rows.map((r) => r.id);
 }
 
+/**
+ * The lessons a finished task proposes (BUILD-PLAN step 2): each a capture into the default
+ * Inbox of the task's workspace, topic `lesson`, pointing at the task. In the done
+ * transaction, so a lesson that is refused (a secret, a missing summary) refuses the report.
+ */
+async function proposeLessons(
+  tx: DbOrTx,
+  f: Fence,
+  task: TaskRow,
+  lessons: Lesson[],
+): Promise<string[]> {
+  const ids: string[] = [];
+  for (const lesson of lessons) {
+    const row = await captureInTx(
+      tx,
+      actorOf(f.req),
+      {
+        ...lesson,
+        workspace_id: task.workspaceId,
+        topic: "lesson",
+        refs: [...(lesson.refs ?? []), `task:${task.id}`],
+      },
+      f.t,
+    );
+    ids.push(row.id);
+  }
+  return ids;
+}
+
 /** Path id, body, transaction: 404 for an unknown or unseen task, 403 for a viewer. */
 function reportHandler<B extends { claim_seq: number }, R>(
   options: { db: Db; now: () => Date },
@@ -243,12 +274,13 @@ export function reportHandlers(options: { db: Db; now: () => Date }) {
   const done = reportHandler(
     options,
     (b) => parseRequest(DoneRequestSchema, b),
-    async (tx, f, body) => {
+    async (tx, f, body, task) => {
       const [again] = await tx
         .select()
         .from(tasks)
         .where(and(heldBy(f), eq(tasks.status, "done")));
       let row = again;
+      let lessons: string[] = [];
       if (!row) {
         row = await fencedUpdate(tx, f, "done", {
           status: "done",
@@ -261,12 +293,14 @@ export function reportHandlers(options: { db: Db; now: () => Date }) {
           at: f.t,
         });
         await auditStatus(tx, f.req, row, "done", "done");
+        lessons = await proposeLessons(tx, f, task, body.lessons ?? []);
       }
-      return { row, ready: await newlyReady(tx, f.req, row.id, f.t) };
+      return { row, ready: await newlyReady(tx, f.req, row.id, f.t), lessons };
     },
-    async ({ row, ready }, t) => ({
+    async ({ row, ready, lessons }, t) => ({
       task: await wire(row, t),
       newly_ready: ready,
+      lessons,
     }),
   );
 

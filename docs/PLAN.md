@@ -157,27 +157,36 @@ On top of the table:
 
 ## 7. How agents use it
 
-**Before work**, the agent calls `context` with its scope and a short task description. It
-gets back one packet, budgeted to about 6 KB:
+**Before work**, the agent claims a task, and `claim_task` returns a `context` packet with it
+(thin step 2). The packet is built from the task's title and body, budgeted to 6,000 characters:
 
-1. Rules in force (workspace, then project, then feature).
-2. Decisions in force (approved, not superseded, not expired).
-3. Open questions in scope.
-4. Relevant entries found by full-text search on the task text: claims (marked unverified),
-   artifacts and lessons.
+1. About me: approved entries of the person's About me (only the workspace owner gets them).
+2. Rules in force: approved entries with topic `rule`, outside About me.
+3. Relevant to this task: up to 4 entries found by word search on the task text, approved or
+   proposed (labelled "proposed, unverified"); never quarantined, rejected or faded ones.
+4. Not known: what the brain could not find, for example that nothing matched, or that a
+   decision shown is only proposed.
 
-Each entry is rendered as quoted data with its kind, status, author, source and date. Only
-approved rules sit in the rules section. Everything else is labelled as information, not
-instructions.
+The text rendering sits between `<sky-brain-context>` and `</sky-brain-context>`. Each entry is
+one line of quoted data with its topic or kind, trust, author, source, date and id; newlines and
+fence tags inside stored text are flattened, so stored text cannot leave the fence. When the
+budget runs out, whole entries are dropped from Relevant first, then Rules. The agent uses `get`
+with an id for the full text. Open questions and decisions in force as their own sections come
+later (step 4).
 
 **During work**, it calls `ask` to post a question. It can carry on, or check back later.
 
-**After work**, it calls `post` for what it learned (claims, a proposed decision, a lesson, an
-artifact summary with links) and `supersede` when it found something newer than an old entry.
+**After work**, `report_task` with outcome `done` may carry up to 3 `lessons` (kind, title,
+body, summary). Each is captured into the default Inbox of the task's workspace with topic
+`lesson` and a ref `task:<id>`, in the same transaction as the report: an agent's lessons are
+proposed until the person approves them, and a lesson that is refused (a secret, no summary)
+refuses the whole report. A repeated `done` adds no lessons. Other things it learned go in with
+`capture`.
 
 ## 8. MCP tools and REST API (Layer 1)
 
-The memory tools are built (step 1). The `context` packet comes with step 2.
+The memory tools are built (step 1). The `context` packet on `claim_task` and lessons on
+`report_task` are built (thin step 2); the Digest is not yet.
 
 | MCP tool | REST | Does |
 |---|---|---|
@@ -206,8 +215,8 @@ reject, release, answer, invite, export and delete.
 | `propose_goal` | a draft goal (only a person approves it) |
 | `add_tasks` | tasks with `depends_on` and `files`; a task added to an approved goal waits for approval |
 | `next_task` | the next task the person may take now in a project, or null |
-| `claim_task` / `renew_task` / `release_task` | a 10-minute lease and its `claim_seq` |
-| `report_task` | `done` with proof, or `failed` with a reason |
+| `claim_task` / `renew_task` / `release_task` | a 10-minute lease and its `claim_seq`; `claim_task` also returns the `context` packet (§7) |
+| `report_task` | `done` with proof and up to 3 proposed `lessons`, or `failed` with a reason |
 
 The MCP tools call the REST routers in process with the verified MCP actor, so both doors make
 the same checks. REST routes:

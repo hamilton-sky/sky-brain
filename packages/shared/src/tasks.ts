@@ -3,6 +3,7 @@
 // `Verb` lives in ./run-tokens.ts.
 import { z } from "zod";
 import type { AuthorKind } from "./enums.ts";
+import { LESSONS_MAX, LessonSchema } from "./memory.ts";
 import { IdSchema } from "./scope.ts";
 
 export const GOAL_EXECUTORS = ["single", "loop", "team"] as const;
@@ -168,6 +169,8 @@ export type Proof = z.infer<typeof ProofSchema>;
 export const DoneRequestSchema = z.strictObject({
   claim_seq: claimSeq,
   proof: ProofSchema,
+  /** 0 to 3 lessons; each is captured in the task's brain (proposed when an agent reports). */
+  lessons: z.array(LessonSchema).max(LESSONS_MAX).optional(),
 });
 export type DoneRequest = z.infer<typeof DoneRequestSchema>;
 
