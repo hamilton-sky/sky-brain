@@ -2,6 +2,7 @@
 // directly, bypassing the trust rules and guards: tests only.
 import type { AuthorKind, Role } from "@sky-brain/shared/enums";
 import type {
+  EntryTopic,
   KnowledgeKind,
   MemoryLayer,
   TrustLevel,
@@ -101,6 +102,7 @@ export interface SeedEntry {
   /** Default `short` (the Inbox). */
   layer?: MemoryLayer;
   kind?: KnowledgeKind;
+  topic?: EntryTopic;
   trust?: TrustLevel;
   title: string;
   body: string;
@@ -143,6 +145,7 @@ export async function seedEntry(
       memoryId,
       layer,
       kind,
+      topic: opts.topic ?? null,
       trust: opts.trust ?? "approved",
       title: opts.title,
       body: opts.body,
@@ -163,6 +166,7 @@ export async function seedEntry(
     entryId: row!.id,
     version: 1,
     kind,
+    topic: opts.topic ?? null,
     title: opts.title,
     body: opts.body,
     summary,

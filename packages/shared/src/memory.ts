@@ -218,3 +218,49 @@ export function fallbackSummary(entryTitle: string, entryBody: string): string {
   }
   return `${entryTitle.trim()}: ${cut}`.slice(0, MEMORY_CAPS.summary);
 }
+
+/** Up to 3 lessons on `POST /api/v1/tasks/:id/done`; each lands in the task's Inbox. */
+export const LESSONS_MAX = 3;
+
+/** A lesson a finished task proposes: a capture with a summary, in the task's own brain. */
+export const LessonSchema = z.strictObject({
+  kind: z.enum(KNOWLEDGE_KINDS),
+  title,
+  body,
+  summary,
+  questions: questions.optional(),
+  refs: refs.optional(),
+});
+export type Lesson = z.infer<typeof LessonSchema>;
+
+/** The context packet's budget (BUILD-PLAN step 2): a few chunks with pointers, never a dump. */
+export const PACKET_CAPS = {
+  aboutMe: 10,
+  rules: 10,
+  relevant: 4,
+  chars: 6_000,
+} as const;
+
+/** One entry in a context packet: its summary and a pointer (`get` for the body). */
+export interface PacketItem {
+  id: string;
+  kind: KnowledgeKind;
+  topic: EntryTopic | null;
+  trust: TrustLevel;
+  layer: MemoryLayer;
+  title: string;
+  summary: string;
+  author_kind: AuthorKind;
+  author: string;
+  source: EntrySource;
+  created_at: string;
+}
+
+/** What `claim_task` hands the agent with its task. `text` is the fenced rendering. */
+export interface ContextPacket {
+  about_me: PacketItem[];
+  rules: PacketItem[];
+  relevant: PacketItem[];
+  not_known: string[];
+  text: string;
+}
