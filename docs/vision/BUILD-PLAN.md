@@ -13,9 +13,10 @@ tables or columns, the schema wins.
 
 It replaces the two build-order lists in VISION.md ("What I would build, in order" and
 "Recommended build order"). The build order (D21) and the trust model (D22) are decided; the rest is still a proposal.
-What runs today is the outer shell: Perminister sign-in, the MCP connector, the task board v1
-and the Gatekeeper's base checks (workspace filter, secret scan, quarantine, size caps, rate
-limits). The `entries` table exists with no API or tools. `docs/PLAN.md` lists what is built.
+What runs today (23 Nov): Perminister sign-in, the MCP connector, the task board v1, the
+Gatekeeper's base checks (workspace filter, secret scan, quarantine, size caps, rate limits), and
+thin steps 1 and 2 of the memory (About me, Inbox, Notebook; `capture`, `search`, `get`; the
+context packet on claim and proposed lessons on report). `docs/PLAN.md` lists what is built.
 
 ## What sky-brain is
 
@@ -176,6 +177,13 @@ out of rank: activation only orders what is still valid and in scope.
 
 **Done when:** each signal shows a gain in a run with it and a run without it, or it is switched
 off.
+
+### Alongside: agent profiles
+
+Who each agent is, what it may touch, its skills, and the board events that wake it:
+[AGENTS.md](AGENTS.md) (D25, open). Identity can land during the step 3 measurement, since it
+only adds bylines; scopes must land with step 6, because the Consolidator is the first agent that
+needs narrower rights than a Doer; skills and triggers follow once two profiles are in daily use.
 
 ### 6. The Consolidator, as one Steward
 
