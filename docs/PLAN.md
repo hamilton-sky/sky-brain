@@ -93,7 +93,9 @@ sky-brain adds:
 | `invites` | workspace_id, email, role, invited_by, accepted_at |
 | `projects` | id, workspace_id, slug, name, git_remote (normalized, unique per workspace) |
 | `features` | id, project_id, slug, name, archived_at |
+| `memories` | id, workspace_id, layer (`core` \| `long` \| `short` \| `working`), name, is_default. One `core` (About me) per workspace |
 | `entries` | see below |
+| `entry_versions` | every version of an entry's text, kind and summary. Append-only |
 | `audit_log` | seq, workspace_id, actor, action, target_id, at, details. Append-only. |
 | `devices` | id, user_id, name, created_at, last_seen_at, revoked_at, secret_hash (the `sbd_` device token's SHA-256) |
 | `device_codes` | the device flow (RFC 8628): device_code_hash, user_code, client_name, expires_at, interval, approved_by, device_id, issued_at |
@@ -103,68 +105,55 @@ sky-brain adds:
 | `task_deps` | task_id, depends_on_id (the DAG; no cycles, same goal) |
 | `task_events` | task_id, kind (`created` \| `claimed` \| `renewed` \| `released` \| `done` \| `failed` \| `reclaimed`), actor, device_id, claim_seq, at. Append-only. |
 
-### `entries`
+### `entries` (memory core, BUILD-PLAN step 1)
+
+The full design is [vision/schema/MEMORY-SCHEMA.md](vision/schema/MEMORY-SCHEMA.md); this is the thin
+part that is built.
 
 | Column | Meaning |
 |---|---|
-| `id` | uuid |
-| `seq` | monotonic number, used as a "what changed since" cursor |
-| `workspace_id`, `project_id`, `feature_id` | the scope; a null project or feature means a wider scope |
-| `kind` | `rule`, `decision`, `claim`, `question`, `answer`, `artifact`, `lesson`, `note` |
-| `status` | `proposed`, `approved`, `open`, `answered`, `superseded`, `expired`, `rejected`, `quarantined` |
-| `title` | one line, up to 200 characters |
-| `body` | markdown, up to 16 KB |
-| `author_kind` | `human` or `agent` |
-| `author` | a user id, or an agent identity such as `claude-code/builder` |
-| `on_behalf_of` | the person whose session or device wrote it |
-| `source` | `human`, `agent`, `code`, `web`, `import` |
-| `refs` | links: URLs, `path@commit`, PR links, other entry ids |
-| `reply_to` | for an answer: the question it answers |
-| `supersedes` | the entry this one replaces |
-| `confidence` | optional, 0 to 1, from the writer |
-| `expires_at` | claims get a default expiry; rules and approved decisions do not |
-| `allow_agent_answers` | set by the asker of a question: whether an agent may answer it (default false) |
-| `quarantined_because` | the id of the quarantine pattern that held the entry, written once when it is stored; null otherwise |
-| `created_at`, `updated_at` | |
-| `search` | generated full-text vector over title and body, with a GIN index |
+| `id`, `seq` | uuid; `seq` moves on every insert and change, a "what changed since" cursor |
+| `workspace_id`, `memory_id`, `layer` | the memory it lives in, for life; `layer` is a copy of the memory's, held by a composite foreign key |
+| `kind` | `fact`, `decision`, `hypothesis`, `observation` (needs a ref as evidence), `external` (D22) |
+| `topic` | optional: `rule`, `question`, `answer`, `lesson`, `note`, `artifact` |
+| `trust` | `quarantined`, `proposed`, `approved`, `rejected` (D22) |
+| `version`, `title`, `body`, `summary`, `summary_source`, `questions`, `refs` | the current version; every version is also in `entry_versions` |
+| `author_kind`, `author`, `on_behalf_of`, `source` | who wrote it; `source` is `human`, `agent`, `web` or `import` |
+| `quarantined_because` | why the text is held (`web_source` or a quarantine pattern), or null |
+| `expires_at` | Inbox (short) entries only: 30 days after capture they leave agents' default search |
+| `search` | generated: title (A), summary and questions (B), body (C), `simple` config with `sb_norm` for Hebrew |
 
-The scope is backed by composite foreign keys: (`project_id`, `workspace_id`) references
-`projects` (`id`, `workspace_id`) and (`feature_id`, `project_id`) references `features`
-(`id`, `project_id`), so an entry can never hang off another workspace's project or another
-project's feature. `seq` comes from one sequence (`entries_seq`) that every insert and every
-status change draws from.
+Database guards (migration 0008): an entry never moves or changes author; its text changes only
+together with a new `entry_versions` row; `entry_versions` is append-only (a workspace delete still
+cascades); an agent-written row can never sit in About me; web or imported text must be kind
+`external`. Each workspace gets About me, a default Inbox and a default Notebook at its first
+sign-in (and by migration for older ones).
 
 `audit_log.workspace_id` has no foreign key, so audit rows outlive a deleted workspace. A
 database trigger refuses `UPDATE`, `DELETE` and `TRUNCATE` on `audit_log`.
 
-Text is never edited after approval. A change is a new entry that supersedes the old one.
-Every status change goes through the API and lands in the audit log.
-
 ## 6. Trust rules
 
-_Not built as an API yet. Step 1 of the build order (D21) replaces this table with two fields,
-kind and trust level (D22); the rules below about agents, quarantine and secrets carry over._
+Built for the memory core (step 1), on the server and with tests for the allowed and refused case:
 
-| Kind | People write it as | Agents write it as | Who can move it on |
+| Who | Writes into | Lands as | Can also |
 |---|---|---|---|
-| `rule` | `approved` | not allowed | people only |
-| `decision` | `approved` | `proposed` | people approve or reject |
-| `claim` | `proposed` | `proposed` | people promote it to a decision, or it expires |
-| `question` | `open` | `open` | answered by a person; by an agent only if the asker allows it |
-| `answer` | allowed | only for questions an agent asked | |
-| `artifact`, `lesson`, `note` | `approved` | `proposed` | people approve or reject |
+| An agent | an Inbox only (the default one, or one named) | `proposed`; a summary is required | read `proposed` and `approved` entries |
+| A person (owner or editor) | any memory they can see | `approved`; a fallback summary if none is sent | approve, reject, write a new version |
+| The owner, in person | About me | `approved` | |
+| A viewer | nothing | | read |
 
 On top of the table:
 
-- Agents never write to the workspace scope, and never approve, reject, release or delete.
-- If an agent supersedes an approved entry, the new entry is `proposed`. The old one stays in
-  force until a person approves the new one.
+- About me is the owner's alone: other members of the workspace never see it.
+- Nothing is edited in place. A person's change is a new version; the old ones stay readable.
+- Only a person approves, rejects or revises, or changes a kind (hard rule 3, D22).
 - Web-sourced text, and text that reads like instructions to an agent ("ignore previous",
-  tool-call syntax, imperative orders to the reader), lands as `quarantined`. Quarantined
-  entries are never served in context until a person releases them.
-- Every write is scanned for secrets (API keys, private keys, tokens, `.env` lines). A hit
-  rejects the write.
-- Claims expire after 30 days unless a person confirms them. The workspace can change this.
+  tool-call syntax, imperative orders to the reader), lands as `quarantined`. Agents never read
+  quarantined or rejected entries; a person releases one by approving it.
+- Every write is scanned for secrets (API keys, private keys, tokens, `.env` lines) in the title,
+  body, summary, questions and refs. A hit rejects the write.
+- Inbox entries fade from agents' search after 30 days; a person still finds them.
 
 ## 7. How agents use it
 
@@ -188,17 +177,18 @@ artifact summary with links) and `supersede` when it found something newer than 
 
 ## 8. MCP tools and REST API (Layer 1)
 
-The six entry tools below are **planned, not built**. BUILD-PLAN step 2 proposes `capture`,
-`search`, `get` and `context_for_task` in their place.
+The memory tools are built (step 1). The `context` packet comes with step 2.
 
-| MCP tool | Does |
-|---|---|
-| `context` | the ranked, fenced packet for a scope and a task |
-| `search` | full-text search with filters: scope, kind, status, since |
-| `get` | one entry, with its supersede chain and answers |
-| `post` | create an entry: kind, scope, title, body, refs |
-| `supersede` | propose a replacement for an entry |
-| `ask` | post a question; returns its id and any answer so far |
+| MCP tool | REST | Does |
+|---|---|---|
+| `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
+| `search` | `GET /api/v1/entries?q=` | word search, any word may match, ranked; returns summaries, not bodies |
+| `get` | `GET /api/v1/entries/:id` | one entry with its body and every version |
+| `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |
+
+People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
+`/approve` and `/reject`. Run tokens have no verb for these routes, so a device cannot reach them
+yet; MCP clients can.
 
 `/mcp` serves MCP over streamable HTTP (`createMcpHandler`, `legacy: "stateless"`, so 2025-era
 clients work too); today it has `whoami`, the connection check, and the task board tools below. An MCP caller is the

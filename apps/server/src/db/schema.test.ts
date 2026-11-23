@@ -59,8 +59,8 @@ describe("migrations", () => {
       .from(sql`information_schema.tables`)
       .where(sql`table_schema = 'public' and table_name in (
       'workspaces','members','invites','projects','features','entries','audit_log','devices',
-      'device_codes')`);
-    expect(rows[0]?.n).toBe(9);
+      'device_codes','memories','entry_versions')`);
+    expect(rows[0]?.n).toBe(11);
   });
 
   it("index the expiry of pending device codes, which every /api/device/code purges by", async () => {
@@ -91,170 +91,22 @@ describe("harness seeds", () => {
   });
 });
 
-describe("entries", () => {
-  it("finds an entry by full-text search on a stemmed word of its body", async () => {
-    const w = await world("fts");
-    const hit = await seedEntry(db, {
-      workspaceId: w.workspaceId,
-      projectId: w.projectId,
-      kind: "lesson",
-      status: "approved",
-      title: "Boot notes",
-      body: "The quokkas were running migrations twice.",
-    });
-    await seedEntry(db, {
-      workspaceId: w.workspaceId,
-      projectId: w.projectId,
-      kind: "lesson",
-      status: "approved",
-      title: "Unrelated",
-      body: "Nothing to see here.",
-    });
-    const rows = await db
-      .select({ id: entries.id })
-      .from(entries)
-      .where(
-        sql`${entries.search} @@ websearch_to_tsquery('english', 'quokka')`,
-      );
-    expect(rows.map((r) => r.id)).toEqual([hit.id]);
-  });
-
-  it("gives unique, growing seq values, and a status update that draws nextval gets a higher seq", async () => {
-    const w = await world("seq");
-    const made = [];
-    for (let i = 0; i < 3; i += 1) {
-      made.push(
-        await seedEntry(db, {
-          workspaceId: w.workspaceId,
-          kind: "note",
-          status: "approved",
-          title: `n${i}`,
-          body: "b",
-        }),
-      );
-    }
-    const seqs = made.map((m) => m.seq);
-    expect(new Set(seqs).size).toBe(3);
-    expect([...seqs].sort((a, b) => a - b)).toEqual(seqs);
-    expect(typeof seqs[0]).toBe("number");
-
-    const first = made[0]!;
-    const [updated] = await db
-      .update(entries)
-      .set({ status: "rejected", seq: sql`nextval('entries_seq')` })
-      .where(eq(entries.id, first.id))
-      .returning({ seq: entries.seq });
-    expect(updated!.seq).toBeGreaterThan(Math.max(...seqs));
-  });
-
-  it("refuses an entry whose project is in another workspace", async () => {
-    const a = await world("xa");
-    const b = await world("xb");
-    await expect(
-      seedEntry(db, {
-        workspaceId: a.workspaceId,
-        projectId: b.projectId,
-        kind: "note",
-        status: "approved",
-        title: "t",
-        body: "b",
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        message: expect.stringMatching(/entries_project_in_workspace_fk/),
-      },
-    });
-    await expect(
-      seedEntry(db, {
-        workspaceId: a.workspaceId,
-        projectId: a.projectId,
-        featureId: b.featureId,
-        kind: "note",
-        status: "approved",
-        title: "t",
-        body: "b",
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        message: expect.stringMatching(/entries_feature_in_project_fk/),
-      },
-    });
-  });
-
-  it("refuses a feature without a project and a confidence outside 0..1", async () => {
-    const w = await world("chk");
-    await expect(
-      seedEntry(db, {
-        workspaceId: w.workspaceId,
-        featureId: w.featureId,
-        kind: "note",
-        status: "approved",
-        title: "t",
-        body: "b",
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        message: expect.stringMatching(/entries_feature_needs_project/),
-      },
-    });
-    await expect(
-      db.insert(entries).values({
-        workspaceId: w.workspaceId,
-        kind: "note",
-        status: "approved",
-        title: "t",
-        body: "b",
-        authorKind: "human",
-        author: "u",
-        onBehalfOf: "u",
-        source: "human",
-        confidence: 1.5,
-      }),
-    ).rejects.toMatchObject({
-      cause: { message: expect.stringMatching(/entries_confidence_range/) },
-    });
-  });
-});
-
 describe("workspace delete", () => {
   async function deleteWorld() {
     const doomed = await world("doomed");
     const kept = await world("kept");
     for (const w of [doomed, kept]) {
-      const old = await seedEntry(db, {
-        workspaceId: w.workspaceId,
-        projectId: w.projectId,
-        featureId: w.featureId,
-        kind: "decision",
-        status: "superseded",
-        title: "old",
-        body: "b",
-      });
-      await seedEntry(db, {
-        workspaceId: w.workspaceId,
-        projectId: w.projectId,
-        kind: "decision",
-        status: "approved",
-        title: "new",
-        body: "b",
-        supersedes: old.id,
-      });
       const q = await seedEntry(db, {
         workspaceId: w.workspaceId,
-        projectId: w.projectId,
-        kind: "question",
-        status: "answered",
         title: "q",
         body: "b",
       });
       await seedEntry(db, {
         workspaceId: w.workspaceId,
-        projectId: w.projectId,
-        kind: "answer",
-        status: "approved",
+        layer: "long",
+        kind: "decision",
         title: "a",
         body: "b",
-        replyTo: q.id,
       });
       await db.insert(invites).values({
         workspaceId: w.workspaceId,
@@ -344,7 +196,7 @@ describe("workspace delete", () => {
       invites: 1,
       projects: 1,
       features: 1,
-      entries: 4,
+      entries: 2,
       audit: 1,
     });
   });

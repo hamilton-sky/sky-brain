@@ -36,6 +36,34 @@
       "when": 1794427110503,
       "tag": "0004_task-events-append-only",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795447691486,
+      "tag": "0005_memory-prep",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795447700307,
+      "tag": "0006_drop-old-entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795447731913,
+      "tag": "0007_memory-core",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795447746790,
+      "tag": "0008_memory-guards",
+      "breakpoints": true
     }
   ]
 }

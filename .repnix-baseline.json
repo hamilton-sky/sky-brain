@@ -123,15 +123,6 @@
       "line": 32
     },
     {
-      "fingerprint": "1112d946493305ca448c9fe8",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/db/entries-view.ts",
-      "line": 12
-    },
-    {
       "fingerprint": "e6c68b8ef94391831ab89e89",
       "provider": "Knip",
       "category": "dead-code",
@@ -355,15 +346,6 @@
       "scope": ".",
       "file": "db/schema.test.ts",
       "line": 21
-    },
-    {
-      "fingerprint": "5f7ea3c6a3c63d715dbc9e88",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "db/schema.ts",
-      "line": 200
     },
     {
       "fingerprint": "d4f24a60c6a7db1d07ede6fa",
@@ -670,6 +652,15 @@
       "scope": ".",
       "file": "App.tsx",
       "line": 176
+    },
+    {
+      "fingerprint": "71b0418bd5c6aed6dd4e6dc8",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "db/schema.ts",
+      "line": 99
     }
   ]
 }

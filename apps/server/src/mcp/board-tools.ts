@@ -20,7 +20,7 @@ type ToolResult = {
 };
 
 /** A 2xx answer as the tool's result; anything else as a tool error carrying the API error. */
-function toToolResult(res: BoardResponse): ToolResult {
+export function toToolResult(res: BoardResponse): ToolResult {
   const ok = res.status >= 200 && res.status < 300;
   const body =
     res.body !== null && typeof res.body === "object"
@@ -39,8 +39,8 @@ function toToolResult(res: BoardResponse): ToolResult {
   };
 }
 
-const READ = { readOnlyHint: true, openWorldHint: false } as const;
-const WRITE = { readOnlyHint: false, openWorldHint: false } as const;
+export const READ = { readOnlyHint: true, openWorldHint: false } as const;
+export const WRITE = { readOnlyHint: false, openWorldHint: false } as const;
 const claimSeq = z
   .int()
   .min(1)
