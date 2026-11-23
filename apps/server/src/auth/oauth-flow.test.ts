@@ -394,4 +394,20 @@ describe("pages", () => {
     }
     expect(script.text).not.toContain("innerHTML");
   });
+
+  it("pages: the consent page links its own stylesheet and has no inline style", async () => {
+    const page = await server.browser().request("/consent");
+    expect(page.text).toContain(
+      '<link rel="stylesheet" href="/auth-pages/consent.css" />',
+    );
+    expect(page.text).not.toMatch(/<style|\sstyle="/);
+    const css = await server.browser().request("/auth-pages/consent.css");
+    expect(css.status).toBe(200);
+    expect(css.headers.get("content-type") ?? "").toMatch(/^text\/css/);
+    expect(css.headers.get("content-security-policy")).toContain(
+      "default-src 'self'",
+    );
+    expect(css.text).toContain("prefers-reduced-motion");
+    expect(css.text).toContain(".card");
+  });
 });
