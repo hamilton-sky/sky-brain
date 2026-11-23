@@ -1,5 +1,14 @@
 // The agents page (D25 part 1): name the roles your agents play, and choose which role each
 // connected app acts as. Everything an agent writes then carries that role as its byline.
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  SelectField,
+  Skeleton,
+  TextField,
+} from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, type AgentProfile, type ConnectedApp } from "./api.ts";
@@ -39,9 +48,9 @@ export function Agents() {
 
   if (!data) {
     return error ? (
-      <p className="error">{error}</p>
+      <Alert tone="error">{error}</Alert>
     ) : (
-      <p className="muted">Loading agents…</p>
+      <Skeleton className="loading" />
     );
   }
   const unused = TEMPLATES.filter(
@@ -50,14 +59,14 @@ export function Agents() {
 
   return (
     <>
-      {error && <p className="error">{error}</p>}
-      <section className="card">
+      {error && <Alert tone="error">{error}</Alert>}
+      <Card>
         <div className="section-head">
           <h2>Roles</h2>
           {!adding && (
-            <button className="button" onClick={() => setAdding(true)}>
+            <Button variant="secondary" onClick={() => setAdding(true)}>
               New role
-            </button>
+            </Button>
           )}
         </div>
         <p className="muted">
@@ -77,11 +86,12 @@ export function Agents() {
         )}
         {data.profiles.map((p) => (
           <div className="row" key={p.id}>
-            <span>
-              <strong>{p.display_name}</strong>{" "}
-              <span className="muted small">
-                {p.slug} · {p.kind}
-              </span>
+            <span className="row">
+              <strong>{p.display_name}</strong>
+              <span className="muted small">{p.slug}</span>
+              <Badge tone={p.kind === "steward" ? "accent" : "neutral"}>
+                {p.kind}
+              </Badge>
             </span>
             <button
               className="link"
@@ -95,20 +105,20 @@ export function Agents() {
           <div className="row">
             <span className="muted small">Quick add:</span>
             {unused.map((t) => (
-              <button
+              <Button
                 key={t.slug}
-                className="button"
+                variant="quiet"
                 onClick={() =>
                   void run(api.createAgentProfile(t.slug, t.name, t.kind))
                 }
               >
                 {t.name}
-              </button>
+              </Button>
             ))}
           </div>
         )}
-      </section>
-      <section className="card">
+      </Card>
+      <Card>
         <h2>Connected apps</h2>
         {data.apps.length === 0 && (
           <p className="muted">
@@ -117,24 +127,23 @@ export function Agents() {
           </p>
         )}
         {data.apps.map((app) => (
-          <label className="row" key={app.client_id}>
-            <span>{appLabel(app)}</span>
-            <select
-              value={app.profile_id ?? ""}
-              onChange={(e) =>
-                void run(api.bindApp(app.client_id, e.target.value || null))
-              }
-            >
-              <option value="">Guest</option>
-              {data.profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.display_name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            key={app.client_id}
+            label={appLabel(app)}
+            value={app.profile_id ?? ""}
+            onChange={(e) =>
+              void run(api.bindApp(app.client_id, e.target.value || null))
+            }
+          >
+            <option value="">Guest</option>
+            {data.profiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.display_name}
+              </option>
+            ))}
+          </SelectField>
         ))}
-      </section>
+      </Card>
     </>
   );
 }
@@ -155,45 +164,39 @@ function NewProfile(props: { onDone: (created: boolean) => void }) {
         )
       }
     >
-      <label>
-        <span className="muted">Name</span>
-        <input
-          autoFocus
-          required
-          maxLength={60}
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setSlug(
-              e.target.value
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/^[^a-z]+|-+$/g, "")
-                .slice(0, 24),
-            );
-          }}
-        />
-      </label>
-      <label>
-        <span className="muted">Short id</span>
-        <input
-          required
-          maxLength={24}
-          pattern="[a-z][a-z0-9-]*"
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-        />
-      </label>
-      <label>
-        <span className="muted">Kind</span>
-        <select
-          value={kind}
-          onChange={(e) => setKind(e.target.value as AgentProfile["kind"])}
-        >
-          <option value="worker">Worker: does your work</option>
-          <option value="steward">Steward: keeps the memory healthy</option>
-        </select>
-      </label>
+      <TextField
+        label="Name"
+        autoFocus
+        required
+        maxLength={60}
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          setSlug(
+            e.target.value
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^[^a-z]+|-+$/g, "")
+              .slice(0, 24),
+          );
+        }}
+      />
+      <TextField
+        label="Short id"
+        required
+        maxLength={24}
+        pattern="[a-z][a-z0-9-]*"
+        value={slug}
+        onChange={(e) => setSlug(e.target.value)}
+      />
+      <SelectField
+        label="Kind"
+        value={kind}
+        onChange={(e) => setKind(e.target.value as AgentProfile["kind"])}
+      >
+        <option value="worker">Worker: does your work</option>
+        <option value="steward">Steward: keeps the memory healthy</option>
+      </SelectField>
       <FormFooter
         error={error}
         submitLabel="Create"

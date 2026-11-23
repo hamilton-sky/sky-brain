@@ -1,4 +1,18 @@
-// The board page: who is signed in, a project picker, and the project's goals.
+// The app: panel-frame-ui's dashboard shell (sidebar with Board and Agents, a toolbar with the
+// theme picker and sign out) in sky-brain's Constellation Night theme (theme.css), around the
+// board (a project picker and the project's goals) or the agents page.
+import {
+  Alert,
+  Button,
+  DashboardShell,
+  EmptyState,
+  PageHeader,
+  SelectField,
+  Skeleton,
+  TextField,
+  ThemeControl,
+  ThemeProvider,
+} from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
@@ -6,6 +20,8 @@ import { Agents } from "./Agents.tsx";
 import { Board } from "./Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
+// The key public/theme-init.js and the sign-in and consent pages read too.
+const THEME = { type: "localStorage", key: "sky-brain-theme" } as const;
 
 function remembered(): string | null {
   try {
@@ -24,8 +40,17 @@ function remember(id: string): void {
 }
 
 export function App() {
+  return (
+    <ThemeProvider persistence={THEME} systemMode="resolved">
+      <Root />
+    </ThemeProvider>
+  );
+}
+
+function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<Page>("board");
 
   useEffect(() => {
     api.me().then(setMe, (err: unknown) => {
@@ -34,80 +59,102 @@ export function App() {
     });
   }, []);
 
-  if (error)
-    return (
-      <Shell>
-        <p className="error">{error}</p>
-      </Shell>
-    );
-  if (me === null)
-    return (
-      <Shell>
-        <p className="muted">Loading…</p>
-      </Shell>
-    );
-  if (me === "signed-out") {
-    return (
-      <Shell>
-        <section className="card center">
-          <h2>Sign in to see your board</h2>
-          <p className="muted">
-            Goals and tasks your agents propose wait here for your approval.
-          </p>
-          <a className="button primary" href="/sign-in">
-            Sign in
-          </a>
-        </section>
-      </Shell>
-    );
-  }
-  return <SignedIn me={me} />;
-}
-
-function SignedIn({ me }: { me: Me }) {
-  const [page, setPage] = useState<"board" | "agents">("board");
+  const signedIn = me !== null && me !== "signed-out" ? me : undefined;
   return (
-    <Shell me={me}>
-      <nav className="toolbar">
-        <button
-          className={page === "board" ? "button primary" : "button"}
-          onClick={() => setPage("board")}
-        >
-          Board
-        </button>
-        <button
-          className={page === "agents" ? "button primary" : "button"}
-          onClick={() => setPage("agents")}
-        >
-          Agents
-        </button>
-      </nav>
-      {page === "board" ? <Projects me={me} /> : <Agents />}
+    <Shell me={signedIn} page={page} onPage={setPage}>
+      {error ? (
+        <Alert tone="error">{error}</Alert>
+      ) : me === null ? (
+        <Skeleton className="loading" />
+      ) : me === "signed-out" ? (
+        <EmptyState
+          title="Sign in to see your board"
+          description="Goals and tasks your agents propose wait here for your approval."
+          action={
+            <a className="pf-button pf-button-primary" href="/sign-in">
+              Sign in
+            </a>
+          }
+        />
+      ) : page === "board" ? (
+        <>
+          <PageHeader
+            eyebrow="Board"
+            title="Goals"
+            description="What your agents propose waits here. Only you approve."
+          />
+          <Projects me={me} />
+        </>
+      ) : (
+        <>
+          <PageHeader
+            eyebrow="Agents"
+            title="Roles and connected apps"
+            description="Name the roles your agents play, and pick the role each app acts as."
+          />
+          <Agents />
+        </>
+      )}
     </Shell>
   );
 }
 
-function Shell(props: { me?: Me; children: React.ReactNode }) {
+type Page = "board" | "agents";
+const PAGES: { id: Page; label: string }[] = [
+  { id: "board", label: "Board" },
+  { id: "agents", label: "Agents" },
+];
+
+function Shell(props: {
+  me?: Me;
+  page: Page;
+  onPage: (page: Page) => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="page">
-      <header className="top">
-        <h1>sky-brain</h1>
-        {props.me && (
-          <div className="who">
-            <span className="muted">{props.me.email}</span>
-            <button
-              className="link"
+    <DashboardShell
+      brand={
+        <span className="pf-brand">
+          <span>
+            sky<span className="dash">-</span>brain
+          </span>
+        </span>
+      }
+      navigation={
+        props.me &&
+        PAGES.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="pf-sidebar-link"
+            aria-current={props.page === p.id ? "page" : undefined}
+            onClick={() => props.onPage(p.id)}
+          >
+            {p.label}
+          </button>
+        ))
+      }
+      sidebarFooter={
+        props.me && <span className="muted small who">{props.me.email}</span>
+      }
+      toolbar={
+        <div className="row">
+          <ThemeControl />
+          {props.me && (
+            <Button
+              variant="secondary"
               onClick={() => {
                 void api.signOut().then(() => location.reload());
               }}
             >
               Sign out
-            </button>
-          </div>
-        )}
-      </header>
-      <main>{props.children}</main>
-    </div>
+            </Button>
+          )}
+        </div>
+      }
+    >
+      {props.children}
+    </DashboardShell>
   );
 }
 
@@ -124,9 +171,9 @@ function Projects({ me }: { me: Me }) {
 
   if (projects === null) {
     return error ? (
-      <p className="error">{error}</p>
+      <Alert tone="error">{error}</Alert>
     ) : (
-      <p className="muted">Loading projects…</p>
+      <Skeleton className="loading" />
     );
   }
   const current =
@@ -137,27 +184,25 @@ function Projects({ me }: { me: Me }) {
     <>
       <section className="toolbar">
         {projects.length > 0 && (
-          <label>
-            <span className="muted">Project</span>
-            <select
-              value={current?.id ?? ""}
-              onChange={(e) => {
-                setSelected(e.target.value);
-                remember(e.target.value);
-              }}
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            label="Project"
+            value={current?.id ?? ""}
+            onChange={(e) => {
+              setSelected(e.target.value);
+              remember(e.target.value);
+            }}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </SelectField>
         )}
         {writable.length > 0 && !adding && (
-          <button className="button" onClick={() => setAdding(true)}>
+          <Button variant="secondary" onClick={() => setAdding(true)}>
             New project
-          </button>
+          </Button>
         )}
       </section>
       {adding && (
@@ -173,15 +218,15 @@ function Projects({ me }: { me: Me }) {
           }}
         />
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <Alert tone="error">{error}</Alert>}
       {current ? (
         <Board key={current.id} project={current} />
       ) : (
         !adding && (
-          <section className="card center">
-            <h2>No projects yet</h2>
-            <p className="muted">Create a project to start a board.</p>
-          </section>
+          <EmptyState
+            title="No projects yet"
+            description="Create a project to start a board."
+          />
         )
       )}
     </>
@@ -197,37 +242,33 @@ function NewProject(props: {
   const { busy, error, submit } = useFormSubmit();
   return (
     <form
-      className="card form"
+      className="pf-card form"
       onSubmit={(e) =>
         submit(e, () => api.createProject(workspace, name).then(props.onDone))
       }
     >
       <h2>New project</h2>
       {props.workspaces.length > 1 && (
-        <label>
-          <span className="muted">Workspace</span>
-          <select
-            value={workspace}
-            onChange={(e) => setWorkspace(e.target.value)}
-          >
-            {props.workspaces.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Workspace"
+          value={workspace}
+          onChange={(e) => setWorkspace(e.target.value)}
+        >
+          {props.workspaces.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </SelectField>
       )}
-      <label>
-        <span className="muted">Name</span>
-        <input
-          autoFocus
-          required
-          maxLength={120}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </label>
+      <TextField
+        label="Name"
+        autoFocus
+        required
+        maxLength={120}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <FormFooter
         error={error}
         submitLabel="Create"

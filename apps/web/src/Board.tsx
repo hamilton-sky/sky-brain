@@ -1,5 +1,14 @@
 // One project's goals: newest first, each with its task counts; open one to see its tasks and
 // approve, cancel or release it. Only a person can do those, so they live here, not in MCP.
+import {
+  Alert,
+  Badge,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Skeleton,
+  TextField,
+} from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import {
@@ -18,6 +27,19 @@ const STATUS_ORDER: TaskStatus[] = [
   "failed",
   "done",
 ];
+type Tone = "neutral" | "success" | "warning" | "danger" | "accent";
+const STATUS_TONE: Record<TaskStatus, Tone> = {
+  pending: "neutral",
+  in_progress: "accent",
+  done: "success",
+  failed: "danger",
+  blocked: "warning",
+};
+const GOAL_TONE: Record<string, Tone> = {
+  draft: "warning",
+  approved: "success",
+  held: "danger",
+};
 const STATUS_LABEL: Record<TaskStatus, string> = {
   pending: "waiting",
   in_progress: "running",
@@ -52,9 +74,9 @@ export function Board({ project }: { project: Project }) {
       <div className="section-head">
         <h2>Goals</h2>
         {!adding && (
-          <button className="button" onClick={() => setAdding(true)}>
+          <Button variant="secondary" onClick={() => setAdding(true)}>
             New goal
-          </button>
+          </Button>
         )}
       </div>
       {adding && (
@@ -66,16 +88,14 @@ export function Board({ project }: { project: Project }) {
           }}
         />
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <Alert tone="error">{error}</Alert>}
       {goals === null ? (
-        <p className="muted">Loading goals…</p>
+        <Skeleton className="loading" />
       ) : goals.length === 0 ? (
-        <section className="card center">
-          <p className="muted">
-            No goals yet. Ask Claude to propose one with the sky-brain
-            connector, or add one here.
-          </p>
-        </section>
+        <EmptyState
+          title="No goals yet"
+          description="Ask Claude to propose one with the sky-brain connector, or add one here."
+        />
       ) : (
         <ul className="goals">
           {goals.map((g) => (
@@ -93,9 +113,9 @@ function Counts({ counts }: { counts: Goal["counts"] }) {
   return (
     <span className="counts">
       {parts.map((s) => (
-        <span key={s} className={`pill status-${s}`}>
+        <Badge key={s} tone={STATUS_TONE[s]}>
           {counts[s]} {STATUS_LABEL[s]}
-        </span>
+        </Badge>
       ))}
     </span>
   );
@@ -106,6 +126,7 @@ function GoalCard({ goal, onChanged }: { goal: Goal; onChanged: () => void }) {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const loadTasks = useCallback(() => {
     api.goal(goal.id).then(
@@ -141,16 +162,16 @@ function GoalCard({ goal, onChanged }: { goal: Goal; onChanged: () => void }) {
   };
 
   return (
-    <li className={`card goal goal-${goal.status}`}>
+    <li className={`pf-card goal goal-${goal.status}`}>
       <button
         className="goal-head"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
         <span className="goal-title">
-          <span className={`badge badge-${held ? "held" : goal.status}`}>
+          <Badge tone={GOAL_TONE[held ? "held" : goal.status] ?? "neutral"}>
             {held ? "held" : goal.status}
-          </span>
+          </Badge>
           {goal.title}
         </span>
         <Counts counts={goal.counts} />
@@ -165,14 +186,14 @@ function GoalCard({ goal, onChanged }: { goal: Goal; onChanged: () => void }) {
             · {new Date(goal.created_at).toLocaleString()}
           </p>
           {held && (
-            <p className="warn">
+            <Alert tone="warning">
               Held because it looks like {goal.quarantined_because}. Read it
               before releasing.
-            </p>
+            </Alert>
           )}
           <p className="body">{goal.body}</p>
           {tasks === null ? (
-            <p className="muted">Loading tasks…</p>
+            <Skeleton className="loading" />
           ) : (
             <ol className="tasks">
               {tasks.map((t) => (
@@ -187,45 +208,52 @@ function GoalCard({ goal, onChanged }: { goal: Goal; onChanged: () => void }) {
             </ol>
           )}
           {goal.status === "approved" && unpinned && (
-            <p className="warn small">
+            <Alert tone="warning">
               Some tasks changed or were added after approval. They wait until
               you approve again.
-            </p>
+            </Alert>
           )}
-          {error && <p className="error">{error}</p>}
+          {error && <Alert tone="error">{error}</Alert>}
           <div className="row">
             {canApprove && (
-              <button
-                className="button primary"
+              <Button
                 disabled={busy}
                 onClick={() => act(() => api.goalAction(goal.id, "approve"))}
               >
                 Approve
-              </button>
+              </Button>
             )}
             {held && (
-              <button
-                className="button"
+              <Button
+                variant="secondary"
                 disabled={busy}
                 onClick={() => act(() => api.goalAction(goal.id, "release"))}
               >
                 Release
-              </button>
+              </Button>
             )}
             {goal.status !== "cancelled" && (
-              <button
-                className="button danger"
+              <Button
+                variant="danger"
                 disabled={busy}
-                onClick={() => {
-                  if (confirm(`Cancel "${goal.title}"?`)) {
-                    act(() => api.goalAction(goal.id, "cancel"));
-                  }
-                }}
+                onClick={() => setConfirming(true)}
               >
                 Cancel goal
-              </button>
+              </Button>
             )}
           </div>
+          <ConfirmDialog
+            open={confirming}
+            onOpenChange={setConfirming}
+            title={`Cancel "${goal.title}"?`}
+            description="Its tasks stop and agents will not pick them up again."
+            confirmLabel="Cancel goal"
+            cancelLabel="Keep it"
+            onConfirm={() => {
+              setConfirming(false);
+              act(() => api.goalAction(goal.id, "cancel"));
+            }}
+          />
         </div>
       )}
     </li>
@@ -246,11 +274,11 @@ function TaskRow(props: {
   return (
     <li className="task">
       <div className="task-head">
-        <span className={`pill status-${task.status}`}>
+        <Badge tone={STATUS_TONE[task.status]}>
           {STATUS_LABEL[task.status]}
-        </span>
+        </Badge>
         <span className="task-title">{task.title}</span>
-        {!task.pinned && <span className="pill">not approved</span>}
+        {!task.pinned && <Badge tone="warning">not approved</Badge>}
       </div>
       <p className="body small">{task.body}</p>
       <p className="muted small">
@@ -294,7 +322,7 @@ function NewGoal(props: {
   const { busy, error, submit } = useFormSubmit();
   return (
     <form
-      className="card form"
+      className="pf-card form"
       onSubmit={(e) =>
         submit(e, () =>
           api
@@ -303,19 +331,18 @@ function NewGoal(props: {
         )
       }
     >
-      <label>
-        <span className="muted">Title</span>
-        <input
-          autoFocus
-          required
-          maxLength={200}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </label>
-      <label>
-        <span className="muted">What done looks like</span>
+      <TextField
+        label="Title"
+        autoFocus
+        required
+        maxLength={200}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <label className="pf-field">
+        <span className="pf-field-label">What done looks like</span>
         <textarea
+          className="pf-input"
           rows={4}
           value={body}
           onChange={(e) => setBody(e.target.value)}

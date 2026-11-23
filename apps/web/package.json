@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "panel-frame-ui": "0.2.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

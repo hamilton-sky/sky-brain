@@ -434,3 +434,23 @@ schema sits at the centre (Conway), so the rings show how active a memory is, no
 **How:** still no inline script or style under `default-src 'self'`: the stylesheet is
 `/auth-pages/sign-in.css`, and the brain (plain canvas, no library) is part of
 `/auth-pages/sign-in.js`. Motion stops under `prefers-reduced-motion`.
+
+
+### D28. One theme for the whole product, with panel-frame-ui in the web app
+
+**Date:** 2026-11-24. **Decided by:** shammai (asked to use panel-frame-ui and one theme style,
+then chose "keep light, fix it" after a design and an accessibility review).
+**Decision:** the web app uses panel-frame-ui (pinned at 0.2.5): its dashboard shell, buttons,
+cards, badges, fields, alerts and confirm dialog. Its `--pf-*` tokens are mapped to the sign-in
+page's Constellation Night colours (`apps/web/src/theme.css`, `pages/base-style.ts`). Dark and
+light both stay. The device setting picks one, and a theme picker in the app can override it.
+The choice is saved as `sky-brain-theme` in localStorage, and the sign-in and consent pages read
+it too. Light is a "dawn star chart": a cool sky, ink stars and brain points, and more solid
+cards. The layer colours were darkened to pass 4.5:1.
+**Why:** light reads better in daylight, for people with astigmatism, and for low vision, and
+it respects the device setting. The old light theme looked weak because it copied the night sky,
+not because light mode is wrong. One look across sign-in, consent and the app makes sky-brain
+feel like one product.
+**How:** no inline script anywhere. The app applies the saved theme before paint with
+`/theme-init.js`, a file. The auth pages do it as the first part of their single script.
+panel-frame-ui's own `getThemeBootstrapScript` is inline, so it is not used.

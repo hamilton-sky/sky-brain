@@ -108,6 +108,9 @@ importers:
 
   apps/web:
     dependencies:
+      panel-frame-ui:
+        specifier: 0.2.5
+        version: 0.2.5(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -2512,6 +2515,13 @@ packages:
 
   package-manager-detector@1.9.0:
     resolution: {integrity: sha512-zAMfbta9nPA8AKkA4WdmNAT8R8s6Dk0/xwPsqNnRidMFcLo1YkLuPDTgs2f64XdzS8vbLNnoJ+uUIkgbz7oRHA==}
+
+  panel-frame-ui@0.2.5:
+    resolution: {integrity: sha512-m9k0gHqQIP0dcLNsuHQVsWzVcPstW2fJ3iqVakZmHpu+iw5dYv2NgTCOlbHYqNLmDfiu/MtC60LmwZxa0cAaOg==}
+    engines: {node: '>=22.14.0'}
+    peerDependencies:
+      react: '>=19.0.0 <20.0.0'
+      react-dom: '>=19.0.0 <20.0.0'
 
   parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
@@ -5157,6 +5167,11 @@ snapshots:
       p-limit: 3.1.0
 
   package-manager-detector@1.9.0: {}
+
+  panel-frame-ui@0.2.5(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+    dependencies:
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
 
   parseurl@1.3.3: {}
 

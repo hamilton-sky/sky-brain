@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
+import "panel-frame-ui/styles.css";
+import "./theme.css";
 import "./styles.css";
 
 const root = document.getElementById("root");

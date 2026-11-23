@@ -1,0 +1,170 @@
+/* sky-brain's theme, Constellation Night (D27), the same colours as the sign-in and consent
+   pages (apps/server/src/auth/pages/base-style.ts). It sets panel-frame-ui's --pf-* tokens, and
+   the app's own tokens that styles.css uses. Dark applies when <html> has data-theme="dark":
+   public/theme-init.js and ThemeProvider (systemMode "resolved") set it from the picker's
+   choice, or from the device setting when the choice is System. */
+:root {
+  color-scheme: light;
+  /* Light is a dawn star chart: a cool clear sky with ink stars, not a faded night. */
+  --sky-top: #dce3f7;
+  --sky-mid: #eceff9;
+  --sky-low: #f5f6fb;
+  --glow: rgba(91, 79, 224, 0.1);
+  --star: rgba(30, 34, 96, 0.6);
+  --star-dim: rgba(30, 34, 96, 0.28);
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-strong: rgba(255, 255, 255, 0.95);
+  --l-core: #8a5a12;
+  --l-work: #0b6b62;
+  --l-short: #6d55d8;
+  --l-long: #2f5fd0;
+
+  --pf-font:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --pf-background: transparent;
+  --pf-surface: var(--glass);
+  --pf-surface-raised: var(--glass-strong);
+  --pf-text: #171a3a;
+  --pf-muted: #4a4e72;
+  --pf-border: rgba(23, 26, 58, 0.14);
+  --pf-accent: #3d3fb8;
+  --pf-accent-contrast: #ffffff;
+  --pf-danger: #b42318;
+  --pf-danger-surface: #fde8e6;
+  --pf-success: #22663f;
+  --pf-success-surface: #e3f5e8;
+  --pf-warning: #8a5a00;
+  --pf-warning-surface: #fff3d6;
+  --pf-shadow: 0 18px 48px -24px rgba(40, 46, 110, 0.35);
+  --pf-radius-md: 14px;
+  --pf-radius-lg: 18px;
+  --pf-content-width: 980px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sky-top: #03040c;
+  --sky-mid: #0a0d26;
+  --sky-low: #161a44;
+  --glow: rgba(120, 140, 255, 0.14);
+  --star: rgba(226, 232, 255, 0.85);
+  --star-dim: rgba(200, 210, 255, 0.38);
+  --glass: rgba(18, 22, 56, 0.58);
+  --glass-strong: rgba(22, 27, 66, 0.94);
+  --l-core: #f3c677;
+  --l-work: #5fd3c4;
+  --l-short: #b3a6ff;
+  --l-long: #86a8ff;
+  --pf-text: #eef1ff;
+  --pf-muted: #a9b0d6;
+  --pf-border: rgba(190, 200, 255, 0.16);
+  --pf-accent: #b9c6ff;
+  --pf-accent-contrast: #0b0e2a;
+  --pf-danger: #ff8a7e;
+  --pf-danger-surface: rgba(120, 30, 30, 0.35);
+  --pf-success: #7fd3a0;
+  --pf-success-surface: rgba(30, 90, 55, 0.35);
+  --pf-warning: #f0c46a;
+  --pf-warning-surface: rgba(110, 80, 20, 0.35);
+  --pf-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.7);
+}
+
+/* The night sky behind every screen, as on the sign-in page. */
+html {
+  background: var(--sky-mid);
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--pf-font);
+  color: var(--pf-text);
+  background:
+    radial-gradient(ellipse 70% 30% at 50% 0%, var(--glow), transparent 70%),
+    linear-gradient(
+        180deg,
+        var(--sky-top) 0%,
+        var(--sky-mid) 40%,
+        var(--sky-low) 100%
+      )
+      fixed;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, var(--star) 50%, transparent 52%),
+    radial-gradient(1px 1px at 37% 72%, var(--star-dim) 50%, transparent 52%),
+    radial-gradient(1.4px 1.4px at 64% 28%, var(--star) 50%, transparent 52%),
+    radial-gradient(1px 1px at 82% 61%, var(--star-dim) 50%, transparent 52%),
+    radial-gradient(1px 1px at 23% 47%, var(--star-dim) 50%, transparent 52%),
+    radial-gradient(1.1px 1.1px at 91% 12%, var(--star) 50%, transparent 52%);
+  background-size: 290px 290px;
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+.pf-sidebar,
+.pf-dashboard-toolbar {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.pf-card {
+  box-shadow: var(--pf-shadow);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.pf-brand .dash {
+  color: var(--pf-muted);
+  font-weight: 400;
+}
+.pf-brand::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: var(--pf-accent);
+  clip-path: polygon(
+    50% 0,
+    61% 39%,
+    100% 50%,
+    61% 61%,
+    50% 100%,
+    39% 61%,
+    0 50%,
+    39% 39%
+  );
+}
+
+/* panel-frame-ui 0.2.5 declares .pf-alert after its tones, so every alert looks neutral; the
+   doubled class puts the tone back. Drop this once the library orders them the other way. */
+.pf-alert.pf-alert-warning {
+  border-color: color-mix(in srgb, var(--pf-warning) 22%, var(--pf-border));
+  color: var(--pf-warning);
+  background: var(--pf-warning-surface);
+}
+.pf-alert.pf-alert-error {
+  border-color: color-mix(in srgb, var(--pf-danger) 24%, var(--pf-border));
+  color: var(--pf-danger);
+  background: var(--pf-danger-surface);
+}
+.pf-alert.pf-alert-success {
+  border-color: color-mix(in srgb, var(--pf-success) 22%, var(--pf-border));
+  color: var(--pf-success);
+  background: var(--pf-success-surface);
+}
+
+/* The sidebar's pages are buttons (the app has no router), so they drop the button look. */
+button.pf-sidebar-link {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  background: none;
+}
+button.pf-sidebar-link:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
