@@ -1,32 +1,46 @@
 // The consent page (spec.md Interfaces -> The pages, § UI). Served by routes.ts with
 // `default-src 'self'`, so there is no inline script or style, and text is set only with
-// textContent: the client name comes from a stranger's metadata document.
+// textContent: the client name comes from a stranger's metadata document. It wears the entry
+// page's look (D27): its stylesheet is /auth-pages/consent.css and a small star brain sits
+// above the card.
+import { brainScript } from "./brain-script.ts";
+import { style } from "./consent-style.ts";
+
 export const html = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Allow access - sky-brain</title>
+    <link rel="stylesheet" href="/auth-pages/consent.css" />
   </head>
   <body>
-    <main>
-      <h1>sky-brain</h1>
-      <p>
-        <span id="client-name">An app</span> wants to use sky-brain as
-        <span id="email">you</span>.
-      </p>
-      <p>It will return you to: <strong id="redirect-host"></strong></p>
-      <p>Access: <span id="scopes"></span></p>
-      <button type="button" id="allow">Allow</button>
-      <button type="button" id="deny">Deny</button>
-      <p id="status" role="status"></p>
+    <main class="wrap consent">
+      <span class="wordmark">sky<span class="dash">-</span>brain</span>
+      <canvas data-brain aria-hidden="true"></canvas>
+      <section class="card" aria-labelledby="ask">
+        <h1 id="ask">
+          <span id="client-name" class="app">An app</span> wants to use your sky-brain
+        </h1>
+        <dl class="facts">
+          <div><dt>Signed in as</dt><dd id="email">you</dd></div>
+          <div><dt>Returns you to</dt><dd id="redirect-host"></dd></div>
+          <div><dt>Access</dt><dd id="scopes"></dd></div>
+        </dl>
+        <div class="actions">
+          <button type="button" id="deny" class="btn btn-ghost">Deny</button>
+          <button type="button" id="allow" class="btn btn-primary">Allow</button>
+        </div>
+        <p id="status" role="status"></p>
+        <p class="fine">Allow only apps you trust. They will use sky-brain as you, with the access above.</p>
+      </section>
     </main>
     <script src="/auth-pages/consent.js" defer></script>
   </body>
 </html>
 `;
 
-export const script = `"use strict";
+const consentScript = `"use strict";
 (function () {
   var params = new URLSearchParams(location.search);
   var clientId = params.get("client_id") || "";
@@ -116,3 +130,7 @@ export const script = `"use strict";
   });
 })();
 `;
+
+export { style };
+// The small star brain above the card comes first, so the page keeps a single script.
+export const script = [brainScript, consentScript].join("\n");

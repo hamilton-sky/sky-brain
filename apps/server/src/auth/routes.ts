@@ -4,8 +4,12 @@ import { toNodeHandler } from "better-auth/node";
 import type express from "express";
 import type { Auth } from "./auth.ts";
 import { stripStateSuffix } from "./perminister-oidc.ts";
-import * as consentPage from "./pages/consent.ts";
 // Named imports, so dead-code checks see each part of the page in use.
+import {
+  html as consentHtml,
+  script as consentScript,
+  style as consentStyle,
+} from "./pages/consent.ts";
 import {
   html as signInHtml,
   script as signInScript,
@@ -21,7 +25,7 @@ interface Page {
 
 const pages: Record<string, Page> = {
   "sign-in": { html: signInHtml, script: signInScript, style: signInStyle },
-  consent: consentPage,
+  consent: { html: consentHtml, script: consentScript, style: consentStyle },
 };
 
 /** Pages ship inside the bundle as strings (spec.md Decisions); an empty one is not built yet. */
