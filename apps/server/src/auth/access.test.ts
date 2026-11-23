@@ -251,4 +251,23 @@ describe("pages", () => {
     expect(script.text).toContain("textContent");
     expect(script.text).not.toContain("innerHTML");
   });
+
+  it("pages: the entry page links its own stylesheet and has no inline style", async () => {
+    const page = await server.browser().request("/sign-in");
+    expect(page.text).toContain(
+      '<link rel="stylesheet" href="/auth-pages/sign-in.css" />',
+    );
+    expect(page.text).not.toMatch(/<style|\sstyle="/);
+    // The four memory layers, each with its own explanation to scroll to.
+    for (const id of ["about-me", "board", "inbox", "notebooks"]) {
+      expect(page.text).toContain(`id="${id}"`);
+    }
+    const css = await server.browser().request("/auth-pages/sign-in.css");
+    expect(css.status).toBe(200);
+    expect(css.headers.get("content-type") ?? "").toMatch(/^text\/css/);
+    expect(css.headers.get("content-security-policy")).toContain(
+      "default-src 'self'",
+    );
+    expect(css.text).toContain("prefers-reduced-motion");
+  });
 });

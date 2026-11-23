@@ -5,15 +5,22 @@ import type express from "express";
 import type { Auth } from "./auth.ts";
 import { stripStateSuffix } from "./perminister-oidc.ts";
 import * as consentPage from "./pages/consent.ts";
-import * as signInPage from "./pages/sign-in.ts";
+// Named imports, so dead-code checks see each part of the page in use.
+import {
+  html as signInHtml,
+  script as signInScript,
+  style as signInStyle,
+} from "./pages/sign-in.ts";
 
 interface Page {
   html: string;
   script: string;
+  /** The page's stylesheet, served as /auth-pages/<name>.css (no inline style under the CSP). */
+  style?: string;
 }
 
 const pages: Record<string, Page> = {
-  "sign-in": signInPage,
+  "sign-in": { html: signInHtml, script: signInScript, style: signInStyle },
   consent: consentPage,
 };
 
@@ -21,7 +28,7 @@ const pages: Record<string, Page> = {
 function sendPage(
   res: express.Response,
   body: string,
-  type: "html" | "text/javascript",
+  type: "html" | "text/javascript" | "text/css",
 ): void {
   res.set({
     "Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'",
@@ -82,5 +89,11 @@ export function mountAuth(app: express.Express, auth: Auth): void {
     app.get(`/auth-pages/${name}.js`, (_req, res) => {
       sendPage(res, page.script, "text/javascript");
     });
+    const { style } = page;
+    if (style !== undefined) {
+      app.get(`/auth-pages/${name}.css`, (_req, res) => {
+        sendPage(res, style, "text/css");
+      });
+    }
   }
 }

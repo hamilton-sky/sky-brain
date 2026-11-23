@@ -417,3 +417,20 @@ be undone. Limit: one role per app per person; to run two roles side by side, co
 **Open:** D25 parts 2 to 4 (scopes with step 6, then skills, then triggers); run tokens for
 devices get a profile when Pathly's client exists.
 
+
+### D27. The sign-in page is sky-brain's entry page
+
+**Date:** 2026-11-24. **Decided by:** shammai (picked the "Constellation Night" style, then "the
+landing page will be the entry page").
+**Decision:** `/sign-in` is also the page that explains sky-brain. It shows a 3D star brain
+coloured by memory layer, the sign-in button right under it, and the four layers as rings with
+About me in the centre (Board, Inbox, Notebooks outward). Clicking a ring scrolls to that layer's
+explanation, with what the matching part of a real brain does. The brain itself only lights up
+on hover.
+**Why:** people arriving from Claude still see the button without scrolling, and people who come
+to look first see how the memory works before they sign in. Rings follow the research in
+HUMAN-MEMORY.md: working memory is the active part of long-term memory (Cowan), and the self
+schema sits at the centre (Conway), so the rings show how active a memory is, not a hierarchy.
+**How:** still no inline script or style under `default-src 'self'`: the stylesheet is
+`/auth-pages/sign-in.css`, and the brain (plain canvas, no library) is part of
+`/auth-pages/sign-in.js`. Motion stops under `prefers-reduced-motion`.
