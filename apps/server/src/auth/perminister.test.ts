@@ -1,7 +1,35 @@
 import { describe, expect, it } from "vitest";
+import {
+  createFakePerminister,
+  type FakePerminister,
+} from "../testing/fake-perminister.ts";
 import { perministerProvider } from "./perminister.ts";
+import { s256, toPerministerAuthorizeUrl } from "./perminister-oidc.ts";
 
 const CLIENT_SECRET = "test-perminister-secret-not-real";
+const NONCE_KEY = "test-better-auth-secret-at-least-32-chars";
+
+/** Plays Better Auth's authorize URL, finished under `key`, through the fake's approve. */
+function approveFor(fake: FakePerminister, verifier: string, key: string) {
+  const q = new URLSearchParams({
+    response_type: "code",
+    client_id: "test-client-id",
+    state: "s".repeat(32),
+    redirect_uri: "https://brain.test/auth/perminister/callback",
+    code_challenge_method: "S256",
+    code_challenge: s256(verifier),
+  });
+  const url = toPerministerAuthorizeUrl(
+    `https://perminister.test/oauth/authorize?${q.toString()}`,
+    "https://perminister.test",
+    key,
+  );
+  const back = new URL(fake.approve(url), "https://brain.test");
+  return {
+    code: back.searchParams.get("code")!,
+    state: back.searchParams.get("state")!,
+  };
+}
 
 interface Call {
   url: string;
@@ -32,6 +60,7 @@ function provider(fetchImpl: typeof fetch) {
     clientId: "test-client-id",
     clientSecret: CLIENT_SECRET,
     publicUrl: "https://brain.test",
+    nonceKey: NONCE_KEY,
     fetch: fetchImpl,
   });
 }
@@ -62,33 +91,77 @@ describe("perministerProvider", () => {
     expect(p.pkce).toBe(true);
   });
 
-  it("perminister: getToken sends the client headers and names only the status on failure", async () => {
-    const ok = stubFetch(() => Response.json(exchange));
-    const tokens = await provider(ok.fetch).getToken!({
-      code: "the-code",
+  it("perminister: getToken exchanges at /oauth/token, checks the ID token, reads the session", async () => {
+    const fake = createFakePerminister({
+      baseUrl: "https://perminister.test",
+      clientId: "test-client-id",
+      clientSecret: CLIENT_SECRET,
+      publicUrl: "https://brain.test",
+    });
+    fake.setAccount({ subjectId: "subject-1", email: "ann@example.com" });
+    const calls: Call[] = [];
+    const spy = (input: RequestInfo | URL, init: RequestInit = {}) => {
+      calls.push({
+        url:
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url,
+        init,
+      });
+      return fake.fetch(input, init);
+    };
+    const verifier = "v".repeat(43);
+    const { code } = approveFor(fake, verifier, NONCE_KEY);
+    const tokens = await provider(spy).getToken!({
+      code,
       redirectURI: "https://brain.test/auth/perminister/callback",
-      codeVerifier: "the-verifier",
+      codeVerifier: verifier,
     });
-    expect(ok.calls).toHaveLength(1);
-    const call = ok.calls[0]!;
-    expect(call.url).toBe("https://perminister.test/api/auth/consumer/token");
-    expect(call.init.method).toBe("POST");
-    const headers = new Headers(call.init.headers);
-    expect(headers.get("content-type")).toBe("application/json");
-    expect(headers.get("x-perminister-client-id")).toBe("test-client-id");
-    expect(headers.get("x-perminister-client-secret")).toBe(CLIENT_SECRET);
-    expect(JSON.parse(call.init.body as string)).toEqual({
-      grant_type: "authorization_code",
-      code: "the-code",
-      code_verifier: "the-verifier",
-    });
-    expect(call.init.signal).toBeInstanceOf(AbortSignal);
-    expect(tokens.accessToken).toBe("perminister-session-token");
-    expect(tokens.accessTokenExpiresAt).toEqual(
-      new Date("2030-01-01T00:00:00.000Z"),
-    );
-    expect(tokens.raw).toEqual(exchange);
+    expect(calls.map((c) => c.url)).toEqual([
+      "https://perminister.test/oauth/token",
+      "https://perminister.test/.well-known/jwks.json",
+      "https://perminister.test/api/auth/consumer/session",
+    ]);
+    const tokenCall = calls[0]!;
+    expect(tokenCall.init.body as string).not.toContain(CLIENT_SECRET);
+    expect(
+      new URLSearchParams(tokenCall.init.body as string).get("code_verifier"),
+    ).toBe(verifier);
+    expect(tokens.accessToken).toMatch(/^perminister-session-subject-1-/);
+    expect(tokens.accessTokenExpiresAt).toBeInstanceOf(Date);
+    const profile = await provider(spy).getUserInfo!(tokens);
+    expect(profile?.subjectId).toBe("subject-1");
+    expect(profile?.organizations).toEqual([
+      expect.objectContaining({ productId: "sky-brain" }),
+    ]);
+  });
 
+  it("perminister: getToken refuses an ID token minted for another request's nonce", async () => {
+    const fake = createFakePerminister({
+      baseUrl: "https://perminister.test",
+      clientId: "test-client-id",
+      clientSecret: CLIENT_SECRET,
+      publicUrl: "https://brain.test",
+    });
+    const verifier = "w".repeat(43);
+    // The authorize URL was finished under another key, so its nonce is not ours.
+    const { code } = approveFor(
+      fake,
+      verifier,
+      "some-other-key-some-other-key-xx",
+    );
+    await expect(
+      provider(fake.fetch).getToken!({
+        code,
+        redirectURI: "https://brain.test/auth/perminister/callback",
+        codeVerifier: verifier,
+      }),
+    ).rejects.toThrow(/nonce/);
+  });
+
+  it("perminister: a refused exchange names only the status, never the secret", async () => {
     const refused = stubFetch(() =>
       Response.json(
         { error: "invalid_grant", echo: CLIENT_SECRET },
@@ -108,19 +181,6 @@ describe("perministerProvider", () => {
     expect(message).toContain("400");
     expect(message).not.toContain(CLIENT_SECRET);
     expect(message).not.toContain("invalid_grant");
-  });
-
-  it("getToken refuses a 200 answer without account.subjectId", async () => {
-    const { fetch: f } = stubFetch(() =>
-      Response.json({ ...exchange, account: { email: "a@example.com" } }),
-    );
-    await expect(
-      provider(f).getToken!({
-        code: "c",
-        redirectURI: "x",
-        codeVerifier: "v",
-      }),
-    ).rejects.toThrow(/200/);
   });
 
   it("getUserInfo maps the exchange to the profile, or null without a subjectId", async () => {

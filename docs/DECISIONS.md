@@ -361,3 +361,24 @@ able to make it binding, and keeps hard rule 3 simple to test: no agent write pa
 architecture page and in BUILD-PLAN.md, and the spec's "the Consolidator promotes" wording.
 **Rejected:** automatic promotion by confidence or repetition; a Steward that writes approved
 memory.
+
+### D24. Sign in with Perminister uses its OpenID Connect flow
+
+**Date:** 2026-11-23. **Decided by:** a production bug (every sign-in showed Perminister's
+"Sign-in request unavailable").
+**Decision:** On 2026-11-14 Perminister moved product sign-in to OpenID Connect and kept the old
+request shape only for two named products. sky-brain now sends what it asks for:
+- The authorize URL carries `scope=openid profile email perminister_api`, a 43-character `nonce`
+  and a 43-character `state`. Better Auth 1.7.15 makes a 32-character state and no nonce for a
+  provider without discovery, so an after-hook on `/sign-in/social` finishes the URL
+  (`auth/perminister-oidc.ts`). The state gets an 11-character suffix derived from it, which the
+  `/auth/perminister/callback` route takes off again. The nonce is an HMAC of the PKCE challenge
+  under `BETTER_AUTH_SECRET`, so getToken recomputes it from the verifier; nothing is stored.
+- getToken exchanges the code at `POST /oauth/token` with HTTP Basic client auth, the fixed
+  callback URI and the PKCE verifier; checks the RS256 ID token (signature from
+  `/.well-known/jwks.json`, issuer, audience, expiry, nonce); then reads the account and its
+  organizations from `GET /api/auth/consumer/session` with the access token and client headers.
+  `mayEnter` (D17) is unchanged.
+**Why:** the old `POST /api/auth/consumer/token` request is refused for new products.
+**Rejected:** using Better Auth's discovery mode, because its 32-character state and nonce are
+still refused; an extra redirect hop of our own, because the after-hook keeps one URL.

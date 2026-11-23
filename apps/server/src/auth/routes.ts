@@ -3,6 +3,7 @@
 import { toNodeHandler } from "better-auth/node";
 import type express from "express";
 import type { Auth } from "./auth.ts";
+import { stripStateSuffix } from "./perminister-oidc.ts";
 import * as consentPage from "./pages/consent.ts";
 import * as signInPage from "./pages/sign-in.ts";
 
@@ -59,10 +60,19 @@ export function mountAuth(app: express.Express, auth: Auth): void {
   app.get("/.well-known/oauth-authorization-server/api/auth", handler);
 
   // Perminister's callback path is fixed; Better Auth's generic provider listens under /api/auth.
+  // Perminister echoes the padded state (perminister-oidc.ts); Better Auth checks its own.
   app.get("/auth/perminister/callback", (req, res) => {
     const at = req.originalUrl.indexOf("?");
-    const query = at === -1 ? "" : req.originalUrl.slice(at);
-    res.redirect(302, `/api/auth/callback/perminister${query}`);
+    const params = new URLSearchParams(
+      at === -1 ? "" : req.originalUrl.slice(at + 1),
+    );
+    const state = params.get("state");
+    if (state !== null) params.set("state", stripStateSuffix(state));
+    const query = params.toString();
+    res.redirect(
+      302,
+      `/api/auth/callback/perminister${query ? `?${query}` : ""}`,
+    );
   });
 
   for (const [name, page] of Object.entries(pages)) {
