@@ -41,7 +41,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .tabs button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--muted);padding:7px 14px;border-radius:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);font-weight:600}
 .tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.intro{direction:rtl;text-align:right;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:18px;color:var(--fg)}
+.intro{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:18px;color:var(--fg)}
 .intro p{margin:0 0 6px}.intro p:last-child{margin:0}
 .intro .muted{color:var(--muted);font-size:14px}
 code,.mono{font-family:var(--f-mono);font-size:.88em}
@@ -140,13 +140,13 @@ select,.btn{font:inherit;font-size:13px;border:1px solid var(--border);backgroun
 .usage td.num,.usage th.num{text-align:right}
 .usage .err{color:var(--bad)}
 .note{font-size:12px;color:var(--muted);margin-top:10px}
-.mocklabel{direction:rtl;text-align:right;font-size:13px;color:var(--muted);margin:0 0 10px}
+.mocklabel{font-size:13px;color:var(--muted);margin:0 0 10px}
 /* ---------- How tab ---------- */
-.how{direction:rtl;text-align:right;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .how .panel{padding:16px 18px}
 .how h3{margin:0 0 8px;font-size:16px}
 .how p,.how li{font-size:14.5px;margin:4px 0}
-.how ul{padding-right:18px;padding-left:0;margin:6px 0}
+.how ul{padding-left:18px;margin:6px 0}
 .flow{grid-column:1/-1;overflow-x:auto}
 .flow svg{display:block;min-width:720px;width:100%;height:auto}
 .flow svg text{font-family:var(--f-ui);fill:var(--fg)}
@@ -163,16 +163,16 @@ select,.btn{font:inherit;font-size:13px;border:1px solid var(--border);backgroun
       <h1>The Brain <span>Book</span></h1>
     </div>
     <nav class="tabs" role="tablist" aria-label="Views">
-      <button role="tab" id="t-book" aria-selected="true" data-tab="book">הספר</button>
-      <button role="tab" id="t-config" aria-selected="false" data-tab="config">מסך ההגדרה</button>
-      <button role="tab" id="t-how" aria-selected="false" data-tab="how">איך זה עובד</button>
+      <button role="tab" id="t-book" aria-selected="true" data-tab="book">The book</button>
+      <button role="tab" id="t-config" aria-selected="false" data-tab="config">Settings page</button>
+      <button role="tab" id="t-how" aria-selected="false" data-tab="how">How it works</button>
     </nav>
   </header>
 
   <section id="v-book" role="tabpanel">
     <div class="intro">
-      <p><strong>זה הספר כפי שהמודל יקרא אותו</strong>, לכלים שיש היום ב-sky-brain. הוא כתוב באנגלית כי הוא נכתב למודלים, כמו תיאורי הכלים.</p>
-      <p class="muted">משמאל: תוכן העניינים (מה ש-<code>book</code> מחזיר) ומעליו חיפוש בספר (<code>book_search</code>). הקטעים במסגרת מקווקוות נבנים אוטומטית מהקוד. פרק 9 הוא דוגמה לדפים שאתה מוסיף.</p>
+      <p><strong>This is the book as a connected model reads it</strong>, written for the tools sky-brain has today.</p>
+      <p class="muted">On the left: the contents (what <code>book</code> returns) and, above it, search in the book (<code>book_search</code>). Sections in a dashed frame are generated from the code. Chapter 9 is an example of pages the person adds.</p>
     </div>
     <div class="book">
       <aside class="rail">
@@ -195,7 +195,7 @@ select,.btn{font:inherit;font-size:13px;border:1px solid var(--border);backgroun
   </section>
 
   <section id="v-config" role="tabpanel" hidden>
-    <p class="mocklabel">מוקאפ של לשונית "Book" באפליקציה. הכפתורים עובדים כאן רק כהדגמה, שום דבר לא נשמר.</p>
+    <p class="mocklabel">Mock of the Book tab in the sky-brain web app. The buttons work here as a demo only; nothing is saved.</p>
     <div class="panel">
       <div class="mockbar">
         <h2>Book</h2>
@@ -239,58 +239,58 @@ select,.btn{font:inherit;font-size:13px;border:1px solid var(--border);backgroun
   <section id="v-how" role="tabpanel" hidden>
     <div class="how">
       <div class="panel flow">
-        <svg viewBox="0 0 980 230" role="img" aria-label="How a model uses the book, read right to left">
+        <svg viewBox="0 0 980 230" role="img" aria-label="How a model uses the book">
           <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
           <g fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)">
-            <path d="M790 70H730"/><path d="M540 70H480"/><path d="M290 70H230"/>
-            <path d="M385 110V150"/>
+            <path d="M190 70H250"/><path d="M440 70H500"/><path d="M690 70H750"/>
+            <path d="M595 110V150"/>
           </g>
           <g stroke="var(--border)" stroke-width="1.2">
-            <rect x="790" y="30" width="170" height="80" rx="12" fill="var(--surface2)"/>
-            <rect x="540" y="30" width="190" height="80" rx="12" fill="var(--accent-soft)"/>
-            <rect x="290" y="30" width="190" height="80" rx="12" fill="var(--surface2)"/>
-            <rect x="20" y="30" width="210" height="80" rx="12" fill="var(--surface2)"/>
-            <rect x="260" y="150" width="250" height="64" rx="12" fill="var(--surface2)"/>
+            <rect x="20" y="30" width="170" height="80" rx="12" fill="var(--surface2)"/>
+            <rect x="250" y="30" width="190" height="80" rx="12" fill="var(--accent-soft)"/>
+            <rect x="500" y="30" width="190" height="80" rx="12" fill="var(--surface2)"/>
+            <rect x="750" y="30" width="210" height="80" rx="12" fill="var(--surface2)"/>
+            <rect x="470" y="150" width="250" height="64" rx="12" fill="var(--surface2)"/>
           </g>
-          <text x="875" y="64" text-anchor="middle" font-weight="600" font-size="15">המודל מקבל משימה</text>
-          <text x="875" y="88" text-anchor="middle" class="sub" font-size="12">"תעשה את המשימה הבאה"</text>
-          <text x="635" y="64" text-anchor="middle" font-weight="600" font-size="15">book / book_search</text>
-          <text x="635" y="88" text-anchor="middle" class="sub" font-size="12">תוכן עניינים, או חיפוש לפי משימה</text>
-          <text x="385" y="64" text-anchor="middle" font-weight="600" font-size="15">book_read</text>
-          <text x="385" y="88" text-anchor="middle" class="sub" font-size="12">פרק, כלי או מתכון</text>
-          <text x="125" y="64" text-anchor="middle" font-weight="600" font-size="15">קורא לכלים</text>
-          <text x="125" y="88" text-anchor="middle" class="sub" font-size="12">ישירות, או דרך look / act</text>
-          <text x="385" y="178" text-anchor="middle" font-weight="600" font-size="14">מה ש-shammai הוסיף או אישר</text>
-          <text x="385" y="200" text-anchor="middle" class="sub" font-size="12">הערות, מתכונים, מילון (פרק 9)</text>
+          <text x="105" y="64" text-anchor="middle" font-weight="600" font-size="15">Model gets a task</text>
+          <text x="105" y="88" text-anchor="middle" class="sub" font-size="12">"do the next task"</text>
+          <text x="345" y="64" text-anchor="middle" font-weight="600" font-size="15">book / book_search</text>
+          <text x="345" y="88" text-anchor="middle" class="sub" font-size="12">contents, or search by task</text>
+          <text x="595" y="64" text-anchor="middle" font-weight="600" font-size="15">book_read</text>
+          <text x="595" y="88" text-anchor="middle" class="sub" font-size="12">a chapter, tool or recipe</text>
+          <text x="855" y="64" text-anchor="middle" font-weight="600" font-size="15">Calls the tools</text>
+          <text x="855" y="88" text-anchor="middle" class="sub" font-size="12">directly, or through look / act</text>
+          <text x="595" y="178" text-anchor="middle" font-weight="600" font-size="14">What shammai added or approved</text>
+          <text x="595" y="200" text-anchor="middle" class="sub" font-size="12">notes, recipes, glossary (chapter 9)</text>
         </svg>
       </div>
       <div class="panel">
-        <h3>שלושה כלים לספר</h3>
+        <h3>Three tools for the book</h3>
         <ul>
-          <li><code>book</code>: תוכן העניינים, מי אתה, חמשת הכללים.</li>
-          <li><code>book_search</code>: חיפוש בספר לפי משימה. מחזיר כלים, מתכונים ופרקים, ולכלי מחזיר גם את הפרמטרים הנדרשים כדי שאפשר לקרוא לו מיד.</li>
-          <li><code>book_read</code>: פותח פרק, כלי או מתכון.</li>
+          <li><code>book</code>: the contents, who you are, the five rules.</li>
+          <li><code>book_search</code>: search the book by task. Returns tools, recipes and chapters; a tool result also lists its required arguments, so the model can call it right away.</li>
+          <li><code>book_read</code>: opens a chapter, a tool or a recipe.</li>
         </ul>
       </div>
       <div class="panel">
-        <h3>נבנה מהקוד, לא נכתב ביד</h3>
-        <p>כל כלי מוגדר פעם אחת עם בלוק <code>book</code>: באיזה פרק הוא, מתי להשתמש בו, וטעויות נפוצות. מזה נבנים הפרקים והחיפוש, כך שהספר לא מתיישן. בדיקה נכשלת אם כלי חסר בספר.</p>
+        <h3>Built from the code</h3>
+        <p>Each tool is defined once, with a <code>book</code> block: its chapter, when to use it, and common mistakes. The chapters and the search index are built from that, so the book cannot go stale. A test fails if a tool is missing from the book.</p>
       </div>
       <div class="panel">
-        <h3>אתה מגדיר, המודל מציע</h3>
-        <p>בלשונית Book אתה מוסיף הערות, מתכונים ומונחים, מסדר ומסתיר פרקים לכל תפקיד. המודל יכול להציע דף עם <code>propose_book_page</code>, אבל הדף לא מוצג לאף מודל עד שאתה מאשר אותו בדף האישור (רמה 2, כמו כללים).</p>
+        <h3>The person configures, the model proposes</h3>
+        <p>On the Book tab the person adds notes, recipes and glossary terms, and orders or hides chapters per role. A model can propose a page with <code>propose_book_page</code>, but no model sees it until the person approves it on the approval page (level 2, like rules).</p>
       </div>
       <div class="panel">
-        <h3>הספר גדל מהשימוש</h3>
-        <p>השרת סופר קריאות בלי לשמור את התוכן שלהן, ומציע הצעות קבועות: רצף כלים שחוזר הופך למתכון, שגיאה שחוזרת הופכת להערה, וחיפוש בספר שלא מצא כלום הופך לדף חסר. sky-brain עצמו לא מפעיל מודל.</p>
+        <h3>The book grows from use</h3>
+        <p>The server counts calls without keeping their content and makes fixed suggestions: a repeated sequence of tools becomes a recipe, a repeated error becomes a note, and a book search that found nothing becomes a missing page. sky-brain itself never runs a model.</p>
       </div>
       <div class="panel">
-        <h3>מצב קומפקטי (אופציונלי)</h3>
-        <p>לכל אפליקציה מחוברת אפשר לבחור: Full (כל הכלים, כמו היום) או Compact (9 כלים, והשאר דרך <code>look</code> לקריאה ו-<code>act</code> לכתיבה). אותן בדיקות הרשאה בדיוק, שום זכות חדשה.</p>
+        <h3>Compact mode (optional)</h3>
+        <p>Per connected app: Full (all tools, as today) or Compact (9 tools, the rest through <code>look</code> for reads and <code>act</code> for writes). The same permission checks, no new rights.</p>
       </div>
       <div class="panel">
-        <h3>איך נדע שזה עובד</h3>
-        <p>בנצ'מרק של 12 משימות, עם ספר ובלי ספר, על מודל גדול ומודל קטן. היעד: לפחות 50% פחות קריאות שגויות, ועד 2 קריאות נוספות למשימה.</p>
+        <h3>How we know it works</h3>
+        <p>A benchmark of 12 tasks, with and without the book, on one large and one small model. Target: at least 50% fewer wrong calls, and at most 2 extra calls per task.</p>
       </div>
     </div>
   </section>
