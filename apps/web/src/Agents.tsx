@@ -5,7 +5,7 @@ import {
   Badge,
   Button,
   Card,
-  SelectField,
+  Select,
   Skeleton,
   TextField,
 } from "panel-frame-ui";
@@ -20,6 +20,9 @@ const TEMPLATES: { slug: string; name: string; kind: AgentProfile["kind"] }[] =
     { slug: "reviewer", name: "Reviewer", kind: "worker" },
     { slug: "librarian", name: "Librarian", kind: "steward" },
   ];
+
+/** The Select value for "no role": a profile id is a uuid, so it never collides. */
+const GUEST = "guest";
 
 function appLabel(app: ConnectedApp): string {
   if (app.name) return app.name;
@@ -93,12 +96,13 @@ export function Agents() {
                 {p.kind}
               </Badge>
             </span>
-            <button
-              className="link"
+            <Button
+              variant="danger"
+              className="small-button"
               onClick={() => void run(api.deleteAgentProfile(p.id))}
             >
               Delete
-            </button>
+            </Button>
           </div>
         ))}
         {unused.length > 0 && (
@@ -127,21 +131,22 @@ export function Agents() {
           </p>
         )}
         {data.apps.map((app) => (
-          <SelectField
+          <Select
             key={app.client_id}
             label={appLabel(app)}
-            value={app.profile_id ?? ""}
-            onChange={(e) =>
-              void run(api.bindApp(app.client_id, e.target.value || null))
+            value={app.profile_id ?? GUEST}
+            onValueChange={(id) =>
+              void run(api.bindApp(app.client_id, id === GUEST ? null : id))
             }
-          >
-            <option value="">Guest</option>
-            {data.profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.display_name}
-              </option>
-            ))}
-          </SelectField>
+            options={[
+              { value: GUEST, label: "Guest", description: "No role yet" },
+              ...data.profiles.map((p) => ({
+                value: p.id,
+                label: p.display_name,
+                description: p.kind === "steward" ? "Steward" : "Worker",
+              })),
+            ]}
+          />
         ))}
       </Card>
     </>
@@ -189,14 +194,19 @@ function NewProfile(props: { onDone: (created: boolean) => void }) {
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
       />
-      <SelectField
+      <Select
         label="Kind"
         value={kind}
-        onChange={(e) => setKind(e.target.value as AgentProfile["kind"])}
-      >
-        <option value="worker">Worker: does your work</option>
-        <option value="steward">Steward: keeps the memory healthy</option>
-      </SelectField>
+        onValueChange={(v) => setKind(v as AgentProfile["kind"])}
+        options={[
+          { value: "worker", label: "Worker", description: "Does your work" },
+          {
+            value: "steward",
+            label: "Steward",
+            description: "Keeps the memory healthy",
+          },
+        ]}
+      />
       <FormFooter
         error={error}
         submitLabel="Create"

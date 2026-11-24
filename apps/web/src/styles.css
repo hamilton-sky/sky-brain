@@ -6,15 +6,6 @@
 .small {
   font-size: 13px;
 }
-.error {
-  color: var(--pf-danger);
-}
-.warn {
-  background: var(--pf-warning-surface);
-  color: var(--pf-warning);
-  padding: 6px 10px;
-  border-radius: var(--pf-radius-sm);
-}
 .pf-dashboard-content > * + *,
 .pf-card + .pf-card,
 .goals > li + li {
@@ -56,13 +47,10 @@
 .pf-card .row + .row {
   margin-top: 10px;
 }
-.link {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--pf-accent);
-  cursor: pointer;
-  font: inherit;
+.small-button {
+  min-height: 32px;
+  padding: 5px 11px;
+  font-size: 12px;
 }
 .form {
   display: flex;

@@ -6,7 +6,7 @@ import {
   Button,
   EmptyState,
   PageHeader,
-  SelectField,
+  Select,
   Skeleton,
   TextField,
   ThemeProvider,
@@ -125,20 +125,15 @@ function Projects({ me }: { me: Me }) {
     <>
       <section className="toolbar">
         {projects.length > 0 && (
-          <SelectField
+          <Select
             label="Project"
             value={current?.id ?? ""}
-            onChange={(e) => {
-              setSelected(e.target.value);
-              remember(e.target.value);
+            onValueChange={(id) => {
+              setSelected(id);
+              remember(id);
             }}
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </SelectField>
+            options={projects.map((p) => ({ value: p.id, label: p.name }))}
+          />
         )}
         {writable.length > 0 && !adding && (
           <Button variant="secondary" onClick={() => setAdding(true)}>
@@ -190,17 +185,15 @@ function NewProject(props: {
     >
       <h2>New project</h2>
       {props.workspaces.length > 1 && (
-        <SelectField
+        <Select
           label="Workspace"
           value={workspace}
-          onChange={(e) => setWorkspace(e.target.value)}
-        >
-          {props.workspaces.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </SelectField>
+          onValueChange={setWorkspace}
+          options={props.workspaces.map((w) => ({
+            value: w.id,
+            label: w.name,
+          }))}
+        />
       )}
       <TextField
         label="Name"
