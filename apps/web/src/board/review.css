@@ -1,0 +1,136 @@
+/* Fast review (Board.tsx, BulkBar.tsx, Digest.tsx): the Today | All goals switch, the bulk
+   bar, and the Today digest's cards. Phone rules for them are in board.css. */
+
+/* View switch: Today | All goals */
+.views {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--pf-border);
+  background: var(--pf-surface);
+}
+.view,
+.tab {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--pf-muted);
+}
+.view[aria-selected="true"],
+.tab[aria-selected="true"] {
+  color: var(--pf-accent-contrast);
+  background: var(--pf-accent);
+}
+.view:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
+.section-head + .pf-alert,
+.pf-alert + .pf-alert,
+.pf-alert + .layout,
+.section-head + .layout {
+  margin-top: 12px;
+}
+
+/* Bulk bar */
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 8px 12px;
+  border-radius: var(--pf-radius-md);
+  border: 1px solid var(--pf-border);
+  background: var(--pf-surface);
+}
+.bulk-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bulk-acts {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.bulk input,
+.gc-check,
+.dc-check {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--pf-accent);
+  cursor: pointer;
+}
+
+/* Today digest */
+.digest {
+  display: grid;
+  gap: 12px;
+}
+.digest-summary {
+  margin: 0;
+}
+.digest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.dc {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+}
+.dc.picked,
+.dc.open {
+  border-color: var(--pf-accent);
+}
+.dc-check {
+  margin-top: 2px;
+}
+.dc-main {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.dc-title {
+  all: unset;
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.dc-title:hover {
+  text-decoration: underline;
+}
+.dc-title:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
+.dc-body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pf-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.dc-acts {
+  display: flex;
+  gap: 6px;
+}

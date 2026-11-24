@@ -24,7 +24,11 @@ import {
   type TestResponse,
   type TestServer,
 } from "../../testing/harness.ts";
-import { loginDevice } from "../../testing/task-seeds.ts";
+import {
+  loginDevice,
+  mintRunToken,
+  withToken,
+} from "../../testing/task-seeds.ts";
 import { runTokenResolver } from "../resolver.ts";
 import { assertRunScope, effectiveRole } from "../run-scope.ts";
 import { verbMiddleware } from "../verbs.ts";
@@ -185,4 +189,28 @@ export function expectError(
     status,
     code,
   });
+}
+
+/**
+ * Clients for a route's permission tests: a person, Claude Code acting for a person, and a run
+ * token (verbs read and plan) minted on the owner's device for one project.
+ */
+export function actorClients(ctx: RunTokenFixture) {
+  return {
+    person: (id: string) => ctx.server.as(human(id)),
+    agent: (person: string) =>
+      ctx.server.as({
+        kind: "agent" as const,
+        agent_id: "claude-code",
+        on_behalf_of: person,
+      }),
+    runToken: async (owner: string, projectId: string) => {
+      const d = await device(ctx.server, owner);
+      const { runToken } = await mintRunToken(ctx.server, d.deviceToken, {
+        project_id: projectId,
+        verbs: ["read", "plan"],
+      });
+      return withToken(ctx.server, runToken);
+    },
+  };
 }

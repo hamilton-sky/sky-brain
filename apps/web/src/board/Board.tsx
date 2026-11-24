@@ -1,6 +1,7 @@
 // One project's board, built for fast review: "Today" is a digest of up to ten goals waiting
 // for you, and "All goals" is the card board (Needs you, Running, Waiting to start, Done).
-// Opening a goal shows it as a dialog over the board.
+// Opening a goal shows it as a dialog over the board; its documents open on their own page
+// (/docs/<id>) to read, edit and comment on.
 // Approve and reject work on one goal or many; only a person can do either, so they live here.
 import {
   Alert,
@@ -10,7 +11,9 @@ import {
   Skeleton,
 } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
-import { api, type Goal, type Project } from "../api.ts";
+import { api, type Goal, type GoalDocument, type Project } from "../api.ts";
+import { navigate } from "../router.ts";
+import { ViewSwitch } from "../ViewSwitch.tsx";
 import { type BulkAction, describeBulk, runBulk } from "./bulk.ts";
 import { BulkBar } from "./BulkBar.tsx";
 import { canReject, type Column, columnOf, COLUMNS } from "./columns.ts";
@@ -19,6 +22,7 @@ import { GoalPanel } from "./GoalPanel.tsx";
 import { GoalTile } from "./GoalTile.tsx";
 import { NewGoal } from "./NewGoal.tsx";
 import "./board.css";
+import "./review.css";
 
 const REFRESH_MS = 15_000;
 const VIEW_KEY = "sky-brain.board-view";
@@ -32,8 +36,11 @@ function rememberedView(): View {
   }
 }
 
+const openDoc = (entryId: string) => navigate({ page: "doc", entryId });
+
 export function Board({ project }: { project: Project }) {
   const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [docs, setDocs] = useState<Record<string, GoalDocument[]>>({});
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -49,8 +56,9 @@ export function Board({ project }: { project: Project }) {
 
   const load = useCallback(() => {
     api.goals(project.id).then(
-      (g) => {
-        setGoals(g);
+      (r) => {
+        setGoals(r.goals);
+        setDocs(r.documents ?? {});
         setNow(new Date());
         setError(null);
       },
@@ -99,28 +107,18 @@ export function Board({ project }: { project: Project }) {
   return (
     <section className="board">
       <div className="section-head">
-        <div className="views" role="tablist" aria-label="View">
-          {(
+        <ViewSwitch
+          label="View"
+          value={view}
+          onChange={pickView}
+          views={[
             [
-              [
-                "today",
-                `Today${needs.length ? ` (${Math.min(needs.length, 10)})` : ""}`,
-              ],
-              ["board", "All goals"],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              className="view"
-              aria-selected={view === v}
-              onClick={() => pickView(v)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+              "today",
+              `Today${needs.length ? ` (${Math.min(needs.length, 10)})` : ""}`,
+            ],
+            ["board", "All goals"],
+          ]}
+        />
         {!adding && (
           <Button variant="secondary" onClick={() => setAdding(true)}>
             New goal
@@ -148,6 +146,8 @@ export function Board({ project }: { project: Project }) {
             {view === "today" ? (
               <Digest
                 goals={goals}
+                docs={docs}
+                onOpenDoc={openDoc}
                 now={now}
                 selected={selected}
                 onSelect={setSelected}
@@ -209,6 +209,7 @@ export function Board({ project }: { project: Project }) {
                             goal={g}
                             now={now}
                             open={openId === g.id}
+                            docs={docs[g.id] ?? []}
                             onOpen={() =>
                               setOpenId(openId === g.id ? null : g.id)
                             }
@@ -237,6 +238,7 @@ export function Board({ project }: { project: Project }) {
               onClose={() => setOpenId(null)}
               onChanged={load}
               onReject={setRejecting}
+              onOpenDoc={openDoc}
             />
           )}
         </div>

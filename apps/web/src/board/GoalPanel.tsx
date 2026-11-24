@@ -1,9 +1,16 @@
-// One goal opened as a dialog over the board: what it is for, its tasks in order, and the
-// person-only actions: approve, release a held text, reject (cancel).
+// One goal opened as a dialog over the board: what it is for, its documents, its tasks in order,
+// and the person-only actions: approve, release a held text, reject (cancel).
 import { Alert, Badge, Button, Dialog } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
-import { api, type Goal, type Task, type TaskStatus } from "../api.ts";
+import {
+  api,
+  type Goal,
+  type GoalDocument,
+  type Task,
+  type TaskStatus,
+} from "../api.ts";
 import { canReject, isHeld } from "./columns.ts";
+import { DocList } from "./DocList.tsx";
 import { ago, proposer, stateBadge } from "./GoalTile.tsx";
 
 const STEP_LABEL: Record<TaskStatus, string> = {
@@ -20,15 +27,20 @@ export function GoalPanel(props: {
   onClose: () => void;
   onChanged: () => void;
   onReject: (goals: Goal[]) => void;
+  onOpenDoc: (entryId: string) => void;
 }) {
   const { goal } = props;
   const [tasks, setTasks] = useState<Task[] | null>(null);
+  const [docs, setDocs] = useState<GoalDocument[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadTasks = useCallback(() => {
     api.goal(goal.id).then(
-      (r) => setTasks(r.tasks),
+      (r) => {
+        setTasks(r.tasks);
+        setDocs(r.documents);
+      },
       (e: Error) => setError(e.message),
     );
   }, [goal.id]);
@@ -81,6 +93,12 @@ export function GoalPanel(props: {
         </Alert>
       )}
       {goal.body && <p className="body">{goal.body}</p>}
+      <DocList
+        docs={docs}
+        busy={busy}
+        onOpen={props.onOpenDoc}
+        onRemove={(entryId) => act(() => api.detachDocument(goal.id, entryId))}
+      />
       {tasks === null ? (
         <p className="muted small">Loading tasks…</p>
       ) : tasks.length === 0 ? (

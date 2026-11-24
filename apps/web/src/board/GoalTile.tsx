@@ -1,19 +1,23 @@
-// A goal as a card: its summary on hover, who proposed it, a task progress bar, its state, and (for goals waiting for
+// A goal as a card: its summary and its documents' summaries on hover, who proposed it, a task progress bar, its state, and (for goals waiting for
 // you) a checkbox to pick it for a bulk approve or reject.
 import { Badge } from "panel-frame-ui";
-import type { Goal } from "../api.ts";
+import type { Goal, GoalDocument } from "../api.ts";
 import { columnOf, isHeld, taskTotal } from "./columns.ts";
+import { DOC_ICON } from "./DocList.tsx";
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "accent";
 
 /** "po · claude.ai" for an agent signed `mcp/claude.ai/po`; "You" for a person. */
-export function proposer(goal: Goal): string {
-  if (goal.author_kind !== "agent") return "You";
-  const parts = goal.author.split("/").filter(Boolean);
+export function signer(kind: "human" | "agent", author: string): string {
+  if (kind !== "agent") return "You";
+  const parts = author.split("/").filter(Boolean);
   const app = parts[1] ?? parts[0] ?? "agent";
   const role = parts.length > 2 ? parts[parts.length - 1] : null;
   return role ? `${role} · ${app}` : app;
 }
+
+export const proposer = (goal: Goal): string =>
+  signer(goal.author_kind, goal.author);
 
 /** The first ~280 characters of a goal's text, cut at a word, for the hover summary. */
 export function summaryOf(body: string, max = 280): string {
@@ -87,6 +91,8 @@ export function GoalTile(props: {
   now: Date;
   open: boolean;
   onOpen: () => void;
+  /** The goal's attached documents (summaries). */
+  docs: GoalDocument[];
   /** Present when the goal can be picked for a bulk action. */
   picked?: boolean;
   onPick?: (on: boolean) => void;
@@ -94,6 +100,9 @@ export function GoalTile(props: {
   const { goal } = props;
   const state = stateBadge(goal);
   const total = taskTotal(goal.counts);
+  // A held document's summary is the writer's word only, so it waits for the dialog.
+  const readable = props.docs.filter((d) => d.trust !== "quarantined");
+  const peek = (goal.body !== "" && !isHeld(goal)) || readable.length > 0;
   return (
     <div className="gc-wrap">
       {props.onPick && (
@@ -105,16 +114,25 @@ export function GoalTile(props: {
           onChange={(e) => props.onPick?.(e.target.checked)}
         />
       )}
-      {goal.body && !isHeld(goal) && (
+      {peek && (
         <div className="gc-peek" role="tooltip" id={`peek-${goal.id}`}>
-          {summaryOf(goal.body)}
+          {goal.body && !isHeld(goal) && <p>{summaryOf(goal.body)}</p>}
+          {readable.slice(0, 3).map((d) => (
+            <p key={d.entry_id} className="peek-doc">
+              {DOC_ICON}
+              <span>
+                <strong>{d.title}</strong> {summaryOf(d.summary, 180)}
+              </span>
+            </p>
+          ))}
+          {readable.length > 3 && (
+            <p className="muted">+{readable.length - 3} more documents</p>
+          )}
         </div>
       )}
       <button
         type="button"
-        aria-describedby={
-          goal.body && !isHeld(goal) ? `peek-${goal.id}` : undefined
-        }
+        aria-describedby={peek ? `peek-${goal.id}` : undefined}
         className={props.onPick ? "gc pickable" : "gc"}
         aria-pressed={props.open}
         onClick={props.onOpen}
@@ -135,6 +153,11 @@ export function GoalTile(props: {
           <Badge>
             {goal.counts.done}/{total} tasks
           </Badge>
+          {props.docs.length > 0 && (
+            <Badge>
+              {props.docs.length} {props.docs.length === 1 ? "doc" : "docs"}
+            </Badge>
+          )}
           {goal.counts.failed > 0 && (
             <Badge tone="danger">{goal.counts.failed} failed</Badge>
           )}

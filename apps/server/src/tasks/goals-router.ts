@@ -4,6 +4,7 @@
 // caps; target and membership (404); role (403); state (409); secrets (422); quarantine.
 import type { Role } from "@sky-brain/shared/enums";
 import { IdSchema } from "@sky-brain/shared/scope";
+import { AttachDocumentRequestSchema } from "@sky-brain/shared/goal-docs";
 import {
   GoalCreateRequestSchema,
   GoalsListQuerySchema,
@@ -28,6 +29,7 @@ import { validate } from "../http/validate.ts";
 import { assertRunScope, effectiveRole } from "../run-tokens/run-scope.ts";
 import { resolveScope } from "../scope/resolve-scope.ts";
 import { addTasksHandler } from "./add-tasks.ts";
+import { attachDocument, detachDocument, documentsOf } from "./goal-docs.ts";
 import {
   approveGoal,
   assertAssignable,
@@ -162,9 +164,17 @@ export function goalsRouter(options: GoalsRouterOptions): Router {
       workspaceId: scope.workspaceId,
       projectId: query.project_id,
     });
-    res
-      .status(200)
-      .json({ goals: await listGoals(db, actor, query.project_id, now()) });
+    const list = await listGoals(db, actor, query.project_id, now());
+    const docs = await documentsOf(
+      db,
+      actor,
+      list.map((g) => g.id),
+    );
+    res.status(200).json({
+      goals: list,
+      // Each goal's attached documents (summaries only), by goal id.
+      documents: Object.fromEntries(docs),
+    });
   });
 
   router.get("/:id", async (req, res) => {
@@ -176,6 +186,7 @@ export function goalsRouter(options: GoalsRouterOptions): Router {
     res.status(200).json({
       goal: await goalWire(db, actor, goal, t),
       tasks: await goalTasks(db, actor, goal.id, t),
+      documents: (await documentsOf(db, actor, [goal.id])).get(goal.id) ?? [],
     });
   });
 
@@ -208,6 +219,47 @@ export function goalsRouter(options: GoalsRouterOptions): Router {
   ];
 
   router.post("/:id/tasks", limit, addTasksHandler({ db, now }));
+
+  /** A writer's change to one goal's documents, with the goal row locked. */
+  const writeGoal = (
+    req: Request,
+    id: string,
+    change: (tx: DbOrTx, goal: GoalRow) => Promise<void>,
+  ) =>
+    db.transaction(async (tx) => {
+      const { goal, role } = await findGoal(tx, actorOf(req), id, true);
+      assertRunScope(req, goal);
+      assertWriter(req, role);
+      await change(tx, goal);
+    });
+
+  /** Attach an entry the caller may read to a goal; people and agents who may write. */
+  router.post("/:id/documents", limit, async (req, res) => {
+    const id = pathId(req);
+    const body = parseRequest(AttachDocumentRequestSchema, req.body);
+    const actor = actorOf(req);
+    await writeGoal(req, id, (tx, goal) =>
+      attachDocument(tx, actor, goal, body.entry_id, now()),
+    );
+    res.status(200).json({
+      documents: (await documentsOf(db, actor, [id])).get(id) ?? [],
+    });
+  });
+
+  /** Only a person removes a document from a goal; the entry itself stays. */
+  router.delete(
+    "/:id/documents/:entryId",
+    requireHuman,
+    limit,
+    async (req, res) => {
+      const id = pathId(req);
+      const entryId = validate(IdSchema, req.params.entryId);
+      await writeGoal(req, id, (tx, goal) =>
+        detachDocument(tx, actorOf(req), goal, entryId),
+      );
+      res.status(204).end();
+    },
+  );
 
   router.post(
     "/:id/approve",
