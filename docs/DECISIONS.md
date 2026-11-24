@@ -454,3 +454,23 @@ feel like one product.
 **How:** no inline script anywhere. The app applies the saved theme before paint with
 `/theme-init.js`, a file. The auth pages do it as the first part of their single script.
 panel-frame-ui's own `getThemeBootstrapScript` is inline, so it is not used.
+
+### D29. Open sign-up: any verified Perminister account gets its own brain
+
+**Date:** 2026-11-24. **Decided by:** shammai ("every user can create their own brain").
+**Decision:** `mayEnter` no longer asks for an organization of the `sky-brain` product. A person
+may enter when Perminister signs them in with an email and the signed ID token says
+`email_verified: true`. The sky-brain production app client in Perminister is set to
+"Public registration", so Perminister itself hands a code to any active account with a verified
+email, and still refuses an account disabled for the product. Everything else in D17 stays:
+the first sign-in makes one private workspace (About me, Inbox, Notebook) owned by that person,
+workspaces are walled off by membership (hard rule 4), sky-brain invites are accepted at sign-in,
+and account linking by email stays off.
+**Why:** sky-brain is for organizations and individuals. Asking Perminister's admin to add each
+person to an organization does not scale, and a fresh workspace per person needs no sharing
+rule to be safe.
+**How:** `email_verified` is read from the ID token, which is signed, not from the session
+answer. Perminister checks the same thing before it issues a code, so this is a second check.
+Taking someone's access away is now done in Perminister by disabling the account for the
+product; their session ends within 7 days (no rolling refresh).
+**Supersedes:** the product-organization rule in D17.

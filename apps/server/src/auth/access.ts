@@ -1,32 +1,19 @@
-// Who may sign in (spec.md Decisions -> Who may sign in). The whole rule is `mayEnter`, so a
-// later gate (an allowlist, a Perminister role) changes this function only.
+// Who may sign in (D29, replacing D17's product-organization rule). The whole rule is `mayEnter`,
+// so a later gate changes this function only.
+//
+// Perminister itself decides whether it signs a person in to sky-brain at all: with the app
+// client's registration policy at "Public registration" any active account with a verified email
+// gets a code, and a person disabled for the product does not. sky-brain then checks the two
+// things it relies on, from the signed ID token: an email, and that Perminister has verified it.
 
-/** The Perminister product whose organizations let a person into sky-brain. */
-export const PERMINISTER_PRODUCT_ID = "sky-brain";
-
-/**
- * True only for an account with an email that Perminister lists an organization for this product
- * for. A pending sky-brain invite alone never lets anyone in.
- */
+/** True only for an account with an email that Perminister says is verified. */
 export function mayEnter(who: {
   email: string | null | undefined;
-  productIds: string[];
+  emailVerified: boolean | null | undefined;
 }): boolean {
   return (
     typeof who.email === "string" &&
     who.email !== "" &&
-    who.productIds.includes(PERMINISTER_PRODUCT_ID)
+    who.emailVerified === true
   );
-}
-
-/** The `productId`s of the exchange's `organizations[]`, read from an untyped profile. */
-export function productIdsOf(profile: unknown): string[] {
-  if (typeof profile !== "object" || profile === null) return [];
-  const organizations = (profile as { organizations?: unknown }).organizations;
-  if (!Array.isArray(organizations)) return [];
-  return organizations.flatMap((org: unknown) => {
-    if (typeof org !== "object" || org === null) return [];
-    const productId = (org as { productId?: unknown }).productId;
-    return typeof productId === "string" ? [productId] : [];
-  });
 }

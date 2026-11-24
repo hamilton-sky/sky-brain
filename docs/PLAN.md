@@ -260,11 +260,12 @@ Approve, Cancel and Release buttons.
 
 Better Auth runs inside the server.
 
-- **People** sign in with Perminister's OpenID Connect flow (D24), which is invite-only for this
-  product. Anyone it signs in
-  with access to the `sky-brain` product may enter (`mayEnter`, D17). Each person gets their own
-  workspace, as `owner`, at their first sign-in. A sky-brain invite adds such a person to another
-  owner's workspace and is accepted at their next sign-in. Everyone else sees "No access".
+- **People** sign in with Perminister's OpenID Connect flow (D24). The app client's registration
+  policy is "Public registration", so anyone with a Perminister account and a verified email may
+  enter (`mayEnter`, D29); no organization or invitation is needed. Each person gets their own
+  private workspace, as `owner`, with About me, an Inbox and a Notebook, at their first sign-in.
+  A sky-brain invite adds such a person to another owner's workspace and is accepted at their
+  next sign-in. An account without a verified email sees "No access".
   A session lasts 7 days from sign-in and is never extended by use, so access taken away in
   Perminister ends at the latest when the session runs out.
 - **MCP clients** (claude.ai, Claude Code, Codex): Better Auth's `mcp()` plugin makes the server
