@@ -6,7 +6,7 @@ import { BulkBar } from "./BulkBar.tsx";
 import { canBulkApprove, digest, isHeld, taskTotal } from "./columns.ts";
 import { ago, Avatar, ProgressBar, proposer } from "./GoalTile.tsx";
 
-export function Digest(props: {
+interface DigestProps {
   goals: Goal[];
   now: Date;
   selected: ReadonlySet<string>;
@@ -16,7 +16,9 @@ export function Digest(props: {
   onOpen: (id: string) => void;
   onApprove: (goals: Goal[]) => void;
   onReject: (goals: Goal[]) => void;
-}) {
+}
+
+export function Digest(props: DigestProps) {
   const d = digest(props.goals, props.now);
   const plural = (n: number, one: string, many: string) =>
     `${n} ${n === 1 ? one : many}`;
@@ -70,17 +72,7 @@ export function Digest(props: {
   );
 }
 
-function DigestCard(props: {
-  goal: Goal;
-  now: Date;
-  selected: ReadonlySet<string>;
-  onSelect: (ids: Set<string>) => void;
-  busy: boolean;
-  openId: string | null;
-  onOpen: (id: string) => void;
-  onApprove: (goals: Goal[]) => void;
-  onReject: (goals: Goal[]) => void;
-}) {
+function DigestCard(props: Omit<DigestProps, "goals"> & { goal: Goal }) {
   const { goal } = props;
   const picked = props.selected.has(goal.id);
   const pick = (on: boolean) => {
