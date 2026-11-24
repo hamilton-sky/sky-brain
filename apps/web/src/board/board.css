@@ -1,0 +1,529 @@
+/* The card board and the Today digest (Board.tsx). Colours come from panel-frame-ui tokens,
+   which theme.css sets for Constellation Night and the light "dawn star chart". */
+
+/* The board uses the full width of the page, like the mock, so four columns fit. */
+.pf-dashboard-content:has(.board) {
+  width: 100%;
+  max-width: none;
+}
+
+/* View switch: Today | All goals */
+.views {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--pf-border);
+  background: var(--pf-surface);
+}
+.view,
+.tab {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--pf-muted);
+}
+.view[aria-selected="true"],
+.tab[aria-selected="true"] {
+  color: var(--pf-accent-contrast);
+  background: var(--pf-accent);
+}
+.view:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
+.section-head + .pf-alert,
+.pf-alert + .pf-alert,
+.pf-alert + .layout,
+.section-head + .layout {
+  margin-top: 12px;
+}
+
+/* Layout: board (or digest) with the open goal beside it */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.layout.open {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+.layout-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Bulk bar */
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 8px 12px;
+  border-radius: var(--pf-radius-md);
+  border: 1px solid var(--pf-border);
+  background: var(--pf-surface);
+}
+.bulk-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bulk-acts {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.bulk input,
+.gc-check,
+.dc-check {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--pf-accent);
+  cursor: pointer;
+}
+
+/* Columns */
+.cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.layout.open .cols {
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+}
+.col {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-width: 0;
+  padding: 10px;
+  border-radius: var(--pf-radius-lg);
+  background: color-mix(in srgb, var(--pf-surface) 45%, transparent);
+  border: 1px solid var(--pf-border);
+}
+.col.needs {
+  --c: var(--pf-warning);
+  border-color: color-mix(in srgb, var(--pf-warning) 35%, var(--pf-border));
+}
+.col.run {
+  --c: var(--pf-accent);
+}
+.col.wait {
+  --c: var(--pf-muted);
+}
+.col.done {
+  --c: var(--pf-success);
+}
+.col-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.col-h .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.col-h .count {
+  margin-left: auto;
+  color: var(--pf-muted);
+}
+.empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pf-muted);
+}
+.tabs {
+  display: none;
+}
+
+/* Goal card */
+.gc-wrap {
+  position: relative;
+}
+.gc-check {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+}
+.gc {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  gap: 9px;
+  cursor: pointer;
+  padding: 14px;
+  border-radius: var(--pf-radius-md);
+  background: var(--pf-surface);
+  border: 1px solid var(--pf-border);
+  box-shadow: var(--pf-shadow);
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+.gc.pickable .t {
+  padding-right: 26px;
+}
+.gc:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--pf-accent) 40%, var(--pf-border));
+}
+.gc:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
+.gc[aria-pressed="true"] {
+  border-color: var(--pf-accent);
+  box-shadow:
+    0 0 0 1px var(--pf-accent),
+    var(--pf-shadow);
+}
+.gc .t {
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--pf-muted);
+}
+.av {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pf-accent-contrast);
+  background: var(--pf-accent);
+  flex: none;
+}
+.av.person {
+  background: var(--l-core);
+}
+.bar {
+  display: flex;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pf-muted) 18%, transparent);
+}
+.bar i {
+  display: block;
+  height: 100%;
+}
+.bar .d {
+  background: var(--pf-success);
+}
+.bar .r {
+  background: var(--pf-accent);
+}
+.bar .f {
+  background: var(--pf-danger);
+}
+.bar .b {
+  background: var(--pf-warning);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.meta .when {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--pf-muted);
+}
+.gc .pf-badge,
+.dc .pf-badge {
+  min-height: 20px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+}
+.why {
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: var(--pf-radius-md);
+  color: var(--pf-danger);
+  background: var(--pf-danger-surface);
+}
+
+/* Today digest */
+.digest {
+  display: grid;
+  gap: 12px;
+}
+.digest-summary {
+  margin: 0;
+}
+.digest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.dc {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: var(--pf-radius-md);
+  background: var(--pf-surface);
+  border: 1px solid var(--pf-border);
+  box-shadow: var(--pf-shadow);
+}
+.dc.picked,
+.dc.open {
+  border-color: var(--pf-accent);
+}
+.dc-check {
+  margin-top: 2px;
+}
+.dc-main {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.dc-title {
+  all: unset;
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.dc-title:hover {
+  text-decoration: underline;
+}
+.dc-title:focus-visible {
+  outline: 2px solid var(--pf-focus);
+  outline-offset: 2px;
+}
+.dc-body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pf-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.dc-acts {
+  display: flex;
+  gap: 6px;
+}
+
+/* Open goal */
+.panel {
+  position: sticky;
+  top: 76px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  padding: 20px;
+  border-radius: var(--pf-radius-lg);
+  background: var(--pf-surface-raised);
+  border: 1px solid var(--pf-border);
+  box-shadow: var(--pf-shadow);
+}
+.panel p {
+  margin: 0;
+}
+.panel-h {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+}
+.panel-h h2 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.25;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.x {
+  all: unset;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--pf-muted);
+  flex: none;
+}
+.x:hover {
+  background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
+}
+.x:focus-visible {
+  outline: 2px solid var(--pf-focus);
+}
+.note {
+  font-size: 12px;
+  color: var(--pf-muted);
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.step {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--pf-border);
+}
+.step > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.step .num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid var(--sc);
+  color: var(--sc);
+}
+.step.done {
+  --sc: var(--pf-success);
+}
+.step.done .num {
+  background: var(--sc);
+  color: var(--pf-accent-contrast);
+}
+.step.in_progress {
+  --sc: var(--pf-accent);
+}
+.step.pending {
+  --sc: var(--pf-muted);
+}
+.step.failed {
+  --sc: var(--pf-danger);
+}
+.step.blocked {
+  --sc: var(--pf-warning);
+}
+.step .st {
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.step .sm {
+  font-size: 12px;
+  color: var(--pf-muted);
+}
+.panel .acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Narrower: the open goal goes under the board. Phone: one column at a time, picked with tabs,
+   and the open goal is a sheet from the bottom. */
+@media (max-width: 1100px) {
+  .layout.open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .layout.open .cols {
+    grid-template-columns: repeat(4, minmax(200px, 1fr));
+  }
+}
+@media (max-width: 1100px) and (min-width: 781px) {
+  .cols,
+  .layout.open .cols {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+  .panel {
+    position: static;
+    max-height: none;
+  }
+}
+@media (max-width: 780px) {
+  .tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab {
+    flex: none;
+    border: 1px solid var(--pf-border);
+    background: var(--pf-surface);
+  }
+  .tab .c {
+    opacity: 0.8;
+    margin-left: 5px;
+  }
+  .cols,
+  .layout.open .cols {
+    grid-template-columns: 1fr;
+  }
+  .col {
+    display: none;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .col.show {
+    display: grid;
+  }
+  .col-h {
+    display: none;
+  }
+  .panel {
+    position: fixed;
+    inset: 64px 0 0 0;
+    z-index: 50;
+    max-height: none;
+    border-radius: 18px 18px 0 0;
+  }
+  .dc {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .dc-acts {
+    grid-column: 2;
+  }
+  .bulk-acts {
+    margin-left: 0;
+  }
+}

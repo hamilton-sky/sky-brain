@@ -7,8 +7,7 @@
   font-size: 13px;
 }
 .pf-dashboard-content > * + *,
-.pf-card + .pf-card,
-.goals > li + li {
+.pf-card + .pf-card {
   margin-top: 14px;
 }
 .pf-card h2,
@@ -57,74 +56,9 @@
   flex-direction: column;
   gap: 12px;
 }
-.goals,
-.tasks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.pf-card.goal {
-  padding: 0;
-}
-.goal-cancelled {
-  opacity: 0.6;
-}
-.goal-head {
-  all: unset;
-  box-sizing: border-box;
-  cursor: pointer;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 16px 20px;
-  border-radius: var(--pf-radius-md);
-}
-.goal-head:focus-visible {
-  outline: 2px solid var(--pf-focus);
-  outline-offset: 2px;
-}
-.goal-title {
-  font-weight: 600;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.goal-body {
-  display: grid;
-  gap: 10px;
-  padding: 4px 20px 18px;
-  border-top: 1px solid var(--pf-border);
-}
-.goal-body > p {
-  margin: 0;
-}
 .body {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.task {
-  border-top: 1px solid var(--pf-border);
-  padding: 10px 0;
-}
-.task-head {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.task-title {
-  font-weight: 500;
-}
-.task p {
-  margin: 4px 0;
 }
 
 /* The frame (AppShell.tsx): sidebar icons. */

@@ -16,7 +16,7 @@ import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
-import { Board } from "./Board.tsx";
+import { Board } from "./board/Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
 // The key public/theme-init.js and the sign-in and consent pages read too.
@@ -81,8 +81,8 @@ function Root() {
       ) : page === "board" ? (
         <>
           <PageHeader
-            title="Goals"
-            description="What your agents propose waits here. Only you approve."
+            title="Board"
+            description="What your agents propose waits here. Only you approve. Review today's list, or see every goal."
           />
           <Projects me={me} />
         </>
