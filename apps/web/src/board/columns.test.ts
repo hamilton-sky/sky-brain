@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Goal } from "../api.ts";
 import { describeBulk, runBulk } from "./bulk.ts";
+import { summaryOf } from "./GoalTile.tsx";
 import {
   canBulkApprove,
   canReject,
@@ -116,5 +117,16 @@ describe("runBulk", () => {
     expect(describeBulk("approve", r)).toBe(
       'Approved 2 goals. 1 could not be approved. "B": It is held.',
     );
+  });
+});
+
+describe("summaryOf", () => {
+  it("keeps short text and cuts long text at a word", () => {
+    expect(summaryOf("  Short goal.  ")).toBe("Short goal.");
+    const long = "word ".repeat(100);
+    const s = summaryOf(long, 50);
+    expect(s.endsWith("…")).toBe(true);
+    expect(s.length).toBeLessThanOrEqual(51);
+    expect(s).not.toMatch(/wor…$/);
   });
 });

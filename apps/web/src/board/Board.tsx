@@ -1,5 +1,6 @@
 // One project's board, built for fast review: "Today" is a digest of up to ten goals waiting
 // for you, and "All goals" is the card board (Needs you, Running, Waiting to start, Done).
+// Opening a goal shows it as a dialog over the board.
 // Approve and reject work on one goal or many; only a person can do either, so they live here.
 import {
   Alert,
@@ -142,7 +143,7 @@ export function Board({ project }: { project: Project }) {
       {goals === null ? (
         <Skeleton className="loading" />
       ) : (
-        <div className={open ? "layout open" : "layout"}>
+        <div className="layout">
           <div className="layout-main">
             {view === "today" ? (
               <Digest

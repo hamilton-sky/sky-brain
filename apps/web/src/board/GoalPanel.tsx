@@ -1,6 +1,6 @@
-// One goal opened beside the board (a sheet from the bottom on a phone): what it is for, its
-// tasks in order, and the person-only actions: approve, release a held text, reject (cancel).
-import { Alert, Badge, Button } from "panel-frame-ui";
+// One goal opened as a dialog over the board: what it is for, its tasks in order, and the
+// person-only actions: approve, release a held text, reject (cancel).
+import { Alert, Badge, Button, Dialog } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { api, type Goal, type Task, type TaskStatus } from "../api.ts";
 import { canReject, isHeld } from "./columns.ts";
@@ -59,18 +59,14 @@ export function GoalPanel(props: {
   const state = stateBadge(goal);
 
   return (
-    <aside className="panel" aria-label="Goal details">
-      <div className="panel-h">
-        <h2>{goal.title}</h2>
-        <button
-          type="button"
-          className="x"
-          aria-label="Close"
-          onClick={props.onClose}
-        >
-          ✕
-        </button>
-      </div>
+    <Dialog
+      open
+      onOpenChange={(open) => !open && props.onClose()}
+      title={goal.title}
+      className="goal-dialog"
+      showCloseButton
+      closeButtonLabel="Close"
+    >
       <p className="note">
         <Badge tone={state.tone}>{state.label}</Badge>{" "}
         {goal.author_kind === "agent"
@@ -144,7 +140,7 @@ export function GoalPanel(props: {
           approve.
         </p>
       )}
-    </aside>
+    </Dialog>
   );
 }
 

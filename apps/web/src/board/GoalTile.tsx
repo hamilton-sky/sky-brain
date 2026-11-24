@@ -1,4 +1,4 @@
-// A goal as a card: who proposed it, a task progress bar, its state, and (for goals waiting for
+// A goal as a card: its summary on hover, who proposed it, a task progress bar, its state, and (for goals waiting for
 // you) a checkbox to pick it for a bulk approve or reject.
 import { Badge } from "panel-frame-ui";
 import type { Goal } from "../api.ts";
@@ -13,6 +13,15 @@ export function proposer(goal: Goal): string {
   const app = parts[1] ?? parts[0] ?? "agent";
   const role = parts.length > 2 ? parts[parts.length - 1] : null;
   return role ? `${role} · ${app}` : app;
+}
+
+/** The first ~280 characters of a goal's text, cut at a word, for the hover summary. */
+export function summaryOf(body: string, max = 280): string {
+  const text = body.trim();
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
 export function ago(iso: string, now: Date): string {
@@ -96,8 +105,16 @@ export function GoalTile(props: {
           onChange={(e) => props.onPick?.(e.target.checked)}
         />
       )}
+      {goal.body && !isHeld(goal) && (
+        <div className="gc-peek" role="tooltip" id={`peek-${goal.id}`}>
+          {summaryOf(goal.body)}
+        </div>
+      )}
       <button
         type="button"
+        aria-describedby={
+          goal.body && !isHeld(goal) ? `peek-${goal.id}` : undefined
+        }
         className={props.onPick ? "gc pickable" : "gc"}
         aria-pressed={props.open}
         onClick={props.onOpen}
