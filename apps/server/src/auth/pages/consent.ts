@@ -17,7 +17,7 @@ export const html = `<!doctype html>
   </head>
   <body>
     <main class="wrap consent">
-      <span class="wordmark">sky<span class="dash">-</span>brain</span>
+      <span class="wordmark"><span class="wm-sky">sky</span><span class="wm-brain">brain</span></span>
       <canvas data-brain aria-hidden="true"></canvas>
       <section class="card" aria-labelledby="ask">
         <h1 id="ask">

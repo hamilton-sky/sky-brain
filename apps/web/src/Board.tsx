@@ -296,18 +296,19 @@ function TaskRow(props: {
         )}
         {task.holder && <> · held by {task.holder.actor}</>}
       </p>
-      {task.fail_reason && <p className="error small">{task.fail_reason}</p>}
+      {task.fail_reason && <Alert tone="error">{task.fail_reason}</Alert>}
       {task.quarantined_because && (
-        <p className="warn small">
-          Held: {task.quarantined_because}.{" "}
-          <button
-            className="link"
+        <Alert tone="warning" className="row">
+          <span>Held: {task.quarantined_because}.</span>
+          <Button
+            variant="secondary"
+            className="small-button"
             disabled={props.busy}
             onClick={() => props.act(() => api.releaseTaskText(task.id))}
           >
             Release
-          </button>
-        </p>
+          </Button>
+        </Alert>
       )}
     </li>
   );
