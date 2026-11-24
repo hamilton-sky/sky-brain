@@ -424,7 +424,8 @@ its own, in `bench/book/`, against a test brain:
    tool's description; server instructions (512 characters, built-in text only) and the claude.ai
    canary test; **one** read-only tool `book { id? }` (no id: the contents; an id: a chapter, tool
    or recipe), marked `readOnlyHint: true, destructiveHint: false`; error messages that point to
-   `book { id: "errors" }`.
+   `book { id: "errors" }`; the "Your brain now" block in `book`; `context { q }` and a `layer`
+   filter on `search` (section 13).
 2. **Deferred, each with its trigger:**
 
 | Piece | Build it when |
@@ -456,6 +457,48 @@ its own, in `bench/book/`, against a test brain:
   quarantined or web text in the same session is flagged.
 - **The usage log keeps counts only** at first. Query text of failed searches can come later if the
   counts show it would help.
+
+
+## 13. The brain's own context, and reading across layers (added 24 Nov, from shammai's question)
+
+shammai asked whether the book accounts for the brain's own context, and for reading all layers
+together as well as each layer alone. The first draft covered the layers as *method* (chapter 2)
+and the context packet only inside `claim_task`. Three gaps, and how the book closes them:
+
+**1. The book shows the brain itself, not only how to use it.** `book` with no id adds a short,
+generated block, **Your brain now**, served as fenced data (hard rule 7), never entry text:
+
+```text
+Your brain now (shammai, as po via claude.ai)
+About me      23 items (last change 20 Nov)
+Notebooks     Work (412, 380 approved) · Family (57) · Health (12)
+Inboxes       Inbox (34 proposed, 6 older than 14 days) · Family inbox (3)
+Boards        sky-brain: 2 goals approved, 1 draft, 3 tasks ready
+Waiting       2 approval requests open
+```
+
+With it the model knows what exists before it searches: which Notebook to narrow to, that the
+Inbox is full of unchecked items, that a task is ready. It costs one query per call, filtered by
+membership (hard rule 4), and later by hat and scopes.
+
+**2. Three reading scopes, taught in chapter 3 as a choice the model makes first:**
+
+| Scope | When | How | Today |
+| --- | --- | --- | --- |
+| **The whole brain** | "What do I know about X?", or starting work without a task | `context { q }`: the same fenced packet `claim_task` returns (About me, rules in force, the most relevant entries across Notebooks and Inbox, and a line on what the brain does not know), on demand | Missing: the packet exists (`memory/packet.ts`) but is reachable only by claiming a task |
+| **One layer** | "What did I decide?" (Notebooks), "what came in lately?" (Inbox), "what is true about me?" (About me) | `search { q, layer }` with `layer` = `core`, `long` or `short`; the board is read with the board tools | Missing: `search` takes `memory_id` but no `layer` |
+| **One memory** | "In my Family notebook..." | `search { q, memory_id }` | Exists |
+
+**3. How layers are weighed together.** When the whole brain is searched, the book states the
+order the server already ranks by, so the model reads results the same way: About me is always
+included and wins on facts about the person; approved beats proposed; inside the same trust,
+Notebooks beat the Inbox, and the Inbox gets a recency boost (MEMORY-SCHEMA section 2). A
+conflict between layers is reported to the person, never settled silently (chapter 3).
+
+**When.** `context { q }` and the `layer` filter change what models can call, so they ship with
+step 1, after the measurement window, and the bench gets tasks for each scope ("everything I know
+about the theme", "only my decisions", "only what came in this week"). "Your brain now" ships with
+the `book` tool itself.
 
 ## Open questions, answered by the research (for shammai to confirm)
 

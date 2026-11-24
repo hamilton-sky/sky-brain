@@ -1,5 +1,16 @@
 # 3. Reading the brain
 
+## First choose the scope
+
+| You need | Call |
+| --- | --- |
+| Everything the brain knows about a topic | `context { q }`: About me, rules and the best entries from every layer, in one fenced packet (planned) |
+| One layer: About me, Notebooks or Inbox | `search { q, layer: "core" \| "long" \| "short" }` (planned) |
+| One memory, such as the Family notebook | `search { q, memory_id }` |
+| What is being worked on now | the board tools (chapter `board`) |
+
+Look at **Your brain now** in the contents first: it shows which memories exist and how full they are.
+
 ## Search, then get
 
 `search` is word search over the person's memories. Any word may match, results are ranked, and
