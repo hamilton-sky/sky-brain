@@ -3,7 +3,8 @@
 **Status:** part 1 (identity) is built and live (D26, 23 Nov 2026). Parts 2 to 4 (scopes, skills,
 triggers) are still a proposal under D25 in [`docs/DECISIONS.md`](../DECISIONS.md). Hats (the
 person's identity an app works under) and approval through the model are proposed in
-[HATS-AND-APPROVAL.md](HATS-AND-APPROVAL.md) (D30, D31).
+[HATS-AND-APPROVAL.md](HATS-AND-APPROVAL.md) (D30, D31). How models learn to use the tools, and where
+skills would show, is proposed in [BOOK.md](BOOK.md) (D35).
 
 sky-brain is a brain shared by a person (or an organization) and the AI agents they connect.
 For agents to share it safely, the server has to know four things about each one: **who it is**,
