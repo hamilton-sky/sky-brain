@@ -1,5 +1,6 @@
 // The board's REST routes as the signed-in browser calls them: the session cookie only, and
 // every write as JSON (the server refuses other bodies from a browser session).
+import type { CommentColor, EntryComment } from "@sky-brain/shared/comments";
 
 export interface Me {
   kind: "human" | "agent";
@@ -82,23 +83,8 @@ export interface Entry {
   updated_at: string;
 }
 
-export type CommentColor = "yellow" | "green" | "blue" | "purple" | "orange";
-
-/** A person's note on a document, on a passage (`quote`) or on the whole text. */
-export interface EntryComment {
-  id: string;
-  entry_id: string;
-  quote: string | null;
-  body: string;
-  color: CommentColor;
-  resolved: boolean;
-  resolved_by: string | null;
-  resolved_at: string | null;
-  author_kind: "human" | "agent";
-  author: string;
-  created_at: string;
-}
-
+// Comments on a document: the shared wire types (types only, so nothing of zod reaches the page).
+export type { CommentColor, EntryComment } from "@sky-brain/shared/comments";
 export interface AgentProfile {
   id: string;
   slug: string;
@@ -246,4 +232,42 @@ export const api = {
       headers: { "content-type": "application/json" },
       body: "{}",
     }),
+};
+
+interface ApprovalItem {
+  kind: "goal" | "entry";
+  id: string;
+  title: string;
+  state: string;
+  changed: boolean;
+}
+
+export interface Approval {
+  id: string;
+  workspace_id: string;
+  status: "pending" | "approved" | "rejected" | "expired" | "superseded";
+  reason: string;
+  requested_by: string;
+  items: ApprovalItem[];
+  path: string;
+  created_at: string;
+  expires_at: string;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export const approvalsApi = {
+  pending: () =>
+    request<{ approvals: Approval[] }>("GET", "/api/v1/approvals").then(
+      (r) => r.approvals,
+    ),
+  get: (id: string) =>
+    request<{ approval: Approval }>("GET", `/api/v1/approvals/${id}`).then(
+      (r) => r.approval,
+    ),
+  decide: (id: string, action: "approve" | "reject") =>
+    request<{ approval: Approval }>(
+      "POST",
+      `/api/v1/approvals/${encodeURIComponent(id)}/${action}`,
+    ).then((r) => r.approval),
 };

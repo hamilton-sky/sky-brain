@@ -192,7 +192,7 @@ The memory tools are built (step 1). The `context` packet on `claim_task` and le
 |---|---|---|
 | `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
 | `search` | `GET /api/v1/entries?q=` | word search, any word may match, ranked; returns summaries, not bodies |
-| `get` | `GET /api/v1/entries/:id` | one entry with its body and every version |
+| `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
 | `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |
 
 People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
@@ -222,6 +222,33 @@ profiles and only apps they allowed on the consent page.
 
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
+
+### Approval requests (D31, step 1)
+
+An agent asks the person to approve exact draft goals or proposed entries, and gets a link to
+sky-brain's own page. The person decides there, signed in; no tool approves, and chat text or a
+tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPROVAL.md](vision/HATS-AND-APPROVAL.md).
+
+| MCP tool | REST | Who |
+|---|---|---|
+| `request_approval` | `POST /api/v1/approvals` (`items`: up to 20 of `{kind: goal or entry, id}`, `reason`) | writers; run tokens refused |
+| `approval_status` | `GET /api/v1/approvals/:id` | members of that brain |
+| | `GET /api/v1/approvals` | pending requests in the person's brains |
+| | `POST /api/v1/approvals/:id/approve`, `/reject` | people only, owners and editors |
+
+- Table `approval_requests` (migration 0010): the items with a **pin** each (a goal's status,
+  last change and its tasks' last change; an entry's trust and version), status `pending`,
+  `approved`, `rejected`, `expired` or `superseded`, who decided and when.
+- **What the person saw is what is applied.** Approving checks every pin first; if anything
+  changed, the request becomes `superseded` and nothing is applied. Then, in one transaction, each
+  goal goes through `approveGoal` and each entry through `setTrustInTx`, so every rule of the
+  person's own buttons (quarantine, role, About me owner only) holds. Rejecting applies nothing:
+  the items stay drafts and proposals.
+- A request expires after 60 minutes (410 `expired`), is decided once (409 after), and one agent
+  may have at most 10 open per person (429 `too_many_open`). Every step writes an audit row.
+- Web: an **Approvals** tab lists what is waiting (refreshed every 20 seconds), and `/a/<id>` shows
+  one request with Approve and Reject. A signed-out visit to `/a/<id>` returns there after
+  sign-in. Alerts (email, then web push) are the next step.
 
 ### The task board (D20)
 
@@ -268,9 +295,16 @@ A goal can carry up to 20 documents: entries (markdown with the writer's summary
 in `goal_documents`. An agent writes one with `capture` and links it with the `attach_document`
 MCP tool; `GET /goals` and `GET /goals/:id` return each goal's documents as summaries, never
 bodies, and agents see only proposed or approved ones. On the board, hovering a card shows the
-summaries; opening a document shows it full screen, rendered by a small markdown reader that
-never inserts HTML, with Edit saving a new version through `POST /entries/:id/versions`. A held
-document is shown as plain text. PDFs are not stored yet.
+summaries; opening a document goes to its own page, `/docs/<entry id>` (D34). The page reads
+the markdown with a small renderer that never inserts HTML, and edits it in four views (Read,
+Sections, Source, Split) with a formatting bar, section moves, splits and merges, and undo; Save
+writes a new version through `POST /entries/:id/versions`. A held document is shown as plain
+text. People comment on a document (`entry_comments`): a note in a color on a selected passage
+or on the whole text, resolved, reopened or deleted by people with a writer role
+(`POST /entries/:id/comments`, `POST /entries/:id/comments/:commentId/resolve`,
+`DELETE /entries/:id/comments/:commentId`, people only; secret-scanned, 2,000 characters, 200 per
+entry). Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
+`GET /entries/:id`), so the model sees them with `get`. PDFs are not stored yet.
 
 ## 9. Auth
 

@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { api, type Goal, type GoalDocument, type Project } from "../api.ts";
 import { navigate } from "../router.ts";
+import { ViewSwitch } from "../ViewSwitch.tsx";
 import { type BulkAction, describeBulk, runBulk } from "./bulk.ts";
 import { BulkBar } from "./BulkBar.tsx";
 import { canReject, type Column, columnOf, COLUMNS } from "./columns.ts";
@@ -106,28 +107,18 @@ export function Board({ project }: { project: Project }) {
   return (
     <section className="board">
       <div className="section-head">
-        <div className="views" role="tablist" aria-label="View">
-          {(
+        <ViewSwitch
+          label="View"
+          value={view}
+          onChange={pickView}
+          views={[
             [
-              [
-                "today",
-                `Today${needs.length ? ` (${Math.min(needs.length, 10)})` : ""}`,
-              ],
-              ["board", "All goals"],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              className="view"
-              aria-selected={view === v}
-              onClick={() => pickView(v)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+              "today",
+              `Today${needs.length ? ` (${Math.min(needs.length, 10)})` : ""}`,
+            ],
+            ["board", "All goals"],
+          ]}
+        />
         {!adding && (
           <Button variant="secondary" onClick={() => setAdding(true)}>
             New goal

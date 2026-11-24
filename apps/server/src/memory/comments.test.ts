@@ -6,24 +6,16 @@ import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { auditLog, entryComments } from "../db/schema.ts";
 import {
-  device,
+  actorClients,
   expectError,
-  human,
   useRunTokenFixture,
   world,
 } from "../run-tokens/tests/fixture.ts";
 import { seedEntry } from "../testing/harness.ts";
-import { mintRunToken, withToken } from "../testing/task-seeds.ts";
 
 const ctx = useRunTokenFixture();
 
-const agent = (person: string) =>
-  ctx.server.as({
-    kind: "agent" as const,
-    agent_id: "claude-code",
-    on_behalf_of: person,
-  });
-const person = (id: string) => ctx.server.as(human(id));
+const { agent, person, runToken } = actorClients(ctx);
 
 async function setup(trust: "proposed" | "quarantined" = "proposed") {
   const w = await world(ctx.db);
@@ -66,7 +58,10 @@ describe("entry comments", () => {
     expect(list.status).toBe(200);
     expect(list.body.comments).toHaveLength(2);
     const got = await person(w.owner).get(`/api/v1/entries/${entryId}`);
-    expect(got.body.comments[0].body).toBe("Weekly is enough.");
+    // Both were written at the fixture's fixed clock, so compare as a set.
+    expect(
+      got.body.comments.map((c: { body: string }) => c.body).sort(),
+    ).toEqual(["Looks good", "Weekly is enough."]);
 
     const audits = await ctx.db
       .select()
@@ -218,12 +213,7 @@ describe("entry comments", () => {
 
   it("run tokens have no verb for comments", async () => {
     const { w, base } = await setup();
-    const d = await device(ctx.server, w.owner);
-    const { runToken } = await mintRunToken(ctx.server, d.deviceToken, {
-      project_id: w.projectA,
-      verbs: ["read", "plan"],
-    });
-    const c = withToken(ctx.server, runToken);
+    const c = await runToken(w.owner, w.projectA);
     expectError(await c.get(base), 403, "verb_not_allowed");
     expectError(await c.post(base, { body: "x" }), 403, "verb_not_allowed");
   });

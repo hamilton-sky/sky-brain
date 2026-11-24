@@ -1,6 +1,7 @@
 // The app: panel-frame-ui's dashboard shell (sidebar with Board and Agents, a toolbar with the
 // theme picker and sign out) in sky-brain's Constellation Night theme (theme.css), around the
-// board (a project picker and the project's goals) or the agents page.
+// board (a project picker and the project's goals), a document's page, approvals, or the agents
+// page. Addresses come from router.ts.
 import {
   Alert,
   Button,
@@ -15,12 +16,37 @@ import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
+import { ApprovalLink, Approvals } from "./Approvals.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./board/Board.tsx";
 import { DocPage } from "./docs/DocPage.tsx";
-import { navigate, useRoute } from "./router.ts";
+import { navigate, parseRoute, useRoute } from "./router.ts";
 
 const PROJECT_KEY = "sky-brain.project";
+// An approval link opened while signed out: where to go back to after sign-in.
+const RETURN_KEY = "sky-brain.return";
+
+/** Remembers an approval link opened while signed out, to return to after sign-in. */
+function rememberReturn(): void {
+  try {
+    const route = parseRoute(location.pathname);
+    if (route.page === "approval") sessionStorage.setItem(RETURN_KEY, route.id);
+  } catch {
+    // Storage refused: the person lands on Approvals instead.
+  }
+}
+
+/** After sign-in lands on `/`, the approval link's request id that sent the person there. */
+function takeReturn(): string | null {
+  try {
+    const id = sessionStorage.getItem(RETURN_KEY);
+    sessionStorage.removeItem(RETURN_KEY);
+    const route = parseRoute(`/a/${id ?? ""}`);
+    return route.page === "approval" ? route.id : null;
+  } catch {
+    return null;
+  }
+}
 // The key public/theme-init.js and the sign-in and consent pages read too.
 const THEME = { type: "localStorage", key: "sky-brain-theme" } as const;
 
@@ -52,16 +78,29 @@ function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
   const route = useRoute();
-  const page: Page = route.page === "agents" ? "agents" : "board";
+  const page: Page =
+    route.page === "approval"
+      ? "approvals"
+      : route.page === "doc"
+        ? "board"
+        : route.page;
 
   useEffect(() => {
-    api.me().then(setMe, (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) {
-        // Signed out: the sign-in page (with the brain and how it works) is the way in.
-        setMe("signed-out");
-        location.replace("/sign-in");
-      } else setError(err instanceof Error ? err.message : String(err));
-    });
+    api.me().then(
+      (m) => {
+        const back = location.pathname === "/" ? takeReturn() : null;
+        if (back) navigate({ page: "approval", id: back }, true);
+        setMe(m);
+      },
+      (err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) {
+          // Signed out: the sign-in page (with the brain and how it works) is the way in.
+          rememberReturn();
+          setMe("signed-out");
+          location.replace("/sign-in");
+        } else setError(err instanceof Error ? err.message : String(err));
+      },
+    );
   }, []);
 
   const signedIn = me !== null && me !== "signed-out" ? me : undefined;
@@ -88,6 +127,22 @@ function Root() {
         />
       ) : route.page === "doc" ? (
         <DocPage key={route.entryId} entryId={route.entryId} me={me} />
+      ) : route.page === "approval" ? (
+        <>
+          <PageHeader
+            title="An agent is asking"
+            description="This is exactly what will change. Only you can approve it."
+          />
+          <ApprovalLink id={route.id} />
+        </>
+      ) : page === "approvals" ? (
+        <>
+          <PageHeader
+            title="Approvals"
+            description="What your agents asked you to approve, in one place."
+          />
+          <Approvals />
+        </>
       ) : page === "board" ? (
         <>
           <PageHeader

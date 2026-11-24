@@ -20,7 +20,7 @@ import { findEntry, type EntryRow } from "./entries-service.ts";
 type Human = Actor & { kind: "human" };
 type CommentRow = typeof entryComments.$inferSelect;
 
-export function commentWire(row: CommentRow): EntryComment {
+function commentWire(row: CommentRow): EntryComment {
   return {
     id: row.id,
     entry_id: row.entryId,

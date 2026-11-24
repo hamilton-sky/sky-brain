@@ -1,6 +1,6 @@
 {
-  "id": "a1f9182b-88b4-4e55-8b38-f6bdc2bf7cf7",
-  "prevId": "19e1e220-e635-46cb-ab40-1aa3277efc61",
+  "id": "55bb4eba-fa1a-4dc9-9214-58343d01b6c2",
+  "prevId": "4683a879-9129-4eea-9357-e8ecdd5ce0a6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3629,6 +3629,143 @@
         "agent_profiles_kind": {
           "name": "agent_profiles_kind",
           "value": "\"agent_profiles\".\"kind\" in ('worker', 'steward')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_requests": {
+      "name": "approval_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_kind": {
+          "name": "author_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author": {
+          "name": "author",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "on_behalf_of": {
+          "name": "on_behalf_of",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "items": {
+          "name": "items",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "approval_requests_workspace_status_idx": {
+          "name": "approval_requests_workspace_status_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "approval_requests_workspace_id_workspaces_id_fk": {
+          "name": "approval_requests_workspace_id_workspaces_id_fk",
+          "tableFrom": "approval_requests",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_requests_status": {
+          "name": "approval_requests_status",
+          "value": "\"approval_requests\".\"status\" in ('pending', 'approved', 'rejected', 'expired', 'superseded')"
+        },
+        "approval_requests_author_kind": {
+          "name": "approval_requests_author_kind",
+          "value": "\"approval_requests\".\"author_kind\" in ('human', 'agent')"
+        },
+        "approval_requests_decided": {
+          "name": "approval_requests_decided",
+          "value": "(\"approval_requests\".\"status\" in ('approved', 'rejected')) = (\"approval_requests\".\"decided_by\" is not null and \"approval_requests\".\"decided_at\" is not null)"
         }
       },
       "isRLSEnabled": false

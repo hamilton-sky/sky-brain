@@ -11,7 +11,7 @@ export interface Section {
 }
 
 let seq = 0;
-export const newId = (): string => `s${(seq += 1)}`;
+const newId = (): string => `s${(seq += 1)}`;
 
 const HEADING = /^#{1,6}\s+\S/;
 

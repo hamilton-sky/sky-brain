@@ -1,5 +1,5 @@
 {
-  "id": "19e1e220-e635-46cb-ab40-1aa3277efc61",
+  "id": "4683a879-9129-4eea-9357-e8ecdd5ce0a6",
   "prevId": "19c54ae9-b745-4397-a3b7-136c2ffcff9f",
   "version": "7",
   "dialect": "postgresql",
@@ -3633,21 +3633,16 @@
       },
       "isRLSEnabled": false
     },
-    "public.goal_documents": {
-      "name": "goal_documents",
+    "public.approval_requests": {
+      "name": "approval_requests",
       "schema": "",
       "columns": {
-        "goal_id": {
-          "name": "goal_id",
+        "id": {
+          "name": "id",
           "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "entry_id": {
-          "name": "entry_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "workspace_id": {
           "name": "workspace_id",
@@ -3673,20 +3668,63 @@
           "primaryKey": false,
           "notNull": true
         },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "items": {
+          "name": "items",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
-        "goal_documents_entry_idx": {
-          "name": "goal_documents_entry_idx",
+        "approval_requests_workspace_status_idx": {
+          "name": "approval_requests_workspace_status_idx",
           "columns": [
             {
-              "expression": "entry_id",
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3699,25 +3737,12 @@
         }
       },
       "foreignKeys": {
-        "goal_documents_goal_id_goals_id_fk": {
-          "name": "goal_documents_goal_id_goals_id_fk",
-          "tableFrom": "goal_documents",
-          "tableTo": "goals",
+        "approval_requests_workspace_id_workspaces_id_fk": {
+          "name": "approval_requests_workspace_id_workspaces_id_fk",
+          "tableFrom": "approval_requests",
+          "tableTo": "workspaces",
           "columnsFrom": [
-            "goal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "goal_documents_entry_id_entries_id_fk": {
-          "name": "goal_documents_entry_id_entries_id_fk",
-          "tableFrom": "goal_documents",
-          "tableTo": "entries",
-          "columnsFrom": [
-            "entry_id"
+            "workspace_id"
           ],
           "columnsTo": [
             "id"
@@ -3726,21 +3751,21 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "goal_documents_pk": {
-          "name": "goal_documents_pk",
-          "columns": [
-            "goal_id",
-            "entry_id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "goal_documents_author_kind": {
-          "name": "goal_documents_author_kind",
-          "value": "\"goal_documents\".\"author_kind\" in ('human', 'agent')"
+        "approval_requests_status": {
+          "name": "approval_requests_status",
+          "value": "\"approval_requests\".\"status\" in ('pending', 'approved', 'rejected', 'expired', 'superseded')"
+        },
+        "approval_requests_author_kind": {
+          "name": "approval_requests_author_kind",
+          "value": "\"approval_requests\".\"author_kind\" in ('human', 'agent')"
+        },
+        "approval_requests_decided": {
+          "name": "approval_requests_decided",
+          "value": "(\"approval_requests\".\"status\" in ('approved', 'rejected')) = (\"approval_requests\".\"decided_by\" is not null and \"approval_requests\".\"decided_at\" is not null)"
         }
       },
       "isRLSEnabled": false

@@ -6,24 +6,17 @@ import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { auditLog, goalDocuments } from "../db/schema.ts";
 import {
-  device,
+  actorClients,
   expectError,
-  human,
   useRunTokenFixture,
   world,
 } from "../run-tokens/tests/fixture.ts";
 import { seedEntry } from "../testing/harness.ts";
-import { mintRunToken, seedGoal, withToken } from "../testing/task-seeds.ts";
+import { seedGoal } from "../testing/task-seeds.ts";
 
 const ctx = useRunTokenFixture();
 
-const agent = (person: string) =>
-  ctx.server.as({
-    kind: "agent" as const,
-    agent_id: "claude-code",
-    on_behalf_of: person,
-  });
-const person = (id: string) => ctx.server.as(human(id));
+const { agent, person, runToken } = actorClients(ctx);
 
 async function setup(status: "draft" | "approved" | "cancelled" = "draft") {
   const w = await world(ctx.db);
@@ -196,12 +189,7 @@ describe("goal documents", () => {
 
   it("run tokens have no verb for documents", async () => {
     const { w, goalId, entryId } = await setup();
-    const d = await device(ctx.server, w.owner);
-    const { runToken } = await mintRunToken(ctx.server, d.deviceToken, {
-      project_id: w.projectA,
-      verbs: ["read", "plan"],
-    });
-    const c = withToken(ctx.server, runToken);
+    const c = await runToken(w.owner, w.projectA);
     expectError(
       await c.post(`/api/v1/goals/${goalId}/documents`, { entry_id: entryId }),
       403,

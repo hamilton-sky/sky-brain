@@ -1,6 +1,7 @@
 // The MCP memory tools end to end (BUILD-PLAN step 1): a real OAuth access token, the tools
 // listed, a capture that lands in the Inbox as proposed, search and get, and another person's
-// brain refused. There is no tool to approve, reject or revise.
+// brain refused. There is no tool to approve, reject or revise; request_approval (D31) only asks,
+// and returns a link to sky-brain's own page.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   startAuthTestServer,
@@ -98,5 +99,34 @@ describe("mcp memory tools", () => {
     const got = await tool("bob", "get", { entry_id: saved.body.entry.id });
     expect(got.isError).toBe(true);
     expect(got.body.status).toBe(404);
+  });
+});
+
+describe("mcp approval tools", () => {
+  it("asks, returns a link, and stays pending until the person decides", async () => {
+    const captured = await tool("ann", "capture", {
+      kind: "decision",
+      title: "Bedtime is 20:30",
+      body: "On school nights the kids go to bed at 20:30.",
+      summary: "School-night bedtime is 20:30.",
+    });
+    expect(captured.isError).toBe(false);
+    const entryId = captured.body.entry.id as string;
+
+    const asked = await tool("ann", "request_approval", {
+      items: [{ kind: "entry", id: entryId }],
+      reason: "Keep the bedtime rule",
+    });
+    expect(asked.isError).toBe(false);
+    const approval = asked.body.approval;
+    expect(approval.status).toBe("pending");
+    expect(approval.url).toBe(`${server.url}/a/${approval.id}`);
+
+    const status = await tool("ann", "approval_status", { id: approval.id });
+    expect(status.body.approval.status).toBe("pending");
+
+    const other = await tool("bob", "approval_status", { id: approval.id });
+    expect(other.isError).toBe(true);
+    expect(other.body.status).toBe(404);
   });
 });

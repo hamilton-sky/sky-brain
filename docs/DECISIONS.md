@@ -475,14 +475,59 @@ Taking someone's access away is now done in Perminister by disabling the account
 product; their session ends within 7 days (no rolling refresh).
 **Supersedes:** the product-organization rule in D17.
 
-### D30. Documents on goals are linked entries; PDFs wait
+### D30. Hats: one brain, several identities
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built. A hat is a lens by default, a wall
+optionally; no starter hats.
+**Proposal:** a person keeps one brain and one About me, and defines hats (Parent, Engineer,
+Friend). A hat is an optional property of a memory, About me entries can be tagged with one or
+more hats, and each connected app is bound to a hat as well as a role. A hat is a lens (focus,
+can be picked per chat) and, if the person wants, a wall (its own connector and token audience).
+A new brain starts with no hats and gets suggestions. Under a hat, an agent sees
+the shared About me plus that hat's part, reads and writes only that hat's memories and shared
+ones, and captures into that hat's Inbox. Hats only narrow rights and are never a grant; "share
+this hat" writes one grant per memory. Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 1.
+**Why:** people live in several roles with different context (self-aspects, working
+self-concept, encoding specificity). Splitting into several brains would lose what is true in
+every role.
+**Keeps:** one core per person, sharing per memory, D26 bindings, hard rules 3 and 5.
+
+### D31. Approval through the connected model
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built.
+**Proposal:** an agent may ask for approval with `propose_change`; the server creates an
+approval request pinned to the exact versions shown, and the person answers through a channel the
+agent cannot write to: an approval link opened in their own sky-brain session (every client),
+with web inbox, email and later web push to tell them it is waiting. MCP elicitation comes later
+and form mode only for low-risk items, because claude.ai does not support it yet and a client hook
+can answer it. Riskier changes (About me, trust, delete) need the link plus a passkey; sharing
+stays web-only. The web app becomes the place for bulk approval and sharing.
+Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
+**Why:** the person works in Claude or Codex and should rarely need to open sky-brain, without
+letting a model approve itself.
+**Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
+**Decided (shammai, 24 Nov):** web push is the second alert channel, after the inbox and email.
+
+### D32. Approval requests: the first step of D31
+
+**Date:** 2026-11-24. **Decided by:** shammai ("merge and continue" after D30 and D31).
+**Decision:** build approval requests before hats and alerts. An agent calls `request_approval`
+with draft goals or proposed entries and gets a link to `/a/<id>`; the person approves or rejects
+on that page or on the Approvals tab. Each item is pinned to the state shown; a change makes the
+request `superseded` and nothing is applied. Requests expire after 60 minutes, are decided once,
+and are capped at 10 open per agent. Rejecting a request does not reject its items.
+**Why:** it works in every client today (claude.ai has no elicitation), and email, web push and
+hats all build on it.
+**Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
+
+### D33. Documents on goals are linked entries; PDFs wait
 
 **Date:** 2026-11-24. **Decided by:** shammai (chose "md now, PDF later").
 **Decision:** a goal can carry up to 20 documents. A document is an existing entry (markdown with
 the writer's summary, versioned), linked to the goal in a new `goal_documents` table. People and
 agents who may write attach one (`POST /goals/:id/documents`, MCP `attach_document`); only a
 person removes one. The board shows the summaries on hover and in the goal's dialog, and opens a
-document full screen to read it, or to edit it as a new version.
+document to read it, or to edit it as a new version (its page: D34).
 **Why:** the person wants agents' md files on the cards, with their summaries, readable and
 editable without leaving the board (as Pathly's artifacts work). Entries already carry a
 writer's summary, versions, secret scanning and quarantine, so linking them adds no new trust
@@ -492,3 +537,22 @@ see or attach a held one). The web app renders markdown with its own small parse
 elements, so no HTML from a document reaches the page; a held document shows as plain text.
 **Not yet:** PDFs and other files. They need storage and a quarantine rule for text that cannot
 be scanned.
+
+### D34. A document page with a Pathly-style editor, and comments people write
+
+**Date:** 2026-11-24. **Decided by:** shammai ("the md editor should not be a modal but a full
+page like the board", with Pathly's comments, split and reorder, and formatting).
+**Decision:** a document opens on its own page, `/docs/<entry id>`, not in a dialog. The page has
+four views: Read (rendered), Sections (a card per heading that can be edited, moved, dragged,
+duplicated, deleted, split at the cursor and merged), Source (markdown with a formatting bar:
+heading sizes, bold, italic, strikethrough, code, lists, quote, link) and Split (source beside
+the rendered text). Edits are a draft with undo and redo until Save writes a new version.
+Comments are stored in a new `entry_comments` table: a person selects a passage (or none),
+writes a note in one of five colors, and resolves, reopens or deletes it. `GET /entries/:id`
+returns the comments, so the model reads them with MCP `get`.
+**Why:** reading and editing long md comfortably needs the whole screen and an address to come
+back to; comments are how the person tells the model what to change without rewriting it.
+**Keeps:** hard rule 3 (agents read comments but never add, resolve or delete them: those routes
+are people only); hard rule 4 (comments filter by the entry's workspace, and a reader of the
+entry is a reader of its comments; agents never see a held entry's); hard rule 6 (secret scan and
+size caps on every comment). Pathly's AI actions are left out: sky-brain never calls an LLM.

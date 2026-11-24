@@ -8,6 +8,7 @@ import { api, type Entry, type EntryComment, type Me } from "../api.ts";
 import { TRUST_BADGE } from "../board/DocList.tsx";
 import { ago, signer } from "../board/GoalTile.tsx";
 import { navigate } from "../router.ts";
+import { ViewSwitch } from "../ViewSwitch.tsx";
 import { CommentsPanel, QUOTE_MAX } from "./CommentsPanel.tsx";
 import { clearPassages, findRange, markPassages } from "./highlight.ts";
 import { record, redo, start, undo, type History } from "./history.ts";
@@ -284,20 +285,12 @@ export function DocPage({ entryId, me }: { entryId: string; me: Me }) {
         />
       </label>
       <div className="doc-modes">
-        <div className="views" role="tablist" aria-label="Editor view">
-          {VIEWS.map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              className="view"
-              aria-selected={view === v}
-              onClick={() => pickView(v)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <ViewSwitch
+          label="Editor view"
+          views={VIEWS}
+          value={view}
+          onChange={pickView}
+        />
         <span className="muted small">
           {words} words{dirty ? " · unsaved changes" : ""}
         </span>
