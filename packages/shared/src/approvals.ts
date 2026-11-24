@@ -70,3 +70,28 @@ export interface ApprovalRequest {
   decided_by: string | null;
   decided_at: string | null;
 }
+
+/** A browser's push subscription, as `PushSubscription.toJSON()` gives it. */
+export const PushSubscribeRequestSchema = z.strictObject({
+  endpoint: z.url({ protocol: /^https$/ }).max(1024),
+  keys: z.strictObject({
+    p256dh: z.string().min(1).max(256),
+    auth: z.string().min(1).max(64),
+  }),
+  expirationTime: z.number().nullable().optional(),
+});
+export type PushSubscribeRequest = z.infer<typeof PushSubscribeRequestSchema>;
+
+export const PushUnsubscribeRequestSchema = z.strictObject({
+  endpoint: z.string().min(1).max(1024),
+});
+
+/** What a push carries: no item text, so a lock screen shows nothing private. */
+export interface ApprovalPush {
+  title: string;
+  body: string;
+  /** `/a/<id>` on sky-brain's own origin. */
+  path: string;
+  approval_id: string;
+  items: number;
+}

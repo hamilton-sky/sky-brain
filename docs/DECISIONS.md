@@ -519,3 +519,16 @@ and are capped at 10 open per agent. Rejecting a request does not reject its ite
 **Why:** it works in every client today (claude.ai has no elicitation), and email, web push and
 hats all build on it.
 **Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
+
+### D33. Web push alerts for approval requests
+
+**Date:** 2026-11-24. **Decided by:** shammai (web push before email; Resend later).
+**Decision:** a person turns on alerts per browser from the Approvals tab. When an agent asks for
+approval, sky-brain sends a VAPID web push to each of that person's subscriptions, with generic
+text and the `/a/<id>` path only. The alert's Approve button posts with the person's own session
+cookie, the same request the page's button makes; the server's checks (people only, pins, expiry)
+are unchanged. Push is off unless the three `VAPID_*` settings are set.
+**Why:** no outside account is needed, it works on desktop and Android at once and on iPhone once
+sky-brain is on the Home Screen, and the research of 24 Nov ranked it after the inbox.
+**Keeps:** hard rule 3 (an alert never approves by itself; the approve route is people only) and
+hard rule 5 (nothing secret in a URL; the link carries only the request id).

@@ -1,5 +1,6 @@
 // Test harness (spec.md Interfaces -> How a test reaches the server). Seeds insert rows
 // directly, bypassing the trust rules and guards: tests only.
+import type { Push } from "../push/push.ts";
 import type { AuthorKind, Role } from "@sky-brain/shared/enums";
 import type {
   EntryTopic,
@@ -208,6 +209,8 @@ export interface TestServerOptions {
   /** Default false. */
   devActorHeader?: boolean;
   webDist?: string;
+  /** Web push for approval requests. Default: off. */
+  push?: Push;
 }
 
 async function toTestResponse(res: Response): Promise<TestResponse> {
@@ -265,6 +268,7 @@ export async function startTestServer(
     devActorHeader: opts.devActorHeader ?? false,
     ...(opts.now ? { now: opts.now } : {}),
     ...(opts.webDist ? { webDist: opts.webDist } : {}),
+    ...(opts.push ? { push: opts.push } : {}),
   });
   const server = await new Promise<Server>((resolve, reject) => {
     const s = app.listen(0, "127.0.0.1", (err?: Error) =>

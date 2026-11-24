@@ -9,6 +9,7 @@ import type express from "express";
 import type { Auth } from "../auth/auth.ts";
 import type { Db } from "../db/client.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
+import type { Push } from "../push/push.ts";
 import { personOf } from "../actor/keys.ts";
 import { boundProfile, withProfile } from "../agents/profiles.ts";
 import { actorFromMcpClaims } from "./actor.ts";
@@ -22,6 +23,7 @@ export interface McpRouteOptions {
   /** The board-write limiter the REST routes share. */
   limiter?: RateLimiter;
   publicUrl: string;
+  push?: Push;
 }
 
 export function mountMcp(app: express.Express, o: McpRouteOptions): void {
@@ -32,6 +34,7 @@ export function mountMcp(app: express.Express, o: McpRouteOptions): void {
       ...(o.now ? { now: o.now } : {}),
       ...(o.limiter ? { limiter: o.limiter } : {}),
       publicUrl: o.publicUrl,
+      ...(o.push ? { push: o.push } : {}),
     }),
   );
   const unauthorized = () =>

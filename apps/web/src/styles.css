@@ -242,3 +242,6 @@
 .approval + .approval {
   margin-top: 1rem;
 }
+.notify {
+  margin-bottom: 1rem;
+}

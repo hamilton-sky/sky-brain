@@ -6,6 +6,7 @@ import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { readConfig } from "./config.ts";
 import { createPostgresDb } from "./db/client.ts";
+import { pushFromEnv } from "./push/push.ts";
 
 const config = readConfig(process.env);
 if (!config.databaseUrl) {
@@ -26,4 +27,5 @@ export default createApp({
   db,
   devActorHeader: false,
   auth: authFromConfig(config, db),
+  push: pushFromEnv(process.env),
 });

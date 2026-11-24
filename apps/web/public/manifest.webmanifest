@@ -1,0 +1,9 @@
+{
+  "name": "sky-brain",
+  "short_name": "sky-brain",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4fb",
+  "theme_color": "#3b3fb6",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

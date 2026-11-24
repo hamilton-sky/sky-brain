@@ -248,7 +248,18 @@ tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPRO
   may have at most 10 open per person (429 `too_many_open`). Every step writes an audit row.
 - Web: an **Approvals** tab lists what is waiting (refreshed every 20 seconds), and `/a/<id>` shows
   one request with Approve and Reject. A signed-out visit to `/a/<id>` returns there after
-  sign-in. Alerts (email, then web push) are the next step.
+  sign-in.
+- **Web push alerts (D33).** On the Approvals tab, "Tell me when an agent asks" turns alerts on
+  for that browser (permission asked only after the click; on iPhone after Add to Home Screen,
+  with `manifest.webmanifest`). Routes, people only: `GET /api/v1/push/key`,
+  `POST /api/v1/push/subscribe` (the browser's `PushSubscription`, `https` endpoint only) and
+  `POST /api/v1/push/unsubscribe` (own rows only). Table `push_subscriptions` (migration 0011).
+  When an **agent** creates a request, every subscription of its person gets a push with no item
+  text ("An agent is waiting for your approval.") and the `/a/<id>` path; the send is awaited
+  (4-second timeout) and never fails the request; 404 and 410 answers delete the subscription.
+  The service worker (`apps/web/public/sw.js`) shows Approve and Review buttons; Approve posts
+  with the session cookie like the page's button, and opens the page if that fails. Push is on
+  only when `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` are set. Email comes later.
 
 ### The task board (D20)
 
