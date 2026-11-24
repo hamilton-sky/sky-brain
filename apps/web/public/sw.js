@@ -1,4 +1,4 @@
-// sky-brain's service worker (D33): shows approval alerts and handles their buttons. A push holds
+// sky-brain's service worker (D36): shows approval alerts and handles their buttons. A push holds
 // no item text, only where to go. "Approve" posts with the person's own session cookie, exactly
 // like the button on the page; if that fails (signed out, expired, changed) the page opens instead.
 const APPROVAL_PATH = /^\/a\/([0-9a-f-]{36})$/i;

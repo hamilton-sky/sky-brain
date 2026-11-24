@@ -1,4 +1,4 @@
-// `/api/v1/push` (D33): the VAPID public key, and a person's own subscribe and unsubscribe.
+// `/api/v1/push` (D36): the VAPID public key, and a person's own subscribe and unsubscribe.
 // People only: agents and run tokens never subscribe anyone.
 import {
   PushSubscribeRequestSchema,

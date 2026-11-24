@@ -1,4 +1,4 @@
-// Web push (D33): a person subscribes their own browser; an agent's approval request alerts
+// Web push (D36): a person subscribes their own browser; an agent's approval request alerts
 // every subscription of that person with a generic text (no item titles); a gone subscription is
 // removed; agents cannot subscribe; nobody can remove another person's subscription.
 import type { Actor } from "@sky-brain/shared/actor";

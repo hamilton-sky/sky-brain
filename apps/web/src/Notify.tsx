@@ -1,4 +1,4 @@
-// "Tell me when an agent asks" (D33): turns web push on for this browser. The browser asks for
+// "Tell me when an agent asks" (D36): turns web push on for this browser. The browser asks for
 // permission only after the person clicks. On an iPhone, push works only once sky-brain is added
 // to the Home Screen, so the card says how.
 import { Alert, Button, Card } from "panel-frame-ui";

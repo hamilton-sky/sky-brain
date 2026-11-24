@@ -1,4 +1,4 @@
-// Web push subscriptions (D31 alerts, D33), re-exported from schema.ts. One row per browser or
+// Web push subscriptions (D31 alerts, D36), re-exported from schema.ts. One row per browser or
 // phone a person turned notifications on in. Only that person writes or reads their rows.
 import { index, pgTable, text } from "drizzle-orm/pg-core";
 import { at, createdAt, id } from "./columns.ts";

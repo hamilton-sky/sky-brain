@@ -238,7 +238,8 @@ export async function createGoal(
 const invalidState = (message: string) =>
   new HttpError(409, "invalid_state", message);
 
-async function audit(
+/** The goal's audit row, by the caller, with `details` added to the actor's. */
+export async function audit(
   tx: DbOrTx,
   actor: Actor,
   goal: GoalRow,

@@ -520,7 +520,44 @@ and are capped at 10 open per agent. Rejecting a request does not reject its ite
 hats all build on it.
 **Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
 
-### D33. Web push alerts for approval requests
+### D33. Documents on goals are linked entries; PDFs wait
+
+**Date:** 2026-11-24. **Decided by:** shammai (chose "md now, PDF later").
+**Decision:** a goal can carry up to 20 documents. A document is an existing entry (markdown with
+the writer's summary, versioned), linked to the goal in a new `goal_documents` table. People and
+agents who may write attach one (`POST /goals/:id/documents`, MCP `attach_document`); only a
+person removes one. The board shows the summaries on hover and in the goal's dialog, and opens a
+document to read it, or to edit it as a new version (its page: D34).
+**Why:** the person wants agents' md files on the cards, with their summaries, readable and
+editable without leaving the board (as Pathly's artifacts work). Entries already carry a
+writer's summary, versions, secret scanning and quarantine, so linking them adds no new trust
+rule; sky-brain still never calls an LLM.
+**How:** the entry must be in the goal's own workspace and readable by the caller (agents never
+see or attach a held one). The web app renders markdown with its own small parser into React
+elements, so no HTML from a document reaches the page; a held document shows as plain text.
+**Not yet:** PDFs and other files. They need storage and a quarantine rule for text that cannot
+be scanned.
+
+### D34. A document page with a Pathly-style editor, and comments people write
+
+**Date:** 2026-11-24. **Decided by:** shammai ("the md editor should not be a modal but a full
+page like the board", with Pathly's comments, split and reorder, and formatting).
+**Decision:** a document opens on its own page, `/docs/<entry id>`, not in a dialog. The page has
+four views: Read (rendered), Sections (a card per heading that can be edited, moved, dragged,
+duplicated, deleted, split at the cursor and merged), Source (markdown with a formatting bar:
+heading sizes, bold, italic, strikethrough, code, lists, quote, link) and Split (source beside
+the rendered text). Edits are a draft with undo and redo until Save writes a new version.
+Comments are stored in a new `entry_comments` table: a person selects a passage (or none),
+writes a note in one of five colors, and resolves, reopens or deletes it. `GET /entries/:id`
+returns the comments, so the model reads them with MCP `get`.
+**Why:** reading and editing long md comfortably needs the whole screen and an address to come
+back to; comments are how the person tells the model what to change without rewriting it.
+**Keeps:** hard rule 3 (agents read comments but never add, resolve or delete them: those routes
+are people only); hard rule 4 (comments filter by the entry's workspace, and a reader of the
+entry is a reader of its comments; agents never see a held entry's); hard rule 6 (secret scan and
+size caps on every comment). Pathly's AI actions are left out: sky-brain never calls an LLM.
+
+### D36. Web push alerts for approval requests
 
 **Date:** 2026-11-24. **Decided by:** shammai (web push before email; Resend later).
 **Decision:** a person turns on alerts per browser from the Approvals tab. When an agent asks for

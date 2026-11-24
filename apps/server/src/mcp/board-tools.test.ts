@@ -79,6 +79,7 @@ describe("mcp board tools", () => {
         "get_goal",
         "propose_goal",
         "add_tasks",
+        "attach_document",
         "next_task",
         "claim_task",
         "renew_task",
@@ -174,6 +175,44 @@ describe("mcp board tools", () => {
 
     next = await tool("ann", "next_task", { project_id: ann.projectId });
     expect(next.body.task.title).toBe("JSON writer");
+  });
+
+  it("captures a document and attaches it to a proposed goal", async () => {
+    const ann = people.ann!;
+    const goal = (
+      await tool("ann", "propose_goal", {
+        project_id: ann.projectId,
+        title: "Write the Consolidator",
+        body: "Nightly merge.",
+      })
+    ).body.goal;
+    const captured = await tool("ann", "capture", {
+      kind: "decision",
+      title: "Consolidator plan",
+      body: "# Plan\n\nMerge the Inbox nightly.",
+      summary: "Merge the Inbox into Notebooks every night.",
+    });
+    expect(captured.isError).toBe(false);
+    const entryId = captured.body.entry.id;
+    const attached = await tool("ann", "attach_document", {
+      goal_id: goal.id,
+      entry_id: entryId,
+    });
+    expect(attached.isError).toBe(false);
+    const got = await tool("ann", "get_goal", { goal_id: goal.id });
+    expect(got.body.documents).toMatchObject([
+      {
+        entry_id: entryId,
+        summary: "Merge the Inbox into Notebooks every night.",
+      },
+    ]);
+    // Bob's goal is not found, whatever entry he names.
+    const bobs = await tool("bob", "attach_document", {
+      goal_id: goal.id,
+      entry_id: entryId,
+    });
+    expect(bobs.isError).toBe(true);
+    expect(bobs.body.status).toBe(404);
   });
 
   it("refuses another person's project and goal as not found", async () => {

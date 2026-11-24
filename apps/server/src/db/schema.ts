@@ -128,5 +128,8 @@ export * from "./memory-schema.ts";
 export * from "./agents-schema.ts";
 // Approval requests: an agent asks, a person decides on the web (D31).
 export * from "./approvals-schema.ts";
-// Web push subscriptions per person (D33).
+// Documents (entries) attached to goals.
+export * from "./goal-docs-schema.ts";
+export * from "./comments-schema.ts";
+// Web push subscriptions per person (D36).
 export * from "./push-schema.ts";

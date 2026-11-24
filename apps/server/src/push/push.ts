@@ -1,4 +1,4 @@
-// Web push for approval requests (D33): when an agent asks, every browser or phone the person
+// Web push for approval requests (D36): when an agent asks, every browser or phone the person
 // turned notifications on in gets a short, generic alert linking to /a/<id>. The alert holds no
 // item text (a lock screen shows it), and a failed push never fails the agent's request.
 import type { ApprovalPush } from "@sky-brain/shared/approvals";
