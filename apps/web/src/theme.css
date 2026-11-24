@@ -39,6 +39,7 @@
   --pf-radius-md: 14px;
   --pf-radius-lg: 18px;
   --pf-content-width: 980px;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%234a4e72' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -66,6 +67,7 @@
   --pf-warning: #f0c46a;
   --pf-warning-surface: rgba(110, 80, 20, 0.35);
   --pf-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.7);
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23a9b0d6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* panel-frame-ui sizes its menus and dialogs with border-box, but they render outside its shell. */
@@ -128,22 +130,25 @@ body::before {
   color: var(--pf-muted);
   font-weight: 400;
 }
-.pf-brand::before {
-  content: "";
-  width: 14px;
-  height: 14px;
+.pf-brand .brain-mark {
+  width: 24px;
+  height: 24px;
   flex: none;
-  background: var(--pf-accent);
-  clip-path: polygon(
-    50% 0,
-    61% 39%,
-    100% 50%,
-    61% 61%,
-    50% 100%,
-    39% 61%,
-    0 50%,
-    39% 39%
-  );
+  color: var(--pf-accent);
+}
+.brain-mark path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.brain-mark .links {
+  stroke-width: 0.9;
+  opacity: 0.7;
+}
+.brain-mark circle {
+  fill: currentColor;
 }
 
 /* panel-frame-ui 0.2.5 declares .pf-alert after its tones, so every alert looks neutral; the
@@ -179,4 +184,19 @@ button.pf-sidebar-link:focus-visible {
 /* A collapsed sidebar keeps only the star of the brand, not a cut-off "sk". */
 .pf-dashboard-shell[data-sidebar-visible="false"] .pf-brand > span {
   display: none;
+}
+
+/* Native dropdowns: the arrow sits inside the box, away from the edge, as in the theme menu. */
+select.pf-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px 14px;
+}
+/* Sign out sits at the far right of the top bar. */
+.pf-dashboard-toolbar {
+  padding-inline: 24px 16px;
 }

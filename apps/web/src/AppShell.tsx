@@ -7,6 +7,22 @@ import { api, type Me } from "./api.ts";
 
 export type Page = "board" | "agents";
 
+// A small constellation brain, like the big one on the sign-in page.
+const BRAIN_MARK = (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="brain-mark">
+    <path d="M12 5c-1-1.7-3.7-2-5-.4C5.3 4.4 3.8 5.9 4 7.6c-1.6.9-2 3-.9 4.4-.9 1.5-.3 3.5 1.4 4.2.3 1.8 2.2 2.8 3.9 2.2 1 1.1 2.6 1.3 3.6.4M12 5c1-1.7 3.7-2 5-.4 1.7-.2 3.2 1.3 3 3 1.6.9 2 3 .9 4.4.9 1.5.3 3.5-1.4 4.2-.3 1.8-2.2 2.8-3.9 2.2-1 1.1-2.6 1.3-3.6.4M12 5v13.8" />
+    <path
+      className="links"
+      d="M8 9l1.5 4.5M8 9l-1.5 3M15.8 8.6l-1.2 4.8M15.8 8.6l1.9 3.2M9.5 13.5l-3 -1.5M14.6 13.4l3.1-1.6"
+    />
+    <circle cx="8" cy="9" r="1.1" />
+    <circle cx="9.5" cy="13.5" r="1.1" />
+    <circle cx="6.5" cy="12" r="0.9" />
+    <circle cx="15.8" cy="8.6" r="1.1" />
+    <circle cx="14.6" cy="13.4" r="1.1" />
+    <circle cx="17.7" cy="11.8" r="0.9" />
+  </svg>
+);
 const BOARD_ICON = (
   <svg viewBox="0 0 20 20" aria-hidden="true" data-icon>
     <rect x="2.5" y="3" width="4.5" height="14" rx="1.5" />
@@ -47,6 +63,7 @@ export function AppShell(props: {
     <DashboardShell
       brand={
         <span className="pf-brand">
+          {BRAIN_MARK}
           <span>
             sky<span className="dash">-</span>brain
           </span>
