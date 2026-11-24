@@ -17,7 +17,7 @@ import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { ApprovalLink, Approvals } from "./Approvals.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
-import { Board } from "./Board.tsx";
+import { Board } from "./board/Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
 // An approval link opened while signed out: where to go back to after sign-in.
@@ -146,8 +146,8 @@ function Root() {
       ) : page === "board" ? (
         <>
           <PageHeader
-            title="Goals"
-            description="What your agents propose waits here. Only you approve."
+            title="Board"
+            description="What your agents propose waits here. Only you approve. Review today's list, or see every goal."
           />
           <Projects me={me} />
         </>

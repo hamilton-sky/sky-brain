@@ -280,8 +280,14 @@ A task is ready when its goal is approved by the caller's own person and not hel
 the text that was approved, every dependency is done, and it is pending (or its lease ran out).
 A claim also waits while another live lease in the project holds an overlapping file. A browser
 session's writes must send `application/json` (415 `json_required` otherwise), so a cross-site
-form cannot approve anything. The web page at `/` lists goals and tasks and has the person-only
-Approve, Cancel and Release buttons.
+form cannot approve anything. The web page at `/` is built for fast review. "Today" is a digest
+of up to ten goals waiting for the person (drafts and held goals, longest-waiting first) with a
+one-line summary of the last day; "All goals" is a card board with four columns (Needs you,
+Running, Waiting to start, Done); hovering a card shows its summary and opening one shows its
+tasks in a dialog. Approve and reject (reject
+cancels the goal) work on one goal or a selection; the page sends one request per goal, so bulk
+review adds no new route and each goal keeps its own checks. Held goals are never approved in
+bulk: the person reads and releases them one by one.
 
 ## 9. Auth
 
