@@ -1,0 +1,22 @@
+CREATE TABLE "entry_comments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"entry_id" uuid NOT NULL,
+	"workspace_id" uuid NOT NULL,
+	"quote" text,
+	"body" text NOT NULL,
+	"color" text DEFAULT 'yellow' NOT NULL,
+	"resolved" boolean DEFAULT false NOT NULL,
+	"resolved_by" text,
+	"resolved_at" timestamp with time zone,
+	"author_kind" text NOT NULL,
+	"author" text NOT NULL,
+	"on_behalf_of" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "entry_comments_color" CHECK ("entry_comments"."color" in ('yellow', 'green', 'blue', 'purple', 'orange')),
+	CONSTRAINT "entry_comments_author_kind" CHECK ("entry_comments"."author_kind" in ('human', 'agent')),
+	CONSTRAINT "entry_comments_body_len" CHECK (char_length("entry_comments"."body") <= 2000),
+	CONSTRAINT "entry_comments_quote_len" CHECK ("entry_comments"."quote" is null or char_length("entry_comments"."quote") <= 500)
+);
+--> statement-breakpoint
+ALTER TABLE "entry_comments" ADD CONSTRAINT "entry_comments_entry_id_entries_id_fk" FOREIGN KEY ("entry_id") REFERENCES "public"."entries"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "entry_comments_entry_idx" ON "entry_comments" USING btree ("entry_id","created_at");

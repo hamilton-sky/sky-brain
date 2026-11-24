@@ -1,5 +1,6 @@
 // Renders parsed markdown (markdown.ts) as React elements: text is always text, never HTML.
 import { Fragment, type ReactNode } from "react";
+import "./markdown.css";
 import { type Inline, parseMarkdown } from "./markdown.ts";
 
 function inline(nodes: Inline[]): ReactNode {
@@ -13,6 +14,8 @@ function inline(nodes: Inline[]): ReactNode {
         return <strong key={i}>{inline(n.c)}</strong>;
       case "em":
         return <em key={i}>{inline(n.c)}</em>;
+      case "del":
+        return <del key={i}>{inline(n.c)}</del>;
       case "link":
         return (
           <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">

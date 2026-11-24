@@ -17,6 +17,8 @@ import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./board/Board.tsx";
+import { DocPage } from "./docs/DocPage.tsx";
+import { navigate, useRoute } from "./router.ts";
 
 const PROJECT_KEY = "sky-brain.project";
 // The key public/theme-init.js and the sign-in and consent pages read too.
@@ -49,7 +51,8 @@ export function App() {
 function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState<Page>("board");
+  const route = useRoute();
+  const page: Page = route.page === "agents" ? "agents" : "board";
 
   useEffect(() => {
     api.me().then(setMe, (err: unknown) => {
@@ -63,7 +66,12 @@ function Root() {
 
   const signedIn = me !== null && me !== "signed-out" ? me : undefined;
   return (
-    <AppShell me={signedIn} page={page} onPage={setPage}>
+    <AppShell
+      me={signedIn}
+      page={page}
+      title={route.page === "doc" ? "Document" : undefined}
+      onPage={(p) => navigate({ page: p })}
+    >
       {error ? (
         <Alert tone="error">{error}</Alert>
       ) : me === null ? (
@@ -78,6 +86,8 @@ function Root() {
             </a>
           }
         />
+      ) : route.page === "doc" ? (
+        <DocPage key={route.entryId} entryId={route.entryId} me={me} />
       ) : page === "board" ? (
         <>
           <PageHeader

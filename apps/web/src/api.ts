@@ -82,6 +82,23 @@ export interface Entry {
   updated_at: string;
 }
 
+export type CommentColor = "yellow" | "green" | "blue" | "purple" | "orange";
+
+/** A person's note on a document, on a passage (`quote`) or on the whole text. */
+export interface EntryComment {
+  id: string;
+  entry_id: string;
+  quote: string | null;
+  body: string;
+  color: CommentColor;
+  resolved: boolean;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  author_kind: "human" | "agent";
+  author: string;
+  created_at: string;
+}
+
 export interface AgentProfile {
   id: string;
   slug: string;
@@ -160,9 +177,27 @@ export const api = {
   detachDocument: (goalId: string, entryId: string) =>
     request<null>("DELETE", `/api/v1/goals/${goalId}/documents/${entryId}`),
   entry: (entryId: string) =>
-    request<{ entry: Entry }>("GET", `/api/v1/entries/${entryId}`).then(
-      (r) => r.entry,
+    request<{ entry: Entry; comments: EntryComment[] }>(
+      "GET",
+      `/api/v1/entries/${entryId}`,
     ),
+  addComment: (
+    entryId: string,
+    comment: { body: string; quote?: string; color: CommentColor },
+  ) =>
+    request<{ comment: EntryComment }>(
+      "POST",
+      `/api/v1/entries/${entryId}/comments`,
+      comment,
+    ).then((r) => r.comment),
+  resolveComment: (entryId: string, commentId: string, resolved: boolean) =>
+    request<{ comment: EntryComment }>(
+      "POST",
+      `/api/v1/entries/${entryId}/comments/${commentId}/resolve`,
+      { resolved },
+    ).then((r) => r.comment),
+  deleteComment: (entryId: string, commentId: string) =>
+    request<null>("DELETE", `/api/v1/entries/${entryId}/comments/${commentId}`),
   reviseEntry: (
     entryId: string,
     change: { title: string; body: string; summary: string },

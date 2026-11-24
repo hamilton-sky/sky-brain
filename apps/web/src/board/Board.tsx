@@ -1,7 +1,7 @@
 // One project's board, built for fast review: "Today" is a digest of up to ten goals waiting
 // for you, and "All goals" is the card board (Needs you, Running, Waiting to start, Done).
-// Opening a goal shows it as a dialog over the board; its documents open full screen to read
-// and edit.
+// Opening a goal shows it as a dialog over the board; its documents open on their own page
+// (/docs/<id>) to read, edit and comment on.
 // Approve and reject work on one goal or many; only a person can do either, so they live here.
 import {
   Alert,
@@ -12,11 +12,11 @@ import {
 } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { api, type Goal, type GoalDocument, type Project } from "../api.ts";
+import { navigate } from "../router.ts";
 import { type BulkAction, describeBulk, runBulk } from "./bulk.ts";
 import { BulkBar } from "./BulkBar.tsx";
 import { canReject, type Column, columnOf, COLUMNS } from "./columns.ts";
 import { Digest } from "./Digest.tsx";
-import { DocReader } from "./DocReader.tsx";
 import { GoalPanel } from "./GoalPanel.tsx";
 import { GoalTile } from "./GoalTile.tsx";
 import { NewGoal } from "./NewGoal.tsx";
@@ -35,10 +35,11 @@ function rememberedView(): View {
   }
 }
 
+const openDoc = (entryId: string) => navigate({ page: "doc", entryId });
+
 export function Board({ project }: { project: Project }) {
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [docs, setDocs] = useState<Record<string, GoalDocument[]>>({});
-  const [openDoc, setOpenDoc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -155,7 +156,7 @@ export function Board({ project }: { project: Project }) {
               <Digest
                 goals={goals}
                 docs={docs}
-                onOpenDoc={setOpenDoc}
+                onOpenDoc={openDoc}
                 now={now}
                 selected={selected}
                 onSelect={setSelected}
@@ -246,14 +247,7 @@ export function Board({ project }: { project: Project }) {
               onClose={() => setOpenId(null)}
               onChanged={load}
               onReject={setRejecting}
-              onOpenDoc={setOpenDoc}
-            />
-          )}
-          {openDoc && (
-            <DocReader
-              entryId={openDoc}
-              onClose={() => setOpenDoc(null)}
-              onChanged={load}
+              onOpenDoc={openDoc}
             />
           )}
         </div>

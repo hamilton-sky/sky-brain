@@ -1,13 +1,14 @@
 // A small, safe markdown reader for documents agents attach: it parses into plain data that
 // Markdown.tsx renders as React elements, so no HTML from a document ever reaches the page.
 // Covers what agents write most: headings, paragraphs, lists, quotes, code, rules, and inline
-// bold, italic, code and links (http, https and mailto only).
+// bold, italic, strikethrough, code and links (http, https and mailto only).
 
 export type Inline =
   | { t: "text"; v: string }
   | { t: "code"; v: string }
   | { t: "strong"; c: Inline[] }
   | { t: "em"; c: Inline[] }
+  | { t: "del"; c: Inline[] }
   | { t: "link"; href: string; c: Inline[] };
 
 export type Block =
@@ -40,6 +41,9 @@ export function parseInline(text: string): Inline[] {
     ) {
       flush();
       out.push({ t: "strong", c: parseInline(m[1]!) });
+    } else if ((m = /^~~(.+?)~~/.exec(rest))) {
+      flush();
+      out.push({ t: "del", c: parseInline(m[1]!) });
     } else if (
       (m = /^\*(?!\s)(.+?)\*/.exec(rest)) ||
       (m = /^_(?!\s)(.+?)_(?![A-Za-z0-9])/.exec(rest))

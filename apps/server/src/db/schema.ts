@@ -128,3 +128,4 @@ export * from "./memory-schema.ts";
 export * from "./agents-schema.ts";
 // Documents (entries) attached to goals.
 export * from "./goal-docs-schema.ts";
+export * from "./comments-schema.ts";

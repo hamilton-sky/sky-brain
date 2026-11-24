@@ -1,0 +1,183 @@
+// Comments on an entry: anyone who may read the entry reads its comments (an agent only on the
+// proposed and approved entries it may read); a person with a writer role adds, resolves,
+// reopens and deletes them. Agents never write here (CLAUDE.md hard rule 3 covers resolve and
+// delete; adding is people only so a comment is always the person's own words).
+import type { Actor } from "@sky-brain/shared/actor";
+import {
+  COMMENTS_PER_ENTRY_MAX,
+  type CommentCreateRequest,
+  type EntryComment,
+} from "@sky-brain/shared/comments";
+import { and, asc, count, eq } from "drizzle-orm";
+import { personOf } from "../actor/keys.ts";
+import { writeAudit } from "../db/audit.ts";
+import type { Db, DbOrTx } from "../db/client.ts";
+import { entryComments } from "../db/schema.ts";
+import { HttpError } from "../http/http-error.ts";
+import { refuseSecrets } from "../tasks/write-guards.ts";
+import { findEntry, type EntryRow } from "./entries-service.ts";
+
+type Human = Actor & { kind: "human" };
+type CommentRow = typeof entryComments.$inferSelect;
+
+export function commentWire(row: CommentRow): EntryComment {
+  return {
+    id: row.id,
+    entry_id: row.entryId,
+    quote: row.quote,
+    body: row.body,
+    color: row.color,
+    resolved: row.resolved,
+    resolved_by: row.resolvedBy,
+    resolved_at: row.resolvedAt?.toISOString() ?? null,
+    author_kind: row.authorKind,
+    author: row.author,
+    created_at: row.createdAt.toISOString(),
+  };
+}
+
+/** The comments of an entry the caller has already read (findEntry), oldest first. */
+export async function commentsOf(
+  db: DbOrTx,
+  entry: EntryRow,
+): Promise<EntryComment[]> {
+  const rows = await db
+    .select()
+    .from(entryComments)
+    .where(
+      and(
+        eq(entryComments.entryId, entry.id),
+        eq(entryComments.workspaceId, entry.workspaceId),
+      ),
+    )
+    .orderBy(asc(entryComments.createdAt), asc(entryComments.id));
+  return rows.map(commentWire);
+}
+
+/** The entry, when the person may read it (404) and write in its workspace (403). */
+async function writableEntry(
+  db: DbOrTx,
+  actor: Human,
+  entryId: string,
+): Promise<EntryRow> {
+  const { entry, role } = await findEntry(db, actor, entryId);
+  if (role !== "owner" && role !== "editor") {
+    throw new HttpError(403, "role_cannot_write", "A viewer cannot write.");
+  }
+  return entry;
+}
+
+const audit = (
+  tx: DbOrTx,
+  actor: Human,
+  entry: EntryRow,
+  action: string,
+  commentId: string,
+) =>
+  writeAudit(tx, {
+    workspaceId: entry.workspaceId,
+    actor: `human:${actor.user_id}`,
+    action,
+    targetId: entry.id,
+    details: { comment_id: commentId },
+  });
+
+export async function addComment(
+  db: Db,
+  actor: Human,
+  entryId: string,
+  body: CommentCreateRequest,
+  now: Date,
+): Promise<EntryComment> {
+  const entry = await writableEntry(db, actor, entryId);
+  refuseSecrets([
+    { name: "body", value: body.body },
+    { name: "quote", value: body.quote ?? "" },
+  ]);
+  return db.transaction(async (tx) => {
+    const [{ n } = { n: 0 }] = await tx
+      .select({ n: count() })
+      .from(entryComments)
+      .where(eq(entryComments.entryId, entry.id));
+    if (n >= COMMENTS_PER_ENTRY_MAX) {
+      throw new HttpError(
+        409,
+        "too_many_comments",
+        `An entry holds at most ${COMMENTS_PER_ENTRY_MAX} comments.`,
+      );
+    }
+    const [row] = await tx
+      .insert(entryComments)
+      .values({
+        entryId: entry.id,
+        workspaceId: entry.workspaceId,
+        quote: body.quote ?? null,
+        body: body.body,
+        color: body.color,
+        authorKind: "human",
+        author: actor.user_id,
+        onBehalfOf: personOf(actor),
+        createdAt: now,
+      })
+      .returning();
+    await audit(tx, actor, entry, "entry.comment.add", row!.id);
+    return commentWire(row!);
+  });
+}
+
+const noComment = () => new HttpError(404, "not_found", "No such comment.");
+
+export async function setResolved(
+  db: Db,
+  actor: Human,
+  entryId: string,
+  commentId: string,
+  resolved: boolean,
+  now: Date,
+): Promise<EntryComment> {
+  const entry = await writableEntry(db, actor, entryId);
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(entryComments)
+      .set(
+        resolved
+          ? { resolved, resolvedBy: actor.user_id, resolvedAt: now }
+          : { resolved, resolvedBy: null, resolvedAt: null },
+      )
+      .where(
+        and(
+          eq(entryComments.id, commentId),
+          eq(entryComments.entryId, entry.id),
+          eq(entryComments.workspaceId, entry.workspaceId),
+        ),
+      )
+      .returning();
+    if (!row) throw noComment();
+    const action = resolved ? "entry.comment.resolve" : "entry.comment.reopen";
+    await audit(tx, actor, entry, action, row.id);
+    return commentWire(row);
+  });
+}
+
+export async function deleteComment(
+  db: Db,
+  actor: Human,
+  entryId: string,
+  commentId: string,
+): Promise<void> {
+  const entry = await writableEntry(db, actor, entryId);
+  await db.transaction(async (tx) => {
+    const gone = await tx
+      .delete(entryComments)
+      .where(
+        and(
+          eq(entryComments.id, commentId),
+          eq(entryComments.entryId, entry.id),
+          eq(entryComments.workspaceId, entry.workspaceId),
+        ),
+      )
+      .returning({ id: entryComments.id });
+    if (gone.length === 0) throw noComment();
+    await audit(tx, actor, entry, "entry.comment.delete", commentId);
+  });
+}

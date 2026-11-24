@@ -89,8 +89,9 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
     {
       title: "Get an entry",
       description:
-        "Returns one entry with its full body and its version history (nothing is edited in " +
-        "place, so older versions show what was believed before).",
+        "Returns one entry with its full body, its version history (nothing is edited in " +
+        "place, so older versions show what was believed before) and the person's comments " +
+        "on it (`quote` is the passage a comment is on; resolved ones are settled).",
       inputSchema: z.object({ entry_id: IdSchema }),
       annotations: READ,
     },
