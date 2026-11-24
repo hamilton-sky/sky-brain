@@ -1,7 +1,8 @@
 // "Sign in with Perminister" as a Better Auth generic OAuth provider, using Perminister's
 // OpenID Connect flow (its docs/api.md, "Sign in with Perminister"). perminister-oidc.ts finishes
 // the authorize URL; getToken exchanges the code at /oauth/token, checks the ID token, then reads
-// the account and its organizations from /api/auth/consumer/session with the new access token.
+// the account from /api/auth/consumer/session with the new access token. Whether the email is
+// verified comes from the signed ID token's `email_verified` claim (D29).
 import type { GenericOAuthConfig } from "better-auth/plugins";
 import {
   PERMINISTER_SCOPE,
@@ -106,13 +107,13 @@ export function perministerProvider(
         await jwksRes.body?.cancel();
         throw new Error(`Perminister JWKS answered status ${jwksRes.status}`);
       }
-      const subject = verifyIdToken(idToken, {
+      const claims = verifyIdToken(idToken, {
         issuer: new URL(baseUrl).origin,
         clientId,
         nonce: nonceFor(options.nonceKey, s256(codeVerifier)),
         jwks: await jwksRes.json(),
       });
-      // The account and its organizations (productIds decide mayEnter, access.ts).
+      // The account (its name and email).
       const sessionRes = await options.fetch(
         `${baseUrl}/api/auth/consumer/session`,
         {
@@ -136,7 +137,7 @@ export function perministerProvider(
       if (!isRecord(raw) || raw.authenticated !== true || !account) {
         throw new Error("Perminister session answered without an account");
       }
-      if (account.subjectId !== subject) {
+      if (account.subjectId !== claims.subject) {
         throw new Error(
           "Perminister session and ID token name different subjects",
         );
@@ -149,7 +150,8 @@ export function perministerProvider(
       return {
         accessToken,
         ...(expiresAt ? { accessTokenExpiresAt: expiresAt } : {}),
-        raw,
+        // The session answer, plus the ID token's verdict on the email for getUserInfo.
+        raw: { ...raw, emailVerified: claims.emailVerified },
       };
     },
     getUserInfo(tokens) {
@@ -166,9 +168,8 @@ export function perministerProvider(
         subjectId,
         email,
         name: fullName || email || subjectId,
-        // Perminister refuses unverified self-service accounts itself (spec.md).
-        emailVerified: true,
-        organizations: isRecord(raw) ? (raw.organizations ?? []) : [],
+        // From the signed ID token (getToken); mayEnter refuses anything but true (D29).
+        emailVerified: isRecord(raw) && raw.emailVerified === true,
       });
     },
   };

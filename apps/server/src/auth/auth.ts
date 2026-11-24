@@ -10,7 +10,7 @@ import { createAuthMiddleware } from "better-auth/api";
 import { genericOAuth, jwt } from "better-auth/plugins";
 import type { Db } from "../db/client.ts";
 import * as schema from "../db/schema.ts";
-import { mayEnter, productIdsOf } from "./access.ts";
+import { mayEnter } from "./access.ts";
 import { onSessionCreated } from "./on-sign-in.ts";
 import { perministerProvider } from "./perminister.ts";
 import { toPerministerAuthorizeUrl } from "./perminister-oidc.ts";
@@ -57,11 +57,8 @@ export function createAuth(options: CreateAuthOptions) {
     // Runs before the user is created and on every later sign-in with the fresh Perminister
     // profile, so access taken away in Perminister refuses the next sign-in (spec.md Decisions).
     user: {
-      validateUserInfo: ({ user, source }) =>
-        mayEnter({
-          email: user.email,
-          productIds: productIdsOf(source.oauth?.profile),
-        })
+      validateUserInfo: ({ user }) =>
+        mayEnter({ email: user.email, emailVerified: user.emailVerified })
           ? undefined
           : { error: "no_access" },
     },

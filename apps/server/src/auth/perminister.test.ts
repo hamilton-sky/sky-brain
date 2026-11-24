@@ -133,9 +133,31 @@ describe("perministerProvider", () => {
     expect(tokens.accessTokenExpiresAt).toBeInstanceOf(Date);
     const profile = await provider(spy).getUserInfo!(tokens);
     expect(profile?.subjectId).toBe("subject-1");
-    expect(profile?.organizations).toEqual([
-      expect.objectContaining({ productId: "sky-brain" }),
-    ]);
+    // From the signed ID token's email_verified claim (D29).
+    expect(profile?.emailVerified).toBe(true);
+  });
+
+  it("perminister: an ID token without email_verified true gives an unverified profile", async () => {
+    const fake = createFakePerminister({
+      baseUrl: "https://perminister.test",
+      clientId: "test-client-id",
+      clientSecret: CLIENT_SECRET,
+      publicUrl: "https://brain.test",
+    });
+    fake.setAccount({
+      subjectId: "subject-2",
+      email: "bob@example.com",
+      emailVerified: false,
+    });
+    const verifier = "w".repeat(43);
+    const { code } = approveFor(fake, verifier, NONCE_KEY);
+    const tokens = await provider(fake.fetch).getToken!({
+      code,
+      redirectURI: "https://brain.test/auth/perminister/callback",
+      codeVerifier: verifier,
+    });
+    const profile = await provider(fake.fetch).getUserInfo!(tokens);
+    expect(profile?.emailVerified).toBe(false);
   });
 
   it("perminister: getToken refuses an ID token minted for another request's nonce", async () => {
@@ -185,15 +207,20 @@ describe("perministerProvider", () => {
 
   it("getUserInfo maps the exchange to the profile, or null without a subjectId", async () => {
     const p = provider(stubFetch(() => new Response(null)).fetch);
-    const profile = await p.getUserInfo!({ raw: exchange });
+    const profile = await p.getUserInfo!({
+      raw: { ...exchange, emailVerified: true },
+    });
     expect(profile).toEqual({
       id: "subject-1",
       subjectId: "subject-1",
       email: "Ann@Example.com",
       name: "Ann Lee",
       emailVerified: true,
-      organizations: exchange.organizations,
     });
+    // Without getToken's verdict from the ID token, the email counts as unverified.
+    expect((await p.getUserInfo!({ raw: exchange }))?.emailVerified).toBe(
+      false,
+    );
     const noName = await p.getUserInfo!({
       raw: {
         ...exchange,

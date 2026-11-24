@@ -16,8 +16,10 @@ export interface PerministerAccount {
   email: string | null;
   firstName?: string | null;
   lastName?: string | null;
-  /** One organization per id. Default `["sky-brain"]`. */
+  /** One organization per id. Default none: public registration needs no organization. */
   productIds?: string[];
+  /** The ID token's `email_verified` claim. Default true. */
+  emailVerified?: boolean;
 }
 
 export interface FakePerministerOptions {
@@ -158,7 +160,7 @@ export function createFakePerminister(
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
       },
-      organizations: (a.productIds ?? ["sky-brain"]).map((productId) => ({
+      organizations: (a.productIds ?? []).map((productId) => ({
         organizationId: randomUUID(),
         organizationName: `Test organization for ${productId}`,
         organizationRole: "member",
@@ -221,7 +223,9 @@ export function createFakePerminister(
         iat: now,
         exp: now + 300,
         nonce: issued.nonce,
-        ...(a.email ? { email: a.email, email_verified: true } : {}),
+        ...(a.email
+          ? { email: a.email, email_verified: a.emailVerified ?? true }
+          : {}),
       }),
     });
   }

@@ -81,11 +81,12 @@ async function inviteOf(workspaceId: string) {
 }
 
 describe("sign-in", () => {
-  it("sign-in: a person with sky-brain access gets their own workspace as owner once", async () => {
+  it("sign-in: a verified person with no Perminister organization gets their own workspace as owner once", async () => {
+    // Public registration (D29): no organization for the sky-brain product is needed.
     const account = {
       subjectId: "subject-own",
       email: "own@example.com",
-      productIds: ["sky-brain"],
+      productIds: [],
     };
     const first = await signIn(account);
     const second = await signIn(account);

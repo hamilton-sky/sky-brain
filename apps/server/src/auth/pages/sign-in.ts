@@ -38,11 +38,11 @@ export const html = `<!doctype html>
         <a class="btn btn-ghost" href="#layers">See how it works</a>
       </div>
       <p id="status" role="status"></p>
-      <p class="fine">Invite-only. Access is managed in Perminister.</p>
+      <p class="fine">Free to join with a Perminister account. Your brain is private to you.</p>
     </section>
     <section id="no-access" class="signin noaccess" hidden>
       <h2>No access</h2>
-      <p class="muted">This account has no access to sky-brain. Ask the owner for an invitation in Perminister.</p>
+      <p class="muted">This account has no access to sky-brain. Verify your email in Perminister, then try again.</p>
       <button type="button" id="try-another" class="btn btn-ghost">Try another account</button>
     </section>
   </header>
@@ -200,7 +200,7 @@ export const html = `<!doctype html>
 
   <section class="final" aria-labelledby="final-h">
     <h2 id="final-h">Ready to connect your brain?</h2>
-    <p class="muted">sky-brain is invite-only. Access is managed in Perminister.</p>
+    <p class="muted">Sign in with any Perminister account with a verified email. You get your own private brain.</p>
     <a class="btn btn-primary btn-star" href="#top">Sign in with Perminister</a>
   </section>
   <p class="foot">Every memory a star. Every link a line.</p>

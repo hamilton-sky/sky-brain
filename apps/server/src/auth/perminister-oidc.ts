@@ -99,8 +99,21 @@ export interface IdTokenCheck {
   now?: number;
 }
 
-/** Checks an RS256 ID token's signature, issuer, audience, expiry and nonce; returns its `sub`. */
-export function verifyIdToken(idToken: string, check: IdTokenCheck): string {
+/** What sky-brain reads from a checked ID token. */
+export interface IdTokenClaims {
+  subject: string;
+  /** Perminister's `email_verified` claim; false when it is missing or anything but `true`. */
+  emailVerified: boolean;
+}
+
+/**
+ * Checks an RS256 ID token's signature, issuer, audience, expiry and nonce; returns its `sub`
+ * and whether Perminister says the email is verified.
+ */
+export function verifyIdToken(
+  idToken: string,
+  check: IdTokenCheck,
+): IdTokenClaims {
   const fail = (why: string): never => {
     throw new Error(`Perminister ID token refused: ${why}`);
   };
@@ -145,5 +158,8 @@ export function verifyIdToken(idToken: string, check: IdTokenCheck): string {
   if (typeof payload.exp !== "number" || payload.exp <= now) fail("expired");
   if (payload.nonce !== check.nonce) fail("nonce");
   if (typeof payload.sub !== "string" || payload.sub === "") fail("no sub");
-  return payload.sub as string;
+  return {
+    subject: payload.sub as string,
+    emailVerified: payload.email_verified === true,
+  };
 }

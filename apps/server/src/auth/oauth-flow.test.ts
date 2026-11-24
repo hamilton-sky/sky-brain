@@ -35,7 +35,7 @@ let server: AuthTestServer;
 
 beforeAll(async () => {
   db = await createTestDb();
-  // Signs in with the fake Perminister's default account (productIds ["sky-brain"]).
+  // Signs in with the fake Perminister's default account (verified email, no organizations).
   server = await startAuthTestServer({
     db,
     cimdDocuments: {
