@@ -49,6 +49,39 @@ export interface Task {
   position: number;
 }
 
+/** A document attached to a goal: the summary only (read the body with `api.entry`). */
+export interface GoalDocument {
+  entry_id: string;
+  kind: string;
+  trust: EntryTrust;
+  title: string;
+  summary: string;
+  version: number;
+  author_kind: "human" | "agent";
+  author: string;
+  quarantined_because: string | null;
+  updated_at: string;
+  attached_by: string;
+  attached_at: string;
+}
+
+export type EntryTrust = "proposed" | "approved" | "rejected" | "quarantined";
+
+/** One memory entry with its body (markdown). */
+export interface Entry {
+  id: string;
+  kind: string;
+  trust: EntryTrust;
+  title: string;
+  body: string;
+  summary: string;
+  version: number;
+  author_kind: "human" | "agent";
+  author: string;
+  quarantined_because: string | null;
+  updated_at: string;
+}
+
 export interface AgentProfile {
   id: string;
   slug: string;
@@ -115,12 +148,32 @@ export const api = {
       name,
     }).then((r) => r.project),
   goals: (projectId: string) =>
-    request<{ goals: Goal[] }>(
+    request<{ goals: Goal[]; documents: Record<string, GoalDocument[]> }>(
       "GET",
       `/api/v1/goals?project_id=${encodeURIComponent(projectId)}`,
-    ).then((r) => r.goals),
+    ),
   goal: (goalId: string) =>
-    request<{ goal: Goal; tasks: Task[] }>("GET", `/api/v1/goals/${goalId}`),
+    request<{ goal: Goal; tasks: Task[]; documents: GoalDocument[] }>(
+      "GET",
+      `/api/v1/goals/${goalId}`,
+    ),
+  detachDocument: (goalId: string, entryId: string) =>
+    request<null>("DELETE", `/api/v1/goals/${goalId}/documents/${entryId}`),
+  entry: (entryId: string) =>
+    request<{ entry: Entry }>("GET", `/api/v1/entries/${entryId}`).then(
+      (r) => r.entry,
+    ),
+  reviseEntry: (
+    entryId: string,
+    change: { title: string; body: string; summary: string },
+  ) =>
+    request<{ entry: Entry }>(
+      "POST",
+      `/api/v1/entries/${entryId}/versions`,
+      change,
+    ).then((r) => r.entry),
+  approveEntry: (entryId: string) =>
+    request<unknown>("POST", `/api/v1/entries/${entryId}/approve`),
   createGoal: (project_id: string, title: string, body: string) =>
     request<{ goal: Goal }>("POST", "/api/v1/goals", {
       project_id,

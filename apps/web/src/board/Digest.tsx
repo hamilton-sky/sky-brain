@@ -1,13 +1,16 @@
 // Today: a short digest of what changed, then at most ten goals waiting for you, the
 // longest-waiting first, each approvable or rejectable in one tap, or all at once.
 import { Badge, Button, EmptyState } from "panel-frame-ui";
-import type { Goal } from "../api.ts";
+import type { Goal, GoalDocument } from "../api.ts";
 import { BulkBar } from "./BulkBar.tsx";
 import { canBulkApprove, digest, isHeld, taskTotal } from "./columns.ts";
+import { DOC_ICON } from "./DocList.tsx";
 import { ago, Avatar, ProgressBar, proposer } from "./GoalTile.tsx";
 
 interface DigestProps {
   goals: Goal[];
+  docs: Record<string, GoalDocument[]>;
+  onOpenDoc: (entryId: string) => void;
   now: Date;
   selected: ReadonlySet<string>;
   onSelect: (ids: Set<string>) => void;
@@ -117,6 +120,22 @@ function DigestCard(props: Omit<DigestProps, "goals"> & { goal: Goal }) {
         ) : (
           goal.body && <p className="dc-body">{goal.body}</p>
         )}
+        {(props.docs[goal.id] ?? []).map((d) => (
+          <button
+            key={d.entry_id}
+            type="button"
+            className="dc-doc"
+            onClick={() => props.onOpenDoc(d.entry_id)}
+          >
+            {DOC_ICON}
+            <span>
+              <strong>{d.title}</strong>
+              {d.trust !== "quarantined" && (
+                <span className="muted"> {d.summary}</span>
+              )}
+            </span>
+          </button>
+        ))}
         <ProgressBar counts={goal.counts} />
       </div>
       <div className="dc-acts">

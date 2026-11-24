@@ -1,6 +1,7 @@
 // One project's board, built for fast review: "Today" is a digest of up to ten goals waiting
 // for you, and "All goals" is the card board (Needs you, Running, Waiting to start, Done).
-// Opening a goal shows it as a dialog over the board.
+// Opening a goal shows it as a dialog over the board; its documents open full screen to read
+// and edit.
 // Approve and reject work on one goal or many; only a person can do either, so they live here.
 import {
   Alert,
@@ -10,15 +11,17 @@ import {
   Skeleton,
 } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
-import { api, type Goal, type Project } from "../api.ts";
+import { api, type Goal, type GoalDocument, type Project } from "../api.ts";
 import { type BulkAction, describeBulk, runBulk } from "./bulk.ts";
 import { BulkBar } from "./BulkBar.tsx";
 import { canReject, type Column, columnOf, COLUMNS } from "./columns.ts";
 import { Digest } from "./Digest.tsx";
+import { DocReader } from "./DocReader.tsx";
 import { GoalPanel } from "./GoalPanel.tsx";
 import { GoalTile } from "./GoalTile.tsx";
 import { NewGoal } from "./NewGoal.tsx";
 import "./board.css";
+import "./review.css";
 
 const REFRESH_MS = 15_000;
 const VIEW_KEY = "sky-brain.board-view";
@@ -34,6 +37,8 @@ function rememberedView(): View {
 
 export function Board({ project }: { project: Project }) {
   const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [docs, setDocs] = useState<Record<string, GoalDocument[]>>({});
+  const [openDoc, setOpenDoc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -49,8 +54,9 @@ export function Board({ project }: { project: Project }) {
 
   const load = useCallback(() => {
     api.goals(project.id).then(
-      (g) => {
-        setGoals(g);
+      (r) => {
+        setGoals(r.goals);
+        setDocs(r.documents ?? {});
         setNow(new Date());
         setError(null);
       },
@@ -148,6 +154,8 @@ export function Board({ project }: { project: Project }) {
             {view === "today" ? (
               <Digest
                 goals={goals}
+                docs={docs}
+                onOpenDoc={setOpenDoc}
                 now={now}
                 selected={selected}
                 onSelect={setSelected}
@@ -209,6 +217,7 @@ export function Board({ project }: { project: Project }) {
                             goal={g}
                             now={now}
                             open={openId === g.id}
+                            docs={docs[g.id] ?? []}
                             onOpen={() =>
                               setOpenId(openId === g.id ? null : g.id)
                             }
@@ -237,6 +246,14 @@ export function Board({ project }: { project: Project }) {
               onClose={() => setOpenId(null)}
               onChanged={load}
               onReject={setRejecting}
+              onOpenDoc={setOpenDoc}
+            />
+          )}
+          {openDoc && (
+            <DocReader
+              entryId={openDoc}
+              onClose={() => setOpenDoc(null)}
+              onChanged={load}
             />
           )}
         </div>

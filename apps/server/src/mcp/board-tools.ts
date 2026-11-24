@@ -1,7 +1,7 @@
-// The board's MCP tools (list projects and goals, propose a goal, add tasks, take the next
-// task, claim, renew, release and report). Each one is a thin call to the REST route through
-// board-dispatch.ts, so the caller (an agent acting for the token's person) gets exactly the
-// REST checks: an agent proposes drafts only and can never approve (CLAUDE.md hard rule 3).
+// The board's MCP tools (list projects and goals, propose a goal, add tasks, attach a document,
+// take the next task, claim, renew, release and report). Each one is a thin call to the REST
+// route through board-dispatch.ts, so the caller (an agent acting for the token's person) gets
+// exactly the REST checks: an agent proposes drafts only and can never approve (CLAUDE.md hard rule 3).
 import type { McpServer } from "@modelcontextprotocol/server";
 import { LESSONS_MAX, LessonSchema } from "@sky-brain/shared/memory";
 import { IdSchema } from "@sky-brain/shared/scope";
@@ -86,7 +86,8 @@ export function registerBoardTools(server: McpServer, call: BoardCall): void {
     {
       title: "Get a goal",
       description:
-        "Returns one goal and all its tasks, with dependencies and status.",
+        "Returns one goal, all its tasks with dependencies and status, and its attached " +
+        "documents (title and summary; read one in full with get).",
       inputSchema: z.object({ goal_id: IdSchema }),
       annotations: READ,
     },
@@ -129,6 +130,25 @@ export function registerBoardTools(server: McpServer, call: BoardCall): void {
     },
     async ({ goal_id, tasks }) =>
       toToolResult(await call("POST", `/goals/${goal_id}/tasks`, { tasks })),
+  );
+
+  server.registerTool(
+    "attach_document",
+    {
+      title: "Attach a document to a goal",
+      description:
+        "Attaches a markdown document to a goal so the person sees its summary on the board " +
+        "card and can open, read and edit it. Write the document first with capture (its " +
+        "summary is what the card shows, so make it clear), then attach the entry_id it " +
+        "returned. The entry must be in the goal's workspace. Attaching twice does nothing; " +
+        "only the person can remove a document.",
+      inputSchema: z.object({ goal_id: IdSchema, entry_id: IdSchema }),
+      annotations: WRITE,
+    },
+    async ({ goal_id, entry_id }) =>
+      toToolResult(
+        await call("POST", `/goals/${goal_id}/documents`, { entry_id }),
+      ),
   );
 
   server.registerTool(

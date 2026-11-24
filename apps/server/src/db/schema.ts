@@ -126,3 +126,5 @@ export * from "./tasks-schema.ts";
 export * from "./memory-schema.ts";
 // Agent profiles and which app acts as which (D25).
 export * from "./agents-schema.ts";
+// Documents (entries) attached to goals.
+export * from "./goal-docs-schema.ts";

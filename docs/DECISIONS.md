@@ -474,3 +474,21 @@ answer. Perminister checks the same thing before it issues a code, so this is a 
 Taking someone's access away is now done in Perminister by disabling the account for the
 product; their session ends within 7 days (no rolling refresh).
 **Supersedes:** the product-organization rule in D17.
+
+### D30. Documents on goals are linked entries; PDFs wait
+
+**Date:** 2026-11-24. **Decided by:** shammai (chose "md now, PDF later").
+**Decision:** a goal can carry up to 20 documents. A document is an existing entry (markdown with
+the writer's summary, versioned), linked to the goal in a new `goal_documents` table. People and
+agents who may write attach one (`POST /goals/:id/documents`, MCP `attach_document`); only a
+person removes one. The board shows the summaries on hover and in the goal's dialog, and opens a
+document full screen to read it, or to edit it as a new version.
+**Why:** the person wants agents' md files on the cards, with their summaries, readable and
+editable without leaving the board (as Pathly's artifacts work). Entries already carry a
+writer's summary, versions, secret scanning and quarantine, so linking them adds no new trust
+rule; sky-brain still never calls an LLM.
+**How:** the entry must be in the goal's own workspace and readable by the caller (agents never
+see or attach a held one). The web app renders markdown with its own small parser into React
+elements, so no HTML from a document reaches the page; a held document shows as plain text.
+**Not yet:** PDFs and other files. They need storage and a quarantine rule for text that cannot
+be scanned.

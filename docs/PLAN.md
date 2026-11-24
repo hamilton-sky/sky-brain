@@ -244,6 +244,8 @@ the same checks. REST routes:
 | `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
+| `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |
+| `DELETE /api/v1/goals/:id/documents/:entryId` | people only |
 | `POST /api/v1/goals/:id/approve`, `/cancel`, `/release` | people only |
 | `GET /api/v1/tasks/ready`, `GET /api/v1/tasks/:id` | members (a run token: its project) |
 | `POST /api/v1/tasks/:id/claim`, `/renew`, `/release`, `/done`, `/fail` | writers; `renew` to `fail` need the holder's `claim_seq` |
@@ -261,6 +263,14 @@ tasks in a dialog. Approve and reject (reject
 cancels the goal) work on one goal or a selection; the page sends one request per goal, so bulk
 review adds no new route and each goal keeps its own checks. Held goals are never approved in
 bulk: the person reads and releases them one by one.
+
+A goal can carry up to 20 documents: entries (markdown with the writer's summary) linked to it
+in `goal_documents`. An agent writes one with `capture` and links it with the `attach_document`
+MCP tool; `GET /goals` and `GET /goals/:id` return each goal's documents as summaries, never
+bodies, and agents see only proposed or approved ones. On the board, hovering a card shows the
+summaries; opening a document shows it full screen, rendered by a small markdown reader that
+never inserts HTML, with Edit saving a new version through `POST /entries/:id/versions`. A held
+document is shown as plain text. PDFs are not stored yet.
 
 ## 9. Auth
 
