@@ -474,3 +474,36 @@ answer. Perminister checks the same thing before it issues a code, so this is a 
 Taking someone's access away is now done in Perminister by disabling the account for the
 product; their session ends within 7 days (no rolling refresh).
 **Supersedes:** the product-organization rule in D17.
+
+### D30. Hats: one brain, several identities
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built. A hat is a lens by default, a wall
+optionally; no starter hats.
+**Proposal:** a person keeps one brain and one About me, and defines hats (Parent, Engineer,
+Friend). A hat is an optional property of a memory, About me entries can be tagged with one or
+more hats, and each connected app is bound to a hat as well as a role. A hat is a lens (focus,
+can be picked per chat) and, if the person wants, a wall (its own connector and token audience).
+A new brain starts with no hats and gets suggestions. Under a hat, an agent sees
+the shared About me plus that hat's part, reads and writes only that hat's memories and shared
+ones, and captures into that hat's Inbox. Hats only narrow rights and are never a grant; "share
+this hat" writes one grant per memory. Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 1.
+**Why:** people live in several roles with different context (self-aspects, working
+self-concept, encoding specificity). Splitting into several brains would lose what is true in
+every role.
+**Keeps:** one core per person, sharing per memory, D26 bindings, hard rules 3 and 5.
+
+### D31. Approval through the connected model
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built.
+**Proposal:** an agent may ask for approval with `propose_change`; the server creates an
+approval request pinned to the exact versions shown, and the person answers through a channel the
+agent cannot write to: an approval link opened in their own sky-brain session (every client),
+with web inbox, email and later web push to tell them it is waiting. MCP elicitation comes later
+and form mode only for low-risk items, because claude.ai does not support it yet and a client hook
+can answer it. Riskier changes (About me, trust, delete) need the link plus a passkey; sharing
+stays web-only. The web app becomes the place for bulk approval and sharing.
+Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
+**Why:** the person works in Claude or Codex and should rarely need to open sky-brain, without
+letting a model approve itself.
+**Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
+**Decided (shammai, 24 Nov):** web push is the second alert channel, after the inbox and email.
