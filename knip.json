@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignoreDependencies": ["jscpd"],
-  "entry": ["bench/run.mjs"]
+  "entry": ["bench/run.mjs"],
+  "ignore": ["apps/web/public/sw.js"]
 }

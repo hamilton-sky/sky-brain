@@ -51,13 +51,13 @@
       "file": "apps/server/src/auth/cli-config.ts"
     },
     {
-      "fingerprint": "60ef1c75d66f72255188e7ec",
+      "fingerprint": "1ef24803c291aac70c5fa0c2",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-dependency",
       "scope": ".",
       "file": "apps/server/package.json",
-      "line": 34
+      "line": 36
     },
     {
       "fingerprint": "28fa33c0cd1e616f94101290",

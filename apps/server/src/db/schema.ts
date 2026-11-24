@@ -131,3 +131,5 @@ export * from "./approvals-schema.ts";
 // Documents (entries) attached to goals.
 export * from "./goal-docs-schema.ts";
 export * from "./comments-schema.ts";
+// Web push subscriptions per person (D36).
+export * from "./push-schema.ts";

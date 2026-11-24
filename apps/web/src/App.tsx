@@ -17,6 +17,7 @@ import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { ApprovalLink, Approvals } from "./Approvals.tsx";
+import { Notify } from "./Notify.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./board/Board.tsx";
 import { DocPage } from "./docs/DocPage.tsx";
@@ -141,6 +142,7 @@ function Root() {
             title="Approvals"
             description="What your agents asked you to approve, in one place."
           />
+          <Notify />
           <Approvals />
         </>
       ) : page === "board" ? (

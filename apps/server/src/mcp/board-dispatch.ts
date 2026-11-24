@@ -9,6 +9,7 @@ import { inject } from "light-my-request";
 import { attachVerifiedActor } from "../actor/middleware.ts";
 import type { Db } from "../db/client.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
+import type { Push } from "../push/push.ts";
 import { errorHandler } from "../http/error-handler.ts";
 import { approvalsRouter } from "../approvals/approvals-router.ts";
 import { entriesRouter, memoriesRouter } from "../memory/memory-router.ts";
@@ -44,11 +45,12 @@ export interface BoardDispatchOptions {
   db: Db;
   now: () => Date;
   limiter: RateLimiter;
+  push?: Push;
 }
 
 /** One in-process board app; `forActor(actor)` gives a caller bound to that actor. */
 export function boardDispatcher(options: BoardDispatchOptions) {
-  const { db, now, limiter } = options;
+  const { db, now, limiter, push } = options;
   const actorOfRequest = new WeakMap<object, Actor>();
   const app = express();
   app.set("trust proxy", false);
@@ -67,7 +69,10 @@ export function boardDispatcher(options: BoardDispatchOptions) {
   app.use("/api/v1/tasks", tasksRouter({ db, now, limiter }));
   app.use("/api/v1/memories", memoriesRouter({ db, now, limiter }));
   app.use("/api/v1/entries", entriesRouter({ db, now, limiter }));
-  app.use("/api/v1/approvals", approvalsRouter({ db, now, limiter }));
+  app.use(
+    "/api/v1/approvals",
+    approvalsRouter({ db, now, limiter, ...(push ? { push } : {}) }),
+  );
   app.use("/api", (_req, res) => {
     res
       .status(404)

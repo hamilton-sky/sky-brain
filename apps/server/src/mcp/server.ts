@@ -8,6 +8,7 @@ import {
 } from "@modelcontextprotocol/server";
 import type { Db } from "../db/client.ts";
 import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
+import type { Push } from "../push/push.ts";
 import { registerApprovalTools } from "./approval-tools.ts";
 import { boardDispatcher } from "./board-dispatch.ts";
 import { registerBoardTools } from "./board-tools.ts";
@@ -20,13 +21,20 @@ export interface McpServerOptions {
   limiter?: RateLimiter;
   /** The origin approval links point at. Default: `http://localhost:3000`. */
   publicUrl?: string;
+  /** Alerts for approval requests. Default: none. */
+  push?: Push;
 }
 
 export function mcpServerFactory(db: Db, options: McpServerOptions = {}) {
   const now = options.now ?? (() => new Date());
   const limiter =
     options.limiter ?? createRateLimiter({ now: () => now().getTime() });
-  const board = boardDispatcher({ db, now, limiter });
+  const board = boardDispatcher({
+    db,
+    now,
+    limiter,
+    ...(options.push ? { push: options.push } : {}),
+  });
   return (ctx: McpRequestContext): McpServer => {
     // route.ts only calls the handler with a verified actor; check it again rather than trust it.
     const actor = ActorSchema.parse(ctx.authInfo?.extra?.actor);

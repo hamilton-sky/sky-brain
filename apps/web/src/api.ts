@@ -271,3 +271,14 @@ export const approvalsApi = {
       `/api/v1/approvals/${encodeURIComponent(id)}/${action}`,
     ).then((r) => r.approval),
 };
+
+export const pushApi = {
+  key: () =>
+    request<{ public_key: string | null }>("GET", "/api/v1/push/key").then(
+      (r) => r.public_key,
+    ),
+  subscribe: (subscription: PushSubscriptionJSON) =>
+    request<unknown>("POST", "/api/v1/push/subscribe", subscription),
+  unsubscribe: (endpoint: string) =>
+    request<unknown>("POST", "/api/v1/push/unsubscribe", { endpoint }),
+};

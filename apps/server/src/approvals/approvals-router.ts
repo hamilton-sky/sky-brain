@@ -11,6 +11,7 @@ import { runContextOf } from "../actor/run-context.ts";
 import type { Db } from "../db/client.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
+import type { Push } from "../push/push.ts";
 import {
   assertWriter,
   boardWriteLimit,
@@ -29,6 +30,8 @@ export interface ApprovalsRouterOptions {
   db: Db;
   now: () => Date;
   limiter: RateLimiter;
+  /** Alerts the person when an agent asks. Default: none. */
+  push?: Push;
 }
 
 /** Run and device tokens act for a task, not for the person's whole brain: 403. */
@@ -53,6 +56,7 @@ export function approvalsRouter({
   db,
   now,
   limiter,
+  push,
 }: ApprovalsRouterOptions): Router {
   const router = express.Router();
   const limit = boardWriteLimit(limiter);
@@ -69,6 +73,18 @@ export function approvalsRouter({
       (role) => assertWriter(req, role),
       t,
     );
+    // Awaited, not fired and forgotten: a serverless function may stop once it has answered.
+    if (push && actor.kind === "agent") {
+      await push
+        .notify(db, row.onBehalfOf, {
+          title: "sky-brain",
+          body: "An agent is waiting for your approval.",
+          path: `/a/${row.id}`,
+          approval_id: row.id,
+          items: row.items.length,
+        })
+        .catch(() => {});
+    }
     res.status(201).json({ approval: await approvalWire(db, actor, row, t) });
   });
 

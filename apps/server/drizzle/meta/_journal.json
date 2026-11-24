@@ -85,6 +85,13 @@
       "when": 1795525879408,
       "tag": "0011_goal-documents-and-comments",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795548840168,
+      "tag": "0012_push-subscriptions",
+      "breakpoints": true
     }
   ]
 }
