@@ -108,20 +108,80 @@ The check is one more term in the existing "lowest of" rule from AGENTS.md: the 
 of a call is the lowest of the person's role in the memory, the run token's role, the profile's
 scope **and the hat's reach**. A hat can only narrow; it never grants anything the person lacks.
 
-### One app, several hats
+### Lens and wall: two jobs a hat does
 
-D26 binds one role per app. Most people use claude.ai for both home and work, so the binding has
-to tell hats apart inside one app. Two ways, in order of preference:
+The security and UX review (24 Nov 2026) split a hat into two jobs, and they need different
+protection:
 
-1. **One connector per hat.** The person adds sky-brain more than once, at
-   `https://sky-brain.vercel.app/mcp/h/<hat-slug>`. The hat is in the path the person typed, not in
-   a token or query string (hard rule 5 holds), and each connector gets its own binding keyed by
-   `(person, client, hat path)`. The server still checks the path's hat belongs to that person.
-   Claude.ai and Claude Code both allow several connectors, and each shows as its own tool group,
-   which is exactly the context switch the person wants.
-2. **Switching inside a chat, with consent.** A tool `switch_hat` asks the person (Part 2's
-   approval flow) and only then moves the conversation's binding. A model can never switch on its
-   own, because a hat switch widens what it can read.
+- **The lens** (soft): which part of About me is in the packet, how search ranks, where captures
+  land, which rules show. A lens never widens what can be read, so it may be picked per chat, even
+  by the person just saying "I'm at work" and the model passing `hat: "work"` on a call.
+- **The wall** (hard): what can be read and written at all. A wall must come from the token, never
+  from anything the model sends (hard rule 2). Only the wall needs its own connector.
+
+A person who only wants focus uses one connector and lenses. A person who wants "work data is
+never readable from a family chat" puts a wall around a hat.
+
+### One app, several hats (the wall)
+
+D26 binds one role per app. For a walled hat, the person adds sky-brain once more, at
+`https://sky-brain.vercel.app/mcp/h/<hat-id>`. What makes this a real wall:
+
+1. **Each hat path is its own OAuth resource.** Protected resource metadata is served per path
+   (`/.well-known/oauth-protected-resource/mcp/h/<hat-id>`), with `resource` set to that exact URL.
+   Claude sends the RFC 8707 `resource` parameter with the path included, so the token's audience
+   is that hat. Today the audience is fixed at `<PUBLIC_URL>/mcp` (`auth/auth.ts`), so a token is
+   valid on every path; that has to change.
+2. **The audience must equal the path, on every call.** A token minted for `/mcp/h/parent` and sent
+   to `/mcp/h/work` gets 401. The binding is keyed by `(person, client, audience)`, taken from the
+   verified token. It cannot be keyed by client id: under Client ID Metadata Documents (CIMD) every
+   claude.ai connector has the same client id.
+3. **Consent is asked again per hat** and names the hat ("Claude wants to work as you, Parent").
+4. **Each hat path reports its own `serverInfo.name`** (`sky-brain-parent`). claude.ai merges
+   connectors that report the same name, even at different URLs (reported bug).
+5. **Opaque hat ids in the URL**, not slugs: a URL ends up in client logs, and a hat name like
+   "divorce" should not. An unknown hat and another person's hat give the same 404. Neither is a
+   secret, so hard rule 5 holds.
+6. **Once a person has any walled hat, the plain `/mcp` connector and run tokens see shared
+   memories only**, not everything.
+
+What the person has to know (from the client research):
+
+- claude.ai, Claude Desktop and the phone app share one connector list; connectors are added on
+  the web. Each can be switched on or off per chat from "+" > Connectors. If both hats are on in
+  one chat, the model holds both walls' reach, so the web setup card says "turn on one hat per chat".
+- **The claude.ai Free plan allows only one custom connector**, and on Team and Enterprise only an
+  owner adds them. Walls are therefore a paid-plan or Claude Code feature; lenses work everywhere.
+- Claude Code: `claude mcp add --transport http parent <url>` per hat, or a project's `.mcp.json`
+  pointing at the work hat, so a repo always works under its hat.
+- The web gives an "Add the Parent hat to Claude" card with the URL, a suggested name
+  ("sky-brain: Parent") and the hat's colour. `whoami` and every tool result say "under Parent".
+
+**No model-callable switch that widens reads.** An earlier draft had `switch_hat` with the
+person's consent. It is dropped: MCP here is stateless, so there is no conversation to switch, and
+a switch would widen every open chat in that app at once. Lenses cover the focus need without it.
+
+### Leaks the design closes
+
+- **Derived entries take the narrowest hat of their sources.** Gists, merges, links and Digest
+  cards made from a Parent item stay Parent. The Consolidator never merges across walled hats.
+- Stewards and run tokens get a hat like any binding; without one they see shared memories only.
+- Bylines and link titles shown in a shared memory never name a walled hat's content.
+
+### Starting with no hats, and suggestions (shammai, 24 Nov)
+
+A new brain starts with **no hats**, which behaves exactly as today. sky-brain suggests hats once
+it has something to go on:
+
+- The Consolidator (a steward) notices a clear cluster, for example 15 or more captures about
+  school and the kids, and writes a **Digest card**: "18 of your notes are about school and the
+  kids. Make a Parent hat?" The card lists the memories that would get the hat, and offers Create,
+  Not now and Never.
+- The card shows in the web's Digest and in a "Suggested hats" strip on About me, at most once a
+  week, never in a chat. An agent may also *propose* a hat through the approval flow (level 3, web
+  only); it never creates one.
+- A short list of examples (Family, Work, Friends, Health) is offered on the empty hats page as
+  one-tap starting points, so the person sees what a hat is without being given any.
 
 ### Hats and sharing other people in
 
@@ -149,7 +209,7 @@ the org design; hats only make that boundary visible to the member.
 
 The person should rarely need to open sky-brain. They work in Claude or Codex. When the model
 wants to save a decision, approve a goal, keep an Inbox item as a Notebook entry or edit About me,
-it shows the person what it wants, the person says yes in that app, and the model continues.
+it shows the person what it wants, the person says yes with one tap, and the model continues.
 
 ```mermaid
 sequenceDiagram
@@ -159,12 +219,13 @@ sequenceDiagram
   participant S as sky-brain server
   M->>S: propose_change(items, reason)
   S-->>S: create approval request (pending, 15 min)
-  S->>C: ask the person (elicitation), not the model
-  C->>P: "Approve 3 changes?" with the exact diff
-  P->>C: Approve
-  C->>S: answer (signed session of this person's connector)
-  S-->>S: record decision: approver = person, channel = claude.ai
-  S->>M: result: approved, items applied
+  S-->>M: pending + approval link
+  S->>P: notification (web push / email), only "an agent is waiting"
+  M->>P: "Please approve: <link>"
+  P->>S: opens link, signed in, sees the exact diff, taps Approve (POST)
+  S-->>S: record decision: approver = person, channel = link
+  M->>S: approval_status(id)
+  S->>M: approved, items applied
   M->>P: continues the work
 ```
 
@@ -183,18 +244,56 @@ Things that do **not** prove a person said yes, so the server never accepts them
 
 The approval answer has to travel on a path the model cannot write to.
 
-### Three channels, from strongest to weakest
+### The channels
 
-| Channel | How the person answers | Why the model cannot fake it | Clients |
+The research of 24 Nov 2026 changed the order. MCP elicitation is not ready to carry approvals:
+claude.ai web, Desktop and the phone app do not support it; on our stateless connection it cannot
+work at all before the 2026-07-28 protocol (multi round-trip requests, "MRTR"); and in Claude Code
+a hook can answer an elicitation, so a form "accept" does not prove a person clicked. So the
+approval itself always happens on a sky-brain page in the person's own session, and the other
+channels only bring the person there.
+
+| Channel | How the person answers | Why the model cannot fake it | Where it works |
 | --- | --- | --- | --- |
-| **A. Approval link (URL elicitation, or a link in the result)** | The server answers the tool call with a short link, `sky-brain.vercel.app/a/<id>`. The person taps it, sees the exact diff on a sky-brain page (signed in with Perminister) and taps Approve. | The decision is made in the person's own browser session. The model never holds that session. | Every client. With MCP URL-mode elicitation the client opens it; otherwise the model shows the link. |
-| **B. In-app form (MCP form elicitation)** | The client shows a form from the server ("Approve these 3 changes?"). The person clicks. | The client answers the server directly. The model does not see or write the answer. | Clients that support elicitation (to be checked per client in the spike). |
-| **C. Push to phone** (later) | sky-brain sends a notification to the person's phone; tapping opens the link from A. | Same as A. | Needs a phone app or web push. |
+| **A. Approval link** | `propose_change` returns a short link, `sky-brain.vercel.app/a/<id>`. The person opens it, sees the exact diff signed in, and taps Approve. | The decision is a POST from the person's own browser session. The model never holds it. | Every client |
+| **B. URL-mode elicitation** (later) | The client itself opens the same link (the spec makes the client show the full URL and keep it from the model). | Same as A. | Clients that support it (Claude Code, VS Code; claude.ai not yet) |
+| **C. Form elicitation** (low trust) | The client shows "Approve these 3 changes?" | Only as strong as the client: hooks can answer it. | Opt-in per binding, level 1 only, never level 2 |
 
-Each channel records `approver = the person`, `channel` (`web`, `link`, `elicitation:<client>`),
-and the binding that asked. An approval by B is trusted as much as the person trusts that app, so
-the person opts in per binding: "Claude Code may ask me for approvals in-app". A binding without
-that tick gets channel A only.
+Each approval records `approver = the person`, `channel` (`web`, `link`, `elicitation-url:<client>`,
+`elicitation-form:<client>`) and the binding that asked.
+
+### Telling the person an approval is waiting
+
+The model shows the link in the chat, but the person may be away. Research of 24 Nov 2026, in
+order of what to build:
+
+| Option | Desktop | Android | iPhone | Approve button in the alert | Effort | Cost |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Approvals inbox on the web**, live toasts while a tab is open | yes | yes | yes | buttons on the page | 1 to 2 days | $0 |
+| **Email** with a link to the confirm page | yes | yes | yes | no | 2 days | about $0 to $20 a month |
+| **Web push** (Chrome, Edge, Firefox, Safari; service worker + `web-push` on Vercel) | yes | yes | only after "Add to Home Screen" | Chrome, Edge, Firefox: yes. Safari and iPhone: tap opens the page | 3 to 5 days | $0 |
+| **Telegram bot** with buttons | yes | yes | yes | yes | 3 days | $0 |
+| Chrome extension | Chrome only | no | no | yes | 1 to 2 weeks + store review | $5 |
+| WhatsApp, SMS | | | | | | per message; skip |
+
+Recommendation: the inbox and email first, then web push, then Telegram if people ask for it. Skip
+the Chrome extension: web push already gives Chrome real system notifications, with buttons, and
+the extension does nothing on phones. A `window.open` popup is blocked by browsers without a click,
+so it is not an alert channel.
+
+Rules for every alert:
+
+- **The text is generic** ("An agent is waiting for your approval in Family"). A lock screen shows
+  whatever the notification says, so no entry content goes in it.
+- **A link never approves by itself.** Mail scanners (Microsoft Safe Links among them) open links
+  and even run their scripts. The link opens a confirm page; only a POST from a signed-in session,
+  with a CSRF check, changes anything. No token in the URL (hard rule 5), only the request id.
+- **An Approve button inside a notification** (Chrome, Edge, Firefox) is allowed for level 1 only.
+  The service worker sends a same-origin POST with the session cookie; if the session expired, it
+  opens the page instead.
+- **Level 2 needs a passkey** (WebAuthn, user verification required) on top of the session.
+- **Single use and short-lived:** each request is approved once, expires in 15 to 60 minutes, and
+  stores a hash of what was shown. A replay does nothing.
 
 ### What needs which channel
 
@@ -203,8 +302,8 @@ Not every change deserves a stop. The levels follow the risk in hard rule 3 and 
 | Level | Examples | How it is approved |
 | --- | --- | --- |
 | **0. No approval** | `capture` into the hat's Inbox (lands as `proposed`), notes on the board of a task the agent holds | None; it is already a proposal. |
-| **1. Confirm in the app** | Approve a draft goal or new tasks, keep an Inbox item into a Notebook, accept a link | B if the binding allows it, else A |
-| **2. Confirm with the person's own session** | Edit About me, release a quarantined entry, raise trust, delete, change rules | A only (step-up), never B |
+| **1. Confirm in the app** | Approve a draft goal or new tasks, keep an Inbox item into a Notebook, accept a link | A, an Approve button in a push alert, or C if the binding allows it |
+| **2. Confirm with the person's own session** | Edit About me, release a quarantined entry, raise trust, delete, change rules | A with a passkey, never C or an alert button |
 | **3. Web only** | Sharing: grants, invites, hats, bindings, profiles, scopes | The web app; never through a model |
 
 Sharing stays web-only on purpose. It is the one action that moves text to a wider audience
@@ -234,9 +333,10 @@ stateDiagram-v2
   flood the person with prompts (approval fatigue is itself an attack).
 - **The model waits without holding the server.** sky-brain's MCP runs stateless on Vercel, so the
   server cannot keep a tool call open for minutes. `propose_change` returns `pending` and the link
-  at once; the model calls `approval_status(id)` (cheap, read-only) when the person says done, or
-  the elicitation answer completes it. Whether form elicitation works in stateless mode on Vercel
-  is the first thing the spike checks.
+  at once; the model calls `approval_status(id)` (cheap, read-only) when the person says done. With
+  the 2026-07-28 protocol, an `input_required` result could later carry the URL elicitation; its
+  `requestState` is signed and bound to the person, and single use is still enforced in the
+  database.
 
 ### The web app's new job
 
@@ -259,8 +359,8 @@ flowchart LR
 
 - Hard rule 3 gets one clarifying sentence, not a weaker rule: "An agent may *ask* for approval.
   The answer must come from the person through a channel the agent cannot write to (the web, an
-  approval link opened in the person's session, or an elicitation answered in a client the person
-  allowed). A tool argument or chat text is never an approval."
+  approval link opened in the person's session, or, for level 1 only, a form elicitation in a
+  client the person allowed). A tool argument or chat text is never an approval."
 - Every approval path needs an allowed test and a refused test, including: a model passing
   `approved: true`, a request approved by another person's session, a superseded item, an expired
   request, and level 2 through form elicitation (refused).
@@ -269,20 +369,31 @@ flowchart LR
 
 ## Build order (suggested)
 
-1. **Spike (1 to 2 days):** which clients support form and URL elicitation (claude.ai web and
-   phone, Claude Code, Codex), and whether it works with stateless MCP on Vercel.
-2. **Approval requests + channel A** (link) and the web Approvals page. Works in every client.
-3. **Hats:** table, hat on memories and bindings, `/mcp/h/<slug>`, packet and search filters.
-4. **Channel B** for the clients the spike shows work, opt-in per binding.
-5. **Per-hat profile slices** and "share this hat" in the share dialog (with step 8 sharing).
+1. **Approval requests, channel A and the web Approvals inbox**, with email alerts. Works in every
+   client today. About 1 week.
+2. **Web push** with Approve buttons for level 1 on desktop, and an "Add to Home Screen" guide for
+   iPhone. About 1 week.
+3. **Hats as lenses:** table, hat on memories and bindings, packet and search filters, capture
+   routing. No new connector needed.
+4. **Walled hats:** OAuth resource and audience per `/mcp/h/<hat-id>`, binding by audience,
+   consent per hat, `serverInfo.name` per hat. Needs a spike on claude.ai first (duplicate host,
+   merge bug, plan limits).
+5. **Hat suggestions** from the Consolidator (with step 6).
+6. **Elicitation** (URL mode, then form mode for level 1) once the clients support it and the MCP
+   SDK speaks the 2026-07-28 protocol; this is a coordinated upgrade with the pinned auth packages.
+7. **Per-hat profile slices** and "share this hat" in the share dialog (with step 8 sharing).
 
 Each step ships with tests and a `docs/PLAN.md` update in the same PR. Like D25, none of this
 changes the step 3 measurement, so it can start in parallel.
 
-## Open questions for shammai
+## Decided and open
 
-1. Is "one connector per hat" acceptable in claude.ai, or should switching inside a chat come
-   first?
-2. Should a new brain suggest starter hats (Me at work, Family, Friends) or start with none?
-3. Is the level table right? In particular, should keeping an Inbox item into a Notebook be
-   level 1 (in the app) or level 0 for some hats?
+Decided by shammai (24 Nov 2026): a new brain starts with no hats, and sky-brain suggests them;
+one connector per hat is acceptable after research (this section's research added lenses for
+everyone and walls for those who want them); the level table stands.
+
+Open:
+
+1. Should a hat be a privacy wall (work data never readable from a family chat), or is a focus
+   lens enough for most people, with walls as an option?
+2. Which alert to build after the inbox and email: web push or Telegram?
