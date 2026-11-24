@@ -10,6 +10,12 @@
   --sky-mid: #eceff9;
   --sky-low: #f5f6fb;
   --glow: rgba(91, 79, 224, 0.1);
+  /* The header brain's colours, as on the sign-in page. */
+  --line: rgba(30, 34, 96, 0.2);
+  --node: #2b2f7a;
+  --node-core: #14174a;
+  --node-halo: rgba(91, 79, 224, 0.06);
+  --signal: #6a4bff;
   --star: rgba(30, 34, 96, 0.6);
   --star-dim: rgba(30, 34, 96, 0.28);
   --glass: rgba(255, 255, 255, 0.8);
@@ -47,6 +53,11 @@
   --sky-mid: #0a0d26;
   --sky-low: #161a44;
   --glow: rgba(120, 140, 255, 0.14);
+  --line: rgba(170, 188, 255, 0.28);
+  --node: #dfe6ff;
+  --node-core: #ffffff;
+  --node-halo: rgba(150, 175, 255, 0.22);
+  --signal: #eef2ff;
   --star: rgba(226, 232, 255, 0.85);
   --star-dim: rgba(200, 210, 255, 0.38);
   --glass: rgba(18, 22, 56, 0.58);
@@ -126,29 +137,24 @@ body::before {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
-.pf-brand .dash {
-  color: var(--pf-muted);
-  font-weight: 400;
+/* The name as on the sign-in page: a light "sky" and a bold "brain" in the accent. */
+.pf-brand .wordmark {
+  font-size: 19px;
+  letter-spacing: -0.02em;
 }
-.pf-brand .brain-mark {
-  width: 24px;
-  height: 24px;
-  flex: none;
+.pf-brand .wm-sky {
+  font-weight: 300;
+}
+.pf-brand .wm-brain {
+  font-weight: 750;
   color: var(--pf-accent);
 }
-.brain-mark path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.brain-mark .links {
-  stroke-width: 0.9;
-  opacity: 0.7;
-}
-.brain-mark circle {
-  fill: currentColor;
+/* The small 3D brain (public brain.js draws it); a canvas, so no outline styles. */
+.pf-brand .brain-mark {
+  width: 46px;
+  height: 36px;
+  flex: none;
+  display: block;
 }
 
 /* panel-frame-ui 0.2.5 declares .pf-alert after its tones, so every alert looks neutral; the

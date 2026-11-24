@@ -18,7 +18,7 @@ export const html = `<!doctype html>
   <body>
 <div class="wrap">
   <nav class="nav" aria-label="Main">
-    <a class="wordmark" href="#top">sky<span class="dash">-</span>brain</a>
+    <a class="wordmark" href="#top"><span class="wm-sky">sky</span><span class="wm-brain">brain</span></a>
     <a class="btn btn-ghost btn-sm" href="#top">Sign in</a>
   </nav>
 

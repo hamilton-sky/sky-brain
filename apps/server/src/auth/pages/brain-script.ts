@@ -1,12 +1,16 @@
 // The 3D star brain on the sign-in (entry) page: plain canvas 2D, no libraries. It is part of
-// /auth-pages/sign-in.js, so the page keeps a single same-origin script.
+// /auth-pages/sign-in.js, so the page keeps a single same-origin script. The web app loads it
+// on its own as /auth-pages/brain.js for the small brain in its header.
 export const brainScript = `"use strict";
 // sky-brain 3D constellation brain. Plain canvas 2D, no libraries, served same-origin
 // so it fits default-src 'self'. Colors come from the page's CSS custom properties.
 (function () {
  function init(canvas) {
-  if (!canvas || !canvas.getContext) return;
+  if (!canvas || !canvas.getContext || canvas.skyBrainOn) return;
+  canvas.skyBrainOn = true;
   var ctx = canvas.getContext("2d");
+  // data-brain="mini" is the small logo in the app's header: finer stars, no inner pathways.
+  var MINI = canvas.getAttribute("data-brain") === "mini";
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   // data-regions="on" colours the brain by memory layer and makes the regions clickable.
   var REG = canvas.getAttribute("data-regions") === "on";
@@ -187,7 +191,7 @@ export const brainScript = `"use strict";
     tiltX += (aimX - tiltX) * 0.04; tiltY += (aimY - tiltY) * 0.04;
     var pitch = 0.22 + (still ? 0 : tiltX), ya = yaw + (still ? 0 : tiltY);
     var cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pitch), sp = Math.sin(pitch);
-    var R = Math.min(W * 0.36, H * 0.5), cx0 = W / 2, cy0 = H * 0.5, f = 3.4;
+    var R = MINI ? Math.min(W * 0.44, H * 0.6) : Math.min(W * 0.36, H * 0.5), cx0 = W / 2, cy0 = H * 0.5, f = 3.4;
 
     for (var i = 0; i < N; i++) {
       var p = pts[i], a = ease(Math.max(0, (el / 1800) - p.d));
@@ -212,6 +216,7 @@ export const brainScript = `"use strict";
     ctx.lineCap = "round";
     for (i = 0; i < edges.length; i++) {
       var e = edges[i], A = proj[e[0]], B = proj[e[1]], fl = e[2] || 0;
+      if (MINI && (fl || i % 3)) continue;
       var depth = cl(((A.z + B.z) / 2 + 1.1) / 2.2);                  // 0 back .. 1 front
       var vis = Math.min(A.a, B.a);
       var em = 1;
@@ -248,7 +253,8 @@ export const brainScript = `"use strict";
         if (hl) { am = pi.reg === hl ? 1.6 : 0.35; sm *= pi.reg === hl ? 1.3 : 1; }
       }
       ctx.globalAlpha = Math.min(1, (deep ? 0.25 + 0.45 * dep : 0.3 + 0.7 * dep) * q.a * am);
-      ctx.beginPath(); ctx.arc(q.x, q.y, (deep ? 0.5 + 0.6 * dep : 0.55 + 0.9 * dep) * q.s * sm, 0, 6.2832); ctx.fill();
+      if (MINI && (deep || order[i] % 2)) continue;
+      ctx.beginPath(); ctx.arc(q.x, q.y, (deep ? 0.5 + 0.6 * dep : 0.55 + 0.9 * dep) * q.s * sm * (MINI ? 0.4 : 1), 0, 6.2832); ctx.fill();
     }
 
     // key memories glow
@@ -257,9 +263,10 @@ export const brainScript = `"use strict";
       var pulse = still ? 0.7 : 0.55 + 0.45 * Math.sin(el * 0.0016 + i * 1.7);
       ctx.globalAlpha = (0.25 + 0.75 * kd) * kq.a * (REG && hl && pts[keys[i]].reg !== hl ? 0.3 : 1);
       ctx.fillStyle = col.halo;
-      ctx.beginPath(); ctx.arc(kq.x, kq.y, (4 + 4 * pulse) * kq.s, 0, 6.2832); ctx.fill();
+      var km = MINI ? 0.4 : 1;
+      ctx.beginPath(); ctx.arc(kq.x, kq.y, (4 + 4 * pulse) * kq.s * km, 0, 6.2832); ctx.fill();
       ctx.fillStyle = col.core;
-      ctx.beginPath(); ctx.arc(kq.x, kq.y, (1.4 + 0.8 * kd) * kq.s, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.arc(kq.x, kq.y, (1.4 + 0.8 * kd) * kq.s * km, 0, 6.2832); ctx.fill();
     }
 
     // signals
@@ -277,12 +284,13 @@ export const brainScript = `"use strict";
         var px = P.x + (Q.x - P.x) * sgn.t, py = P.y + (Q.y - P.y) * sgn.t;
         var sd = cl(((P.z + Q.z) / 2 + 1.1) / 2.2);
         ctx.globalAlpha = 0.35 + 0.65 * sd;
-        var sgGrad = ctx.createRadialGradient(px, py, 0, px, py, 5);
+        var sr = MINI ? 2 : 5;
+        var sgGrad = ctx.createRadialGradient(px, py, 0, px, py, sr);
         sgGrad.addColorStop(0, col.signal); sgGrad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = sgGrad;
-        ctx.beginPath(); ctx.arc(px, py, 5, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(px, py, sr, 0, 6.2832); ctx.fill();
         ctx.fillStyle = col.signal;
-        ctx.beginPath(); ctx.arc(px, py, 1.3, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(px, py, MINI ? 0.6 : 1.3, 0, 6.2832); ctx.fill();
       }
     }
     ctx.globalCompositeOperation = "source-over";
@@ -315,7 +323,8 @@ export const brainScript = `"use strict";
     canvas.skyBrain = { highlight: function (r) { hl = r || null; if (!running) draw(performance.now()); } };
   }
 
-  function loop(now) { draw(now); if (running) requestAnimationFrame(loop); }
+  // A canvas React removed stops drawing, so a remounted header does not leave a loop behind.
+  function loop(now) { if (!canvas.isConnected) { running = false; return; } draw(now); if (running) requestAnimationFrame(loop); }
   function start() {
     if (reduce.matches) { running = false; draw(performance.now()); return; }
     if (!running) { running = true; requestAnimationFrame(loop); }
@@ -324,6 +333,8 @@ export const brainScript = `"use strict";
   resize();
   start();
  }
+  // The web app draws its header brain after React renders, so it calls this itself.
+  window.skyBrainInit = init;
   var all = document.querySelectorAll("canvas[data-brain]");
   for (var n = 0; n < all.length; n++) init(all[n]);
 })();

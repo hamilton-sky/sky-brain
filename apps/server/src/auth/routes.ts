@@ -4,6 +4,7 @@ import { toNodeHandler } from "better-auth/node";
 import type express from "express";
 import type { Auth } from "./auth.ts";
 import { stripStateSuffix } from "./perminister-oidc.ts";
+import { brainScript } from "./pages/brain-script.ts";
 // Named imports, so dead-code checks see each part of the page in use.
 import {
   html as consentHtml,
@@ -86,6 +87,10 @@ export function mountAuth(app: express.Express, auth: Auth): void {
     );
   });
 
+  // The 3D brain alone, for the small brain in the web app's header.
+  app.get("/auth-pages/brain.js", (_req, res) => {
+    sendPage(res, brainScript, "text/javascript");
+  });
   for (const [name, page] of Object.entries(pages)) {
     app.get(`/${name}`, (_req, res) => {
       sendPage(res, page.html, "html");

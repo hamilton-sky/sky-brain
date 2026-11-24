@@ -90,8 +90,10 @@ p { margin: 0; }
 
 /* nav */
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; }
-.wordmark { font-weight: 600; font-size: 18px; letter-spacing: 0.01em; text-decoration: none; }
-.wordmark .dash { color: var(--muted); font-weight: 400; }
+/* The name is one word in two weights: a light "sky" and a bold "brain" in the accent. */
+.wordmark { font-size: 19px; letter-spacing: -0.02em; text-decoration: none; }
+.wordmark .wm-sky { font-weight: 300; }
+.wordmark .wm-brain { font-weight: 750; color: var(--accent); }
 
 /* buttons */
 .btn {
