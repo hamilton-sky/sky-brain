@@ -5,6 +5,14 @@ mock of the Book settings page: https://claude.ai/artifact/R17CXKKuHiUM1gq7fsTdD
 [`docs/DECISIONS.md`](../DECISIONS.md). The first draft of the book itself is in
 [book/](book/), one file per chapter.
 
+> **Revised after research, 24 Nov 2026.** A research pass
+> ([BOOK-RESEARCH.md](BOOK-RESEARCH.md)) changed the plan. Short version: at 18 tools, frontier
+> models are not overloaded; what moves accuracy is *method* (when to use a tool, in what order,
+> what goes wrong), and the one channel every client delivers is the tool description itself. So
+> the book's **text** is worth shipping soon, and most of its **machinery** waits for a trigger.
+> Sections 10 and 11 hold the revised measurement and build order. Sections 4 to 7 stay as the
+> long-term design, with the corrections in section 12.
+
 It answers four ideas shammai raised on 24 Nov 2026:
 
 1. **One entry point, like a book.** The model calls one tool, `book`, and gets a table of
@@ -192,10 +200,12 @@ book is missing.
 
 | MCP feature | What sky-brain serves | Where it helps |
 | --- | --- | --- |
-| **Server instructions** (sent once at connect) | Three lines: "sky-brain is the person's brain. Call `book` first in a new session, or `book_search` with your task. Never say the person approved." | Clients that pass server instructions to the model (Claude Code does). Costs nothing elsewhere. |
-| **Tools** `book`, `book_read`, `book_search` | The whole book | Every client. This is the path that always works. |
-| **Resources** `book://contents`, `book://chapter/<id>` | The same text as resources | Clients that let a person attach a resource (Claude Code `@` mentions). |
-| **Prompts**, one per recipe | `next-task`, `save-decision`, `plan-goal`... with their arguments | Clients that show prompts as commands. The person starts a recipe by name. |
+| **Server instructions** (sent once at connect) | At most 512 characters, built-in text only: "sky-brain is the person's brain. Call `book` for how to use it. Never say the person approved." Never person or model pages. | Confirmed in Claude Code (cut at 4,096 characters), Codex, VS Code, Gemini CLI; ChatGPT uses them with tool metadata. **Not documented for claude.ai**: check with a canary instruction. |
+| **Tool descriptions** | Each tool's description also carries its `useWhen` and `pitfalls` from the registry | Every client. The only channel that always reaches the model. |
+| **Tools** `book` (later `book_search`) | The whole book | Every client. Keep the tool list fixed: `tools/list_changed` is not reliable (ChatGPT needs a manual refresh). |
+| **Resources** `book://contents`, `book://chapter/<id>` (deferred) | The same text as resources | Read by the model on its own only in Claude Code; elsewhere a person attaches them. |
+| **Prompts**, one per recipe (deferred) | `next-task`, `save-decision`... | Started by the user everywhere; never reach the model by themselves. |
+| **Skills over MCP** (SEP-2640, watch) | Recipes as `skill://` resources | Hosts that implement the Skills extension; not confirmed in claude.ai yet. |
 
 ---
 
@@ -386,44 +396,70 @@ Three things tell a model how to work. The book keeps them apart and shows them 
 
 ## 10. Measuring it
 
-The book is worth building only if models make fewer mistakes with it. Before the book ships to
-everyone, a small benchmark in `bench/book/`: 12 tasks with known right sequences, for example
-"save this decision", "do the next task in sky-brain and report it", "find what I decided about
-the theme", "ask me to approve these two goals". Each task runs with and without the book, on
-two models (one large, one small), against a test brain.
+The book is worth building only if models make fewer mistakes with it, and the research found no
+published test of a separate usage guide against good tool descriptions alone. So sky-brain runs
+its own, in `bench/book/`, against a test brain:
 
-| Measure | Target |
+- **30 to 40 tasks** from real use, including traps: pairs of similar tools (`search` or
+  `list_memories`, `release_task` or `report_task`), missing arguments, and things an agent must
+  refuse (approve, delete). A third of the tasks is held out and never used to tune the text.
+- **Three arms:** A today's tools; B improved descriptions only (use-when and pitfalls written
+  into each description); C improved descriptions plus `book`.
+- **Three trials** per task per arm, on one frontier and one small model. Report pass^1 and
+  pass^3.
+- **Graded by the database state** where possible (the right entry captured, the right task
+  reported), plus counts of wrong-tool calls, invalid arguments, extra calls and tokens (the
+  book's own cost included).
+- **The decisive comparison is C against B** on the held-out tasks. If C does not beat B, ship B
+  only and keep the chapter text as the source of the descriptions.
+
+## 11. Build order (revised)
+
+0. **Now, offline only:** `bench/book/` and the arm A baseline, and a count of how many tokens
+   today's tool definitions take. Nothing a model can see changes while the two-week memory-loop
+   measurement runs, because new instructions or descriptions would change how models call
+   `capture` and `search` and spoil that measurement.
+1. **After the window, about 3 to 4 days, kept only if B or C wins:** `defineTool` with the `book`
+   block and the test that every tool has a chapter; use-when and pitfalls rendered into each
+   tool's description; server instructions (512 characters, built-in text only) and the claude.ai
+   canary test; **one** read-only tool `book { id? }` (no id: the contents; an id: a chapter, tool
+   or recipe), marked `readOnlyHint: true, destructiveHint: false`; error messages that point to
+   `book { id: "errors" }`.
+2. **Deferred, each with its trigger:**
+
+| Piece | Build it when |
 | --- | --- |
-| Calls refused with a 400 (wrong arguments, wrong tool) | at least 50% fewer |
-| Tasks finished with the right sequence | up from the baseline |
-| Captures without a useful summary, observations without refs | near zero |
-| Extra calls per task (the cost of reading the book) | at most 2 |
-| Tokens of tool definitions per chat in compact mode | at least 60% fewer |
+| `book_search` | The book holds more than about 30 items, or the bench shows models opening the wrong chapter |
+| Person pages and the Book web page | The same guidance has been written into a chat, CLAUDE.md or a project file three or more times, or a bench failure cannot be fixed in the built-in text |
+| Model-proposed pages | Person pages are in real use, and the approval page has the controls in section 12 |
+| Usage suggestions | The `tool_calls` log (counts only) has 30 days of data with repeated error patterns |
+| Compact mode (`look` / `act`) | Tool definitions pass about 10K tokens or 30 tools, or a client that loads every tool up front shows wrong-tool errors |
+| Resources, prompts, `skill://` | A person asks to start recipes by name, or claude.ai supports the Skills extension |
+| Per-role and per-hat books | Scopes (D25 part 2) and hats (D30) ship |
 
----
+## 12. Corrections to sections 4 to 7 from the research
 
-## 11. Build order (suggested)
+- **`book_read` merges into `book { id? }`.** One tool instead of three; `book_search` comes later.
+- **Compact mode has real costs:** a dispatcher hides each tool's argument schema from the model,
+  and it folds claude.ai's per-tool on/off switches and ChatGPT's per-tool confirmations into one.
+  Claude Code already loads tools on demand by itself. Hence deferred.
+- **Three labelled tiers, always:** built in (from the code), from the person, and proposed by a
+  model and approved by the person. Each is served fenced as quoted data (hard rule 7), built-in
+  text ranks first, and person or model text never goes into server instructions or tool
+  descriptions, which clients load with the most authority.
+- **Model-proposed pages are memory poisoning with more authority** (the attacks on ChatGPT and
+  Windsurf memory, MemoryGraft, and a 2026 study of cross-session rules in coding agents all use
+  this loop). Before they ship, the approval must be bound to a hash of the exact text (any edit
+  is a new pending version); invisible and bidirectional Unicode is refused; the approval page
+  shows exactly the text that will be served; recipes are structured steps only (tool names and
+  short notes, with no URLs, emails, images or links); and a proposal from an agent that read
+  quarantined or web text in the same session is flagged.
+- **The usage log keeps counts only** at first. Query text of failed searches can come later if the
+  counts show it would help.
 
-1. **Registry and book, read-only.** `defineTool` with `book` metadata, the chapter files,
-   `book`, `book_read`, `book_search` (word search), server instructions. The benchmark. About 1
-   week.
-2. **Book page, read-only**, with "View as" and token counts, and the `tool_calls` log with its
-   stats. About 3 days.
-3. **The person's pages**: notes, recipes and glossary on the web; recipes as MCP prompts;
-   chapters as resources. About 1 week.
-4. **Suggestions**: the usage rules, `propose_book_page`, and `book_page` approvals. About 1 week.
-5. **Compact mode** per connected app (`look`, `act`). About 3 days.
-6. **Later**: semantic `book_search` with the step 4 vectors; skills as the "Your job" chapter
-   (with D25 part 3); per-hat books (with hats, D30).
+## Open questions, answered by the research (for shammai to confirm)
 
-Each step ships with its tests and a `docs/PLAN.md` update in the same PR. None of it changes the
-step 3 measurement of the memory loop.
-
-## Open questions for shammai
-
-1. **Approval level for model pages.** This proposal puts every page at level 2, like rules. A
-   lighter option: level 1 for recipes (steps that only name tools), level 2 for free text.
-2. **Default mode.** Full by default (nothing changes for today's connectors) and compact as an
-   option, or compact by default for new connections?
-3. **Usage log.** Is keeping the text of failed `book_search` queries for 30 days acceptable, or
-   should only the count be kept?
+1. **Approval level for model pages:** level 2 for any free text served to models. Structured
+   recipes could move to level 1 later, once the bench and a review history exist.
+2. **Default mode:** full stays the default; compact mode is deferred.
+3. **Usage log:** counts only at first.
