@@ -4,6 +4,10 @@
 // target and membership (404); role and layer (403); state (409); secrets (422); quarantine.
 import type { Actor } from "@sky-brain/shared/actor";
 import {
+  CommentCreateRequestSchema,
+  CommentResolveRequestSchema,
+} from "@sky-brain/shared/comments";
+import {
   CaptureRequestSchema,
   MemoriesListQuerySchema,
   MemoryCreateRequestSchema,
@@ -20,6 +24,7 @@ import { memories } from "../db/schema.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
+import { IdSchema } from "@sky-brain/shared/scope";
 import {
   boardWriteLimit,
   parseRequest,
@@ -33,6 +38,12 @@ import {
   searchEntries,
   setTrust,
 } from "./entries-service.ts";
+import {
+  addComment,
+  commentsOf,
+  deleteComment,
+  setResolved,
+} from "./comments.ts";
 import {
   listMemories,
   memoryWire,
@@ -135,8 +146,54 @@ export function entriesRouter({
     res.status(200).json({
       entry: entryWire(entry, true),
       versions: versions.map(versionWire),
+      // The person's notes on the text, so the model reading it with `get` sees them too.
+      comments: await commentsOf(db, entry),
     });
   });
+
+  router.get("/:id/comments", async (req, res) => {
+    const { entry } = await findEntry(db, actorOf(req), pathId(req));
+    res.status(200).json({ comments: await commentsOf(db, entry) });
+  });
+
+  router.post("/:id/comments", requireHuman, limit, async (req, res) => {
+    const id = pathId(req);
+    const body = parseRequest(CommentCreateRequestSchema, req.body);
+    const comment = await addComment(db, human(actorOf(req)), id, body, now());
+    res.status(201).json({ comment });
+  });
+
+  router.post(
+    "/:id/comments/:commentId/resolve",
+    requireHuman,
+    limit,
+    async (req, res) => {
+      const id = pathId(req);
+      const commentId = validate(IdSchema, req.params.commentId);
+      const { resolved } = parseRequest(CommentResolveRequestSchema, req.body);
+      const comment = await setResolved(
+        db,
+        human(actorOf(req)),
+        id,
+        commentId,
+        resolved,
+        now(),
+      );
+      res.status(200).json({ comment });
+    },
+  );
+
+  router.delete(
+    "/:id/comments/:commentId",
+    requireHuman,
+    limit,
+    async (req, res) => {
+      const id = pathId(req);
+      const commentId = validate(IdSchema, req.params.commentId);
+      await deleteComment(db, human(actorOf(req)), id, commentId);
+      res.status(204).end();
+    },
+  );
 
   router.post("/:id/versions", requireHuman, limit, async (req, res) => {
     const id = pathId(req);

@@ -1,6 +1,7 @@
 // The app: panel-frame-ui's dashboard shell (sidebar with Board and Agents, a toolbar with the
 // theme picker and sign out) in sky-brain's Constellation Night theme (theme.css), around the
-// board (a project picker and the project's goals) or the agents page.
+// board (a project picker and the project's goals), a document's page, approvals, or the agents
+// page. Addresses come from router.ts.
 import {
   Alert,
   Button,
@@ -17,31 +18,31 @@ import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { ApprovalLink, Approvals } from "./Approvals.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
-import { Board } from "./Board.tsx";
+import { Board } from "./board/Board.tsx";
+import { DocPage } from "./docs/DocPage.tsx";
+import { navigate, parseRoute, useRoute } from "./router.ts";
 
 const PROJECT_KEY = "sky-brain.project";
 // An approval link opened while signed out: where to go back to after sign-in.
 const RETURN_KEY = "sky-brain.return";
 
-/** The request id of an approval link, `/a/<id>`, or null. */
-function approvalLinkId(): string | null {
-  return /^\/a\/([0-9a-f-]{36})$/i.exec(location.pathname)?.[1] ?? null;
-}
-
+/** Remembers an approval link opened while signed out, to return to after sign-in. */
 function rememberReturn(): void {
   try {
-    if (approvalLinkId()) sessionStorage.setItem(RETURN_KEY, location.pathname);
+    const route = parseRoute(location.pathname);
+    if (route.page === "approval") sessionStorage.setItem(RETURN_KEY, route.id);
   } catch {
     // Storage refused: the person lands on Approvals instead.
   }
 }
 
-/** After sign-in lands on `/`, go back to the approval link that sent the person there. */
+/** After sign-in lands on `/`, the approval link's request id that sent the person there. */
 function takeReturn(): string | null {
   try {
-    const path = sessionStorage.getItem(RETURN_KEY);
+    const id = sessionStorage.getItem(RETURN_KEY);
     sessionStorage.removeItem(RETURN_KEY);
-    return path && /^\/a\/[0-9a-f-]{36}$/i.test(path) ? path : null;
+    const route = parseRoute(`/a/${id ?? ""}`);
+    return route.page === "approval" ? route.id : null;
   } catch {
     return null;
   }
@@ -76,17 +77,19 @@ export function App() {
 function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState<Page>("board");
-  const [linkId, setLinkId] = useState(approvalLinkId);
+  const route = useRoute();
+  const page: Page =
+    route.page === "approval"
+      ? "approvals"
+      : route.page === "doc"
+        ? "board"
+        : route.page;
 
   useEffect(() => {
     api.me().then(
       (m) => {
         const back = location.pathname === "/" ? takeReturn() : null;
-        if (back) {
-          history.replaceState(null, "", back);
-          setLinkId(approvalLinkId());
-        }
+        if (back) navigate({ page: "approval", id: back }, true);
         setMe(m);
       },
       (err: unknown) => {
@@ -104,14 +107,9 @@ function Root() {
   return (
     <AppShell
       me={signedIn}
-      page={linkId ? "approvals" : page}
-      onPage={(p) => {
-        if (linkId) {
-          history.replaceState(null, "", "/");
-          setLinkId(null);
-        }
-        setPage(p);
-      }}
+      page={page}
+      title={route.page === "doc" ? "Document" : undefined}
+      onPage={(p) => navigate({ page: p })}
     >
       {error ? (
         <Alert tone="error">{error}</Alert>
@@ -127,13 +125,15 @@ function Root() {
             </a>
           }
         />
-      ) : linkId ? (
+      ) : route.page === "doc" ? (
+        <DocPage key={route.entryId} entryId={route.entryId} me={me} />
+      ) : route.page === "approval" ? (
         <>
           <PageHeader
             title="An agent is asking"
             description="This is exactly what will change. Only you can approve it."
           />
-          <ApprovalLink id={linkId} />
+          <ApprovalLink id={route.id} />
         </>
       ) : page === "approvals" ? (
         <>
@@ -146,8 +146,8 @@ function Root() {
       ) : page === "board" ? (
         <>
           <PageHeader
-            title="Goals"
-            description="What your agents propose waits here. Only you approve."
+            title="Board"
+            description="What your agents propose waits here. Only you approve. Review today's list, or see every goal."
           />
           <Projects me={me} />
         </>

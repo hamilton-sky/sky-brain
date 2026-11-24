@@ -68,10 +68,13 @@ function signOut(): void {
 export function AppShell(props: {
   me?: Me;
   page: Page;
+  /** The top bar's name when it is not the page's (a document under Board). */
+  title?: string;
   onPage: (page: Page) => void;
   children: ReactNode;
 }) {
-  const title = PAGES.find((p) => p.id === props.page)?.label ?? "";
+  const title =
+    props.title ?? PAGES.find((p) => p.id === props.page)?.label ?? "";
   return (
     <DashboardShell
       brand={

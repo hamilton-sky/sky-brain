@@ -192,7 +192,7 @@ The memory tools are built (step 1). The `context` packet on `claim_task` and le
 |---|---|---|
 | `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
 | `search` | `GET /api/v1/entries?q=` | word search, any word may match, ranked; returns summaries, not bodies |
-| `get` | `GET /api/v1/entries/:id` | one entry with its body and every version |
+| `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
 | `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |
 
 People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
@@ -271,6 +271,8 @@ the same checks. REST routes:
 | `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
+| `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |
+| `DELETE /api/v1/goals/:id/documents/:entryId` | people only |
 | `POST /api/v1/goals/:id/approve`, `/cancel`, `/release` | people only |
 | `GET /api/v1/tasks/ready`, `GET /api/v1/tasks/:id` | members (a run token: its project) |
 | `POST /api/v1/tasks/:id/claim`, `/renew`, `/release`, `/done`, `/fail` | writers; `renew` to `fail` need the holder's `claim_seq` |
@@ -280,8 +282,29 @@ A task is ready when its goal is approved by the caller's own person and not hel
 the text that was approved, every dependency is done, and it is pending (or its lease ran out).
 A claim also waits while another live lease in the project holds an overlapping file. A browser
 session's writes must send `application/json` (415 `json_required` otherwise), so a cross-site
-form cannot approve anything. The web page at `/` lists goals and tasks and has the person-only
-Approve, Cancel and Release buttons.
+form cannot approve anything. The web page at `/` is built for fast review. "Today" is a digest
+of up to ten goals waiting for the person (drafts and held goals, longest-waiting first) with a
+one-line summary of the last day; "All goals" is a card board with four columns (Needs you,
+Running, Waiting to start, Done); hovering a card shows its summary and opening one shows its
+tasks in a dialog. Approve and reject (reject
+cancels the goal) work on one goal or a selection; the page sends one request per goal, so bulk
+review adds no new route and each goal keeps its own checks. Held goals are never approved in
+bulk: the person reads and releases them one by one.
+
+A goal can carry up to 20 documents: entries (markdown with the writer's summary) linked to it
+in `goal_documents`. An agent writes one with `capture` and links it with the `attach_document`
+MCP tool; `GET /goals` and `GET /goals/:id` return each goal's documents as summaries, never
+bodies, and agents see only proposed or approved ones. On the board, hovering a card shows the
+summaries; opening a document goes to its own page, `/docs/<entry id>` (D34). The page reads
+the markdown with a small renderer that never inserts HTML, and edits it in four views (Read,
+Sections, Source, Split) with a formatting bar, section moves, splits and merges, and undo; Save
+writes a new version through `POST /entries/:id/versions`. A held document is shown as plain
+text. People comment on a document (`entry_comments`): a note in a color on a selected passage
+or on the whole text, resolved, reopened or deleted by people with a writer role
+(`POST /entries/:id/comments`, `POST /entries/:id/comments/:commentId/resolve`,
+`DELETE /entries/:id/comments/:commentId`, people only; secret-scanned, 2,000 characters, 200 per
+entry). Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
+`GET /entries/:id`), so the model sees them with `get`. PDFs are not stored yet.
 
 ## 9. Auth
 
