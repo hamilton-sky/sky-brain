@@ -507,3 +507,15 @@ Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
 letting a model approve itself.
 **Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
 **Decided (shammai, 24 Nov):** web push is the second alert channel, after the inbox and email.
+
+### D32. Approval requests: the first step of D31
+
+**Date:** 2026-11-24. **Decided by:** shammai ("merge and continue" after D30 and D31).
+**Decision:** build approval requests before hats and alerts. An agent calls `request_approval`
+with draft goals or proposed entries and gets a link to `/a/<id>`; the person approves or rejects
+on that page or on the Approvals tab. Each item is pinned to the state shown; a change makes the
+request `superseded` and nothing is applied. Requests expire after 60 minutes, are decided once,
+and are capped at 10 open per agent. Rejecting a request does not reject its items.
+**Why:** it works in every client today (claude.ai has no elicitation), and email, web push and
+hats all build on it.
+**Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
