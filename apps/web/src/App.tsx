@@ -4,19 +4,18 @@
 import {
   Alert,
   Button,
-  DashboardShell,
   EmptyState,
   PageHeader,
   SelectField,
   Skeleton,
   TextField,
-  ThemeControl,
   ThemeProvider,
 } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
+import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
@@ -64,7 +63,7 @@ function Root() {
 
   const signedIn = me !== null && me !== "signed-out" ? me : undefined;
   return (
-    <Shell me={signedIn} page={page} onPage={setPage}>
+    <AppShell me={signedIn} page={page} onPage={setPage}>
       {error ? (
         <Alert tone="error">{error}</Alert>
       ) : me === null ? (
@@ -82,7 +81,6 @@ function Root() {
       ) : page === "board" ? (
         <>
           <PageHeader
-            eyebrow="Board"
             title="Goals"
             description="What your agents propose waits here. Only you approve."
           />
@@ -91,73 +89,13 @@ function Root() {
       ) : (
         <>
           <PageHeader
-            eyebrow="Agents"
             title="Roles and connected apps"
             description="Name the roles your agents play, and pick the role each app acts as."
           />
           <Agents />
         </>
       )}
-    </Shell>
-  );
-}
-
-type Page = "board" | "agents";
-const PAGES: { id: Page; label: string }[] = [
-  { id: "board", label: "Board" },
-  { id: "agents", label: "Agents" },
-];
-
-function Shell(props: {
-  me?: Me;
-  page: Page;
-  onPage: (page: Page) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <DashboardShell
-      brand={
-        <span className="pf-brand">
-          <span>
-            sky<span className="dash">-</span>brain
-          </span>
-        </span>
-      }
-      navigation={
-        props.me &&
-        PAGES.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className="pf-sidebar-link"
-            aria-current={props.page === p.id ? "page" : undefined}
-            onClick={() => props.onPage(p.id)}
-          >
-            {p.label}
-          </button>
-        ))
-      }
-      sidebarFooter={
-        props.me && <span className="muted small who">{props.me.email}</span>
-      }
-      toolbar={
-        <div className="row">
-          <ThemeControl />
-          {props.me && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                void api.signOut().then(() => location.reload());
-              }}
-            >
-              Sign out
-            </Button>
-          )}
-        </div>
-      }
-    >
-      {props.children}
-    </DashboardShell>
+    </AppShell>
   );
 }
 

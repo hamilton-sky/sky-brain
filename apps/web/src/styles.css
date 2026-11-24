@@ -138,3 +138,95 @@
 .task p {
   margin: 4px 0;
 }
+
+/* The frame (AppShell.tsx): sidebar icons. */
+.pf-sidebar-link [data-icon],
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The sidebar stays open on wide screens (shammai: a fixed side panel). panel-frame-ui makes
+   its brand a collapse button and hides the pages when collapsed, so the brand is not clickable
+   here. Phones keep the menu button and drawer. */
+@media (min-width: 781px) {
+  .pf-sidebar-brand-toggle {
+    pointer-events: none;
+    cursor: default;
+  }
+  .pf-sidebar-brand-toggle:hover {
+    background: none;
+  }
+}
+.pf-sidebar-navigation {
+  display: grid;
+  gap: 4px;
+}
+
+/* The top bar: page name on the left; theme, account and Sign out on the right. */
+.pf-toolbar-content {
+  gap: 12px;
+}
+.pf-toolbar-title {
+  font-size: 15px;
+  color: var(--pf-text);
+}
+.theme-picker {
+  margin-left: auto;
+}
+.theme-picker .pf-select-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.theme-picker .pf-select-trigger {
+  min-height: 36px;
+}
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 240px;
+  font-size: 13px;
+  color: var(--pf-muted);
+}
+.account-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pf-accent-contrast);
+  background: var(--pf-accent);
+}
+.sign-out {
+  min-height: 36px;
+  padding-block: 6px;
+}
+@media (max-width: 640px) {
+  .account-email,
+  .sign-out span,
+  .pf-toolbar-title {
+    display: none;
+  }
+  .sign-out {
+    padding-inline: 9px;
+  }
+}
