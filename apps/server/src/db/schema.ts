@@ -126,3 +126,5 @@ export * from "./tasks-schema.ts";
 export * from "./memory-schema.ts";
 // Agent profiles and which app acts as which (D25).
 export * from "./agents-schema.ts";
+// Approval requests: an agent asks, a person decides on the web (D31).
+export * from "./approvals-schema.ts";

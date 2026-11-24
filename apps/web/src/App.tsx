@@ -15,10 +15,37 @@ import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
+import { ApprovalLink, Approvals } from "./Approvals.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./Board.tsx";
 
 const PROJECT_KEY = "sky-brain.project";
+// An approval link opened while signed out: where to go back to after sign-in.
+const RETURN_KEY = "sky-brain.return";
+
+/** The request id of an approval link, `/a/<id>`, or null. */
+function approvalLinkId(): string | null {
+  return /^\/a\/([0-9a-f-]{36})$/i.exec(location.pathname)?.[1] ?? null;
+}
+
+function rememberReturn(): void {
+  try {
+    if (approvalLinkId()) sessionStorage.setItem(RETURN_KEY, location.pathname);
+  } catch {
+    // Storage refused: the person lands on Approvals instead.
+  }
+}
+
+/** After sign-in lands on `/`, go back to the approval link that sent the person there. */
+function takeReturn(): string | null {
+  try {
+    const path = sessionStorage.getItem(RETURN_KEY);
+    sessionStorage.removeItem(RETURN_KEY);
+    return path && /^\/a\/[0-9a-f-]{36}$/i.test(path) ? path : null;
+  } catch {
+    return null;
+  }
+}
 // The key public/theme-init.js and the sign-in and consent pages read too.
 const THEME = { type: "localStorage", key: "sky-brain-theme" } as const;
 
@@ -50,20 +77,42 @@ function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<Page>("board");
+  const [linkId, setLinkId] = useState(approvalLinkId);
 
   useEffect(() => {
-    api.me().then(setMe, (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) {
-        // Signed out: the sign-in page (with the brain and how it works) is the way in.
-        setMe("signed-out");
-        location.replace("/sign-in");
-      } else setError(err instanceof Error ? err.message : String(err));
-    });
+    api.me().then(
+      (m) => {
+        const back = location.pathname === "/" ? takeReturn() : null;
+        if (back) {
+          history.replaceState(null, "", back);
+          setLinkId(approvalLinkId());
+        }
+        setMe(m);
+      },
+      (err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) {
+          // Signed out: the sign-in page (with the brain and how it works) is the way in.
+          rememberReturn();
+          setMe("signed-out");
+          location.replace("/sign-in");
+        } else setError(err instanceof Error ? err.message : String(err));
+      },
+    );
   }, []);
 
   const signedIn = me !== null && me !== "signed-out" ? me : undefined;
   return (
-    <AppShell me={signedIn} page={page} onPage={setPage}>
+    <AppShell
+      me={signedIn}
+      page={linkId ? "approvals" : page}
+      onPage={(p) => {
+        if (linkId) {
+          history.replaceState(null, "", "/");
+          setLinkId(null);
+        }
+        setPage(p);
+      }}
+    >
       {error ? (
         <Alert tone="error">{error}</Alert>
       ) : me === null ? (
@@ -78,6 +127,22 @@ function Root() {
             </a>
           }
         />
+      ) : linkId ? (
+        <>
+          <PageHeader
+            title="An agent is asking"
+            description="This is exactly what will change. Only you can approve it."
+          />
+          <ApprovalLink id={linkId} />
+        </>
+      ) : page === "approvals" ? (
+        <>
+          <PageHeader
+            title="Approvals"
+            description="What your agents asked you to approve, in one place."
+          />
+          <Approvals />
+        </>
       ) : page === "board" ? (
         <>
           <PageHeader

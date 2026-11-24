@@ -71,6 +71,13 @@
       "when": 1795471161252,
       "tag": "0009_agent-profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795523523932,
+      "tag": "0010_approval-requests",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import { attachVerifiedActor } from "../actor/middleware.ts";
 import type { Db } from "../db/client.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { errorHandler } from "../http/error-handler.ts";
+import { approvalsRouter } from "../approvals/approvals-router.ts";
 import { entriesRouter, memoriesRouter } from "../memory/memory-router.ts";
 import { projectsRouter } from "../projects/projects-router.ts";
 import { goalsRouter } from "../tasks/goals-router.ts";
@@ -66,6 +67,7 @@ export function boardDispatcher(options: BoardDispatchOptions) {
   app.use("/api/v1/tasks", tasksRouter({ db, now, limiter }));
   app.use("/api/v1/memories", memoriesRouter({ db, now, limiter }));
   app.use("/api/v1/entries", entriesRouter({ db, now, limiter }));
+  app.use("/api/v1/approvals", approvalsRouter({ db, now, limiter }));
   app.use("/api", (_req, res) => {
     res
       .status(404)

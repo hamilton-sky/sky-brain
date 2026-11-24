@@ -412,33 +412,41 @@ export async function setTrust(
   entryId: string,
   to: "approved" | "rejected",
 ): Promise<EntryRow> {
-  const { entry, memory, role } = await findEntry(db, actor, entryId);
+  return db.transaction((tx) => setTrustInTx(tx, actor, entryId, to));
+}
+
+/** `setTrust` inside the caller's transaction (an approval request applies several at once). */
+export async function setTrustInTx(
+  tx: DbOrTx,
+  actor: Actor & { kind: "human" },
+  entryId: string,
+  to: "approved" | "rejected",
+): Promise<EntryRow> {
+  const { entry, memory, role } = await findEntry(tx, actor, entryId);
   assertMayWrite(actor, memory, role);
   if (entry.trust === to) {
     throw new HttpError(409, "invalid_state", `The entry is already ${to}.`);
   }
-  return db.transaction(async (tx) => {
-    const [row] = await tx
-      .update(entries)
-      .set({ trust: to, quarantinedBecause: null })
-      .where(and(eq(entries.id, entry.id), eq(entries.trust, entry.trust)))
-      .returning();
-    if (!row) {
-      throw new HttpError(
-        409,
-        "stale_version",
-        "Someone else changed this entry; read it again.",
-      );
-    }
-    await writeAudit(tx, {
-      workspaceId: entry.workspaceId,
-      actor: `human:${actor.user_id}`,
-      action: to === "approved" ? "entry.approve" : "entry.reject",
-      targetId: entry.id,
-      details: { from: entry.trust, to },
-    });
-    return row;
+  const [row] = await tx
+    .update(entries)
+    .set({ trust: to, quarantinedBecause: null })
+    .where(and(eq(entries.id, entry.id), eq(entries.trust, entry.trust)))
+    .returning();
+  if (!row) {
+    throw new HttpError(
+      409,
+      "stale_version",
+      "Someone else changed this entry; read it again.",
+    );
+  }
+  await writeAudit(tx, {
+    workspaceId: entry.workspaceId,
+    actor: `human:${actor.user_id}`,
+    action: to === "approved" ? "entry.approve" : "entry.reject",
+    targetId: entry.id,
+    details: { from: entry.trust, to },
   });
+  return row;
 }
 
 /**
