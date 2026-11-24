@@ -475,9 +475,10 @@ Taking someone's access away is now done in Perminister by disabling the account
 product; their session ends within 7 days (no rolling refresh).
 **Supersedes:** the product-organization rule in D17.
 
-### D30. Hats: one brain, several identities (open)
+### D30. Hats: one brain, several identities
 
-**Date:** 2026-11-24. **Status:** proposed, waiting for shammai.
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built. A hat is a lens by default, a wall
+optionally; no starter hats.
 **Proposal:** a person keeps one brain and one About me, and defines hats (Parent, Engineer,
 Friend). A hat is an optional property of a memory, About me entries can be tagged with one or
 more hats, and each connected app is bound to a hat as well as a role. A hat is a lens (focus,
@@ -491,9 +492,9 @@ self-concept, encoding specificity). Splitting into several brains would lose wh
 every role.
 **Keeps:** one core per person, sharing per memory, D26 bindings, hard rules 3 and 5.
 
-### D31. Approval through the connected model (open)
+### D31. Approval through the connected model
 
-**Date:** 2026-11-24. **Status:** proposed, waiting for shammai.
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built.
 **Proposal:** an agent may ask for approval with `propose_change`; the server creates an
 approval request pinned to the exact versions shown, and the person answers through a channel the
 agent cannot write to: an approval link opened in their own sky-brain session (every client),
@@ -505,4 +506,4 @@ Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
 **Why:** the person works in Claude or Codex and should rarely need to open sky-brain, without
 letting a model approve itself.
 **Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
-**Open:** web push or Telegram as the second alert channel.
+**Decided (shammai, 24 Nov):** web push is the second alert channel, after the inbox and email.

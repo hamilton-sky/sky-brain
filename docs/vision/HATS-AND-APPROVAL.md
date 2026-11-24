@@ -1,6 +1,6 @@
 # Hats and approval through the model
 
-**Status:** proposal, 24 Nov 2026. Nothing here is built or decided. Open as D30 (hats) and D31
+**Status:** design agreed with shammai, 24 Nov 2026, not built. D30 (hats) and D31
 (approval through the connected model) in [`docs/DECISIONS.md`](../DECISIONS.md).
 
 It answers two ideas shammai raised on 24 Nov 2026:
@@ -386,14 +386,15 @@ flowchart LR
 Each step ships with tests and a `docs/PLAN.md` update in the same PR. Like D25, none of this
 changes the step 3 measurement, so it can start in parallel.
 
-## Decided and open
+## Decided
 
-Decided by shammai (24 Nov 2026): a new brain starts with no hats, and sky-brain suggests them;
-one connector per hat is acceptable after research (this section's research added lenses for
-everyone and walls for those who want them); the level table stands.
+By shammai, 24 Nov 2026:
 
-Open:
+- A new brain starts with no hats, and sky-brain suggests them.
+- One connector per hat is acceptable, after research.
+- A hat is a focus lens by default. A wall (its own connector and token audience) is an option for
+  the person who wants it.
+- The level table stands.
+- Alerts: the web Approvals inbox and email first, then web push. Telegram only if people ask.
 
-1. Should a hat be a privacy wall (work data never readable from a family chat), or is a focus
-   lens enough for most people, with walls as an option?
-2. Which alert to build after the inbox and email: web push or Telegram?
+Still open: nothing blocking. The walled-hat spike on claude.ai comes before build step 4.

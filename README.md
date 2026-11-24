@@ -131,7 +131,7 @@ Setup and the verified list: [docs/CONNECT.md](docs/CONNECT.md).
 - [docs/vision/HUMAN-MEMORY.md](docs/vision/HUMAN-MEMORY.md): how human memory retrieves and
   preserves, and what sky-brain takes from it
 - [docs/vision/HATS-AND-APPROVAL.md](docs/vision/HATS-AND-APPROVAL.md): hats (one brain, several
-  identities) and approval through the connected model (D30, D31, proposed).
+  identities) and approval through the connected model (D30, D31, design agreed).
 - [docs/vision/AGENTS.md](docs/vision/AGENTS.md): agent profiles: who each agent is, what it may
   touch, its skills, and the board events that wake it (proposed, D25)
 - [docs/vision/hub/](docs/vision/hub/README.md): the architecture page and the other design pages
