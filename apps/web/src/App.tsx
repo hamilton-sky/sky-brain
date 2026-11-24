@@ -54,8 +54,11 @@ function Root() {
 
   useEffect(() => {
     api.me().then(setMe, (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) setMe("signed-out");
-      else setError(err instanceof Error ? err.message : String(err));
+      if (err instanceof ApiError && err.status === 401) {
+        // Signed out: the sign-in page (with the brain and how it works) is the way in.
+        setMe("signed-out");
+        location.replace("/sign-in");
+      } else setError(err instanceof Error ? err.message : String(err));
     });
   }, []);
 
