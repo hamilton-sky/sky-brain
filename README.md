@@ -67,6 +67,7 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Memory core, thin step 1: About me, Inbox and Notebook per person, entries with kind, trust, versions and summaries, word search; MCP tools `capture`, `search`, `get`, `list_memories` | ✅ Built and live (PR #19) |
 | Memory loop, thin step 2: a fenced context packet on `claim_task` (About me, rules, relevant entries, what is not known) and up to 3 proposed lessons on `report_task` | ✅ Built and live (PR #20). No Digest page yet; the two-week measurement is in [docs/MEASURE-STEP2.md](docs/MEASURE-STEP2.md) |
 | Agents: identity per agent (D26): you name roles (Product owner, Doer, Reviewer…) on the Agents tab and bind each connected app to one; everything it writes is signed `mcp/<app>/<role>` | ✅ Built and live |
+| Approval through the connected model, step 1 (D31): `request_approval` and `approval_status` MCP tools, a link to `/a/<id>`, an Approvals tab | ✅ Built (this PR); email and web push alerts next |
 | Agents: permissions, skills and board triggers per agent | ⬜ Proposed in [docs/vision/AGENTS.md](docs/vision/AGENTS.md) (D25, open) |
 | pgvector 0.8.1 (`halfvec`, HNSW) | ✅ Enabled on the database, not used yet |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
@@ -130,6 +131,8 @@ Setup and the verified list: [docs/CONNECT.md](docs/CONNECT.md).
   schema (core, long, short, working), its SQL and tests, and the red/blue team review behind it
 - [docs/vision/HUMAN-MEMORY.md](docs/vision/HUMAN-MEMORY.md): how human memory retrieves and
   preserves, and what sky-brain takes from it
+- [docs/vision/HATS-AND-APPROVAL.md](docs/vision/HATS-AND-APPROVAL.md): hats (one brain, several
+  identities) and approval through the connected model (D30, D31, design agreed).
 - [docs/vision/AGENTS.md](docs/vision/AGENTS.md): agent profiles: who each agent is, what it may
   touch, its skills, and the board events that wake it (proposed, D25)
 - [docs/vision/hub/](docs/vision/hub/README.md): the architecture page and the other design pages

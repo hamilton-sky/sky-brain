@@ -159,3 +159,41 @@ export const api = {
       body: "{}",
     }),
 };
+
+interface ApprovalItem {
+  kind: "goal" | "entry";
+  id: string;
+  title: string;
+  state: string;
+  changed: boolean;
+}
+
+export interface Approval {
+  id: string;
+  workspace_id: string;
+  status: "pending" | "approved" | "rejected" | "expired" | "superseded";
+  reason: string;
+  requested_by: string;
+  items: ApprovalItem[];
+  path: string;
+  created_at: string;
+  expires_at: string;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export const approvalsApi = {
+  pending: () =>
+    request<{ approvals: Approval[] }>("GET", "/api/v1/approvals").then(
+      (r) => r.approvals,
+    ),
+  get: (id: string) =>
+    request<{ approval: Approval }>("GET", `/api/v1/approvals/${id}`).then(
+      (r) => r.approval,
+    ),
+  decide: (id: string, action: "approve" | "reject") =>
+    request<{ approval: Approval }>(
+      "POST",
+      `/api/v1/approvals/${encodeURIComponent(id)}/${action}`,
+    ).then((r) => r.approval),
+};

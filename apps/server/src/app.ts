@@ -13,6 +13,7 @@ import { requireJsonWrites } from "./http/json-writes.ts";
 import { mountMcp } from "./mcp/route.ts";
 import { entriesRouter, memoriesRouter } from "./memory/memory-router.ts";
 import { agentsRouter } from "./agents/agents-router.ts";
+import { approvalsRouter } from "./approvals/approvals-router.ts";
 import { meRouter } from "./projects/me-router.ts";
 import { projectsRouter } from "./projects/projects-router.ts";
 import { mintRouter } from "./run-tokens/mint-router.ts";
@@ -168,6 +169,10 @@ export function createApp(options: AppOptions): express.Express {
     memoriesRouter({ db, now, limiter: boardLimiter }),
   );
   app.use("/api/v1/entries", entriesRouter({ db, now, limiter: boardLimiter }));
+  app.use(
+    "/api/v1/approvals",
+    approvalsRouter({ db, now, limiter: boardLimiter }),
+  );
 
   app.use("/api", (_req, res) => {
     res

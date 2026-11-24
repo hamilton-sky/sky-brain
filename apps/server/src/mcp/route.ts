@@ -31,6 +31,7 @@ export function mountMcp(app: express.Express, o: McpRouteOptions): void {
     mcpServerFactory(o.db, {
       ...(o.now ? { now: o.now } : {}),
       ...(o.limiter ? { limiter: o.limiter } : {}),
+      publicUrl: o.publicUrl,
     }),
   );
   const unauthorized = () =>

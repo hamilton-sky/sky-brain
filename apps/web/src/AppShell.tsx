@@ -5,7 +5,7 @@ import { Button, DashboardShell, ThemeControl } from "panel-frame-ui";
 import { useEffect, useRef, type ReactNode } from "react";
 import { api, type Me } from "./api.ts";
 
-export type Page = "board" | "agents";
+export type Page = "board" | "approvals" | "agents";
 
 declare global {
   interface Window {
@@ -42,6 +42,12 @@ const AGENTS_ICON = (
     <path d="M10 6V3.2M7.6 10.2h.01M12.4 10.2h.01M2 10v2.5M18 10v2.5" />
   </svg>
 );
+const APPROVALS_ICON = (
+  <svg viewBox="0 0 20 20" aria-hidden="true" data-icon>
+    <circle cx="10" cy="10" r="7" />
+    <path d="M6.8 10.2 9 12.4l4.2-4.6" />
+  </svg>
+);
 const SIGN_OUT_ICON = (
   <svg viewBox="0 0 20 20" aria-hidden="true" className="btn-icon">
     <path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8M12 6.5 15.5 10 12 13.5M15.5 10H8" />
@@ -50,6 +56,7 @@ const SIGN_OUT_ICON = (
 
 const PAGES: { id: Page; label: string; icon: ReactNode }[] = [
   { id: "board", label: "Board", icon: BOARD_ICON },
+  { id: "approvals", label: "Approvals", icon: APPROVALS_ICON },
   { id: "agents", label: "Agents", icon: AGENTS_ICON },
 ];
 
