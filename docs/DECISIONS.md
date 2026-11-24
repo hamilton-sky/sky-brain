@@ -519,3 +519,23 @@ and are capped at 10 open per agent. Rejecting a request does not reject its ite
 **Why:** it works in every client today (claude.ai has no elicitation), and email, web push and
 hats all build on it.
 **Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
+
+### D35. The brain book: one entry point that teaches models to use the brain
+
+**Date:** 2026-11-24. **Status:** proposal from shammai's idea (24 Nov); not built.
+**Proposal:** a model starts with `book`, a short table of contents of the brain (who you are,
+five rules, chapters with one line each), and opens chapters with `book_read` or finds tools,
+recipes and pages with `book_search`. Chapters: start here, layers, reading, writing, board,
+approval, recipes, errors, and the person's own pages. The built-in text is generated from the
+tool registry (`defineTool` with a `book` block) and chapter files in the server, so it never
+drifts from the tools, and it is built per caller (role, hat, scopes). The person configures and
+extends the book on a Book page (notes, recipes, glossary, order, hide per role). Models propose
+pages with `propose_book_page`; a page is served only after the person approves it through an
+approval request (level 2, like rules). Usage suggestions come from fixed rules over a log of
+tool calls that keeps no arguments. A per-app compact mode exposes 9 tools and reaches the rest
+through `look` (read-only) and `act` (writes), which call the same handlers. Skills (D25 part 3)
+become a "Your job" chapter. Full design: `docs/vision/BOOK.md`; draft text: `docs/vision/book/`.
+**Why:** tools alone do not teach a model how they fit together, and listing every tool in every
+chat costs context. A short contents, read on demand, and worked recipes fix both.
+**Keeps:** hard rules 2, 3 and 6 (the book adds no rights, agents cannot write guidance without
+approval, pages are scanned), D31/D32 approvals, and no model calls inside sky-brain.
