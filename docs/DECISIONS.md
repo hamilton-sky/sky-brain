@@ -522,7 +522,9 @@ hats all build on it.
 
 ### D35. The brain book: one entry point that teaches models to use the brain
 
-**Date:** 2026-11-24. **Status:** proposal from shammai's idea (24 Nov); not built.
+**Date:** 2026-11-24. **Status:** proposal from shammai's idea (24 Nov); not built. Revised the
+same day after research (`docs/vision/BOOK-RESEARCH.md`): benchmark first, then a thin book (text in
+tool descriptions, server instructions, one `book { id? }` tool); the rest waits for triggers.
 **Proposal:** a model starts with `book`, a short table of contents of the brain (who you are,
 five rules, chapters with one line each), and opens chapters with `book_read` or finds tools,
 recipes and pages with `book_search`. Chapters: start here, layers, reading, writing, board,
