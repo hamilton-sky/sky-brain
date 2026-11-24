@@ -474,3 +474,31 @@ answer. Perminister checks the same thing before it issues a code, so this is a 
 Taking someone's access away is now done in Perminister by disabling the account for the
 product; their session ends within 7 days (no rolling refresh).
 **Supersedes:** the product-organization rule in D17.
+
+### D30. Hats: one brain, several identities (open)
+
+**Date:** 2026-11-24. **Status:** proposed, waiting for shammai.
+**Proposal:** a person keeps one brain and one About me, and defines hats (Parent, Engineer,
+Friend). A hat is an optional property of a memory, About me entries can be tagged with one or
+more hats, and each connected app is bound to a hat as well as a role. Under a hat, an agent sees
+the shared About me plus that hat's part, reads and writes only that hat's memories and shared
+ones, and captures into that hat's Inbox. Hats only narrow rights and are never a grant; "share
+this hat" writes one grant per memory. Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 1.
+**Why:** people live in several roles with different context (self-aspects, working
+self-concept, encoding specificity). Splitting into several brains would lose what is true in
+every role.
+**Keeps:** one core per person, sharing per memory, D26 bindings, hard rules 3 and 5.
+
+### D31. Approval through the connected model (open)
+
+**Date:** 2026-11-24. **Status:** proposed, waiting for shammai.
+**Proposal:** an agent may ask for approval with `propose_change`; the server creates an
+approval request pinned to the exact versions shown, and the person answers through a channel the
+agent cannot write to: an approval link opened in their own sky-brain session (every client), or
+an MCP form elicitation in a client they allowed. Riskier changes (About me, trust, delete) need
+the link; sharing stays web-only. The web app becomes the place for bulk approval and sharing.
+Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
+**Why:** the person works in Claude or Codex and should rarely need to open sky-brain, without
+letting a model approve itself.
+**Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
+**Open:** which clients support elicitation, and whether it works with stateless MCP on Vercel.
