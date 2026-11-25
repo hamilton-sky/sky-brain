@@ -1,10 +1,55 @@
-// The board page: who is signed in, a project picker, and the project's goals.
+// The app: panel-frame-ui's dashboard shell (sidebar with Board and Agents, a toolbar with the
+// theme picker and sign out) in sky-brain's Constellation Night theme (theme.css), around the
+// board (a project picker and the project's goals), a document's page, approvals, or the agents
+// page. Addresses come from router.ts.
+import {
+  Alert,
+  Button,
+  EmptyState,
+  PageHeader,
+  Select,
+  Skeleton,
+  TextField,
+  ThemeProvider,
+} from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
-import { FormFooter } from "./FormFooter.tsx";
+import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
 import { api, ApiError, type Me, type Project } from "./api.ts";
-import { Board } from "./Board.tsx";
+import { Agents } from "./Agents.tsx";
+import { ApprovalLink, Approvals } from "./Approvals.tsx";
+import { Notify } from "./Notify.tsx";
+import { AppShell, type Page } from "./AppShell.tsx";
+import { Board } from "./board/Board.tsx";
+import { DocPage } from "./docs/DocPage.tsx";
+import { navigate, parseRoute, useRoute } from "./router.ts";
 
 const PROJECT_KEY = "sky-brain.project";
+// An approval link opened while signed out: where to go back to after sign-in.
+const RETURN_KEY = "sky-brain.return";
+
+/** Remembers an approval link opened while signed out, to return to after sign-in. */
+function rememberReturn(): void {
+  try {
+    const route = parseRoute(location.pathname);
+    if (route.page === "approval") sessionStorage.setItem(RETURN_KEY, route.id);
+  } catch {
+    // Storage refused: the person lands on Approvals instead.
+  }
+}
+
+/** After sign-in lands on `/`, the approval link's request id that sent the person there. */
+function takeReturn(): string | null {
+  try {
+    const id = sessionStorage.getItem(RETURN_KEY);
+    sessionStorage.removeItem(RETURN_KEY);
+    const route = parseRoute(`/a/${id ?? ""}`);
+    return route.page === "approval" ? route.id : null;
+  } catch {
+    return null;
+  }
+}
+// The key public/theme-init.js and the sign-in and consent pages read too.
+const THEME = { type: "localStorage", key: "sky-brain-theme" } as const;
 
 function remembered(): string | null {
   try {
@@ -23,71 +68,101 @@ function remember(id: string): void {
 }
 
 export function App() {
-  const [me, setMe] = useState<Me | null | "signed-out">(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.me().then(setMe, (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) setMe("signed-out");
-      else setError(err instanceof Error ? err.message : String(err));
-    });
-  }, []);
-
-  if (error)
-    return (
-      <Shell>
-        <p className="error">{error}</p>
-      </Shell>
-    );
-  if (me === null)
-    return (
-      <Shell>
-        <p className="muted">Loading…</p>
-      </Shell>
-    );
-  if (me === "signed-out") {
-    return (
-      <Shell>
-        <section className="card center">
-          <h2>Sign in to see your board</h2>
-          <p className="muted">
-            Goals and tasks your agents propose wait here for your approval.
-          </p>
-          <a className="button primary" href="/sign-in">
-            Sign in
-          </a>
-        </section>
-      </Shell>
-    );
-  }
   return (
-    <Shell me={me}>
-      <Projects me={me} />
-    </Shell>
+    <ThemeProvider persistence={THEME} systemMode="resolved">
+      <Root />
+    </ThemeProvider>
   );
 }
 
-function Shell(props: { me?: Me; children: React.ReactNode }) {
+function Root() {
+  const [me, setMe] = useState<Me | null | "signed-out">(null);
+  const [error, setError] = useState<string | null>(null);
+  const route = useRoute();
+  const page: Page =
+    route.page === "approval"
+      ? "approvals"
+      : route.page === "doc"
+        ? "board"
+        : route.page;
+
+  useEffect(() => {
+    api.me().then(
+      (m) => {
+        const back = location.pathname === "/" ? takeReturn() : null;
+        if (back) navigate({ page: "approval", id: back }, true);
+        setMe(m);
+      },
+      (err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) {
+          // Signed out: the sign-in page (with the brain and how it works) is the way in.
+          rememberReturn();
+          setMe("signed-out");
+          location.replace("/sign-in");
+        } else setError(err instanceof Error ? err.message : String(err));
+      },
+    );
+  }, []);
+
+  const signedIn = me !== null && me !== "signed-out" ? me : undefined;
   return (
-    <div className="page">
-      <header className="top">
-        <h1>sky-brain</h1>
-        {props.me && (
-          <div className="who">
-            <span className="muted">{props.me.email}</span>
-            <button
-              className="link"
-              onClick={() => {
-                void api.signOut().then(() => location.reload());
-              }}
-            >
-              Sign out
-            </button>
-          </div>
-        )}
-      </header>
-      <main>{props.children}</main>
-    </div>
+    <AppShell
+      me={signedIn}
+      page={page}
+      title={route.page === "doc" ? "Document" : undefined}
+      onPage={(p) => navigate({ page: p })}
+    >
+      {error ? (
+        <Alert tone="error">{error}</Alert>
+      ) : me === null ? (
+        <Skeleton className="loading" />
+      ) : me === "signed-out" ? (
+        <EmptyState
+          title="Sign in to see your board"
+          description="Goals and tasks your agents propose wait here for your approval."
+          action={
+            <a className="pf-button pf-button-primary" href="/sign-in">
+              Sign in
+            </a>
+          }
+        />
+      ) : route.page === "doc" ? (
+        <DocPage key={route.entryId} entryId={route.entryId} me={me} />
+      ) : route.page === "approval" ? (
+        <>
+          <PageHeader
+            title="An agent is asking"
+            description="This is exactly what will change. Only you can approve it."
+          />
+          <ApprovalLink id={route.id} />
+        </>
+      ) : page === "approvals" ? (
+        <>
+          <PageHeader
+            title="Approvals"
+            description="What your agents asked you to approve, in one place."
+          />
+          <Notify />
+          <Approvals />
+        </>
+      ) : page === "board" ? (
+        <>
+          <PageHeader
+            title="Board"
+            description="What your agents propose waits here. Only you approve. Review today's list, or see every goal."
+          />
+          <Projects me={me} />
+        </>
+      ) : (
+        <>
+          <PageHeader
+            title="Roles and connected apps"
+            description="Name the roles your agents play, and pick the role each app acts as."
+          />
+          <Agents />
+        </>
+      )}
+    </AppShell>
   );
 }
 
@@ -104,9 +179,9 @@ function Projects({ me }: { me: Me }) {
 
   if (projects === null) {
     return error ? (
-      <p className="error">{error}</p>
+      <Alert tone="error">{error}</Alert>
     ) : (
-      <p className="muted">Loading projects…</p>
+      <Skeleton className="loading" />
     );
   }
   const current =
@@ -117,27 +192,20 @@ function Projects({ me }: { me: Me }) {
     <>
       <section className="toolbar">
         {projects.length > 0 && (
-          <label>
-            <span className="muted">Project</span>
-            <select
-              value={current?.id ?? ""}
-              onChange={(e) => {
-                setSelected(e.target.value);
-                remember(e.target.value);
-              }}
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Project"
+            value={current?.id ?? ""}
+            onValueChange={(id) => {
+              setSelected(id);
+              remember(id);
+            }}
+            options={projects.map((p) => ({ value: p.id, label: p.name }))}
+          />
         )}
         {writable.length > 0 && !adding && (
-          <button className="button" onClick={() => setAdding(true)}>
+          <Button variant="secondary" onClick={() => setAdding(true)}>
             New project
-          </button>
+          </Button>
         )}
       </section>
       {adding && (
@@ -153,15 +221,15 @@ function Projects({ me }: { me: Me }) {
           }}
         />
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <Alert tone="error">{error}</Alert>}
       {current ? (
         <Board key={current.id} project={current} />
       ) : (
         !adding && (
-          <section className="card center">
-            <h2>No projects yet</h2>
-            <p className="muted">Create a project to start a board.</p>
-          </section>
+          <EmptyState
+            title="No projects yet"
+            description="Create a project to start a board."
+          />
         )
       )}
     </>
@@ -174,46 +242,34 @@ function NewProject(props: {
 }) {
   const [name, setName] = useState("");
   const [workspace, setWorkspace] = useState(props.workspaces[0]!.id);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, submit } = useFormSubmit();
   return (
     <form
-      className="card form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setBusy(true);
-        api.createProject(workspace, name).then(props.onDone, (err: Error) => {
-          setError(err.message);
-          setBusy(false);
-        });
-      }}
+      className="pf-card form"
+      onSubmit={(e) =>
+        submit(e, () => api.createProject(workspace, name).then(props.onDone))
+      }
     >
       <h2>New project</h2>
       {props.workspaces.length > 1 && (
-        <label>
-          <span className="muted">Workspace</span>
-          <select
-            value={workspace}
-            onChange={(e) => setWorkspace(e.target.value)}
-          >
-            {props.workspaces.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label>
-        <span className="muted">Name</span>
-        <input
-          autoFocus
-          required
-          maxLength={120}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+        <Select
+          label="Workspace"
+          value={workspace}
+          onValueChange={setWorkspace}
+          options={props.workspaces.map((w) => ({
+            value: w.id,
+            label: w.name,
+          }))}
         />
-      </label>
+      )}
+      <TextField
+        label="Name"
+        autoFocus
+        required
+        maxLength={120}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <FormFooter
         error={error}
         submitLabel="Create"

@@ -9,7 +9,7 @@
     "test:pg": "vitest run --config vitest.pg.config.ts",
     "dev": "tsx watch src/dev.ts",
     "start": "tsx src/main.ts",
-    "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:light-my-request --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@vercel/functions --outfile=dist/vercel.mjs",
+    "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:light-my-request --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@vercel/functions --external:web-push --outfile=dist/vercel.mjs",
     "migrate": "tsx src/db/migrate-cli.ts"
   },
   "dependencies": {
@@ -26,11 +26,13 @@
     "light-my-request": "6.6.0",
     "pg": "8.23.1",
     "tsx": "4.23.15",
+    "web-push": "3.6.7",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/pg": "8.23.1",
+    "@types/web-push": "3.6.4",
     "auth": "1.7.15",
     "drizzle-kit": "0.31.11",
     "esbuild": "0.28.2"

@@ -13,7 +13,7 @@ import {
   seedWorkspace,
   type Db,
 } from "../testing/harness.ts";
-import { mayEnter, PERMINISTER_PRODUCT_ID } from "./access.ts";
+import { mayEnter } from "./access.ts";
 
 let db: Db;
 let server: AuthTestServer;
@@ -70,44 +70,54 @@ async function userCount(email: string): Promise<number> {
 }
 
 describe("access", () => {
-  it("access: mayEnter allows a Perminister account with sky-brain access", () => {
-    expect(PERMINISTER_PRODUCT_ID).toBe("sky-brain");
-    // Allowed.
-    expect(
-      mayEnter({ email: "ann@example.com", productIds: ["sky-brain"] }),
-    ).toBe(true);
-    expect(
-      mayEnter({
-        email: "ann@example.com",
-        productIds: ["other", "sky-brain"],
-      }),
-    ).toBe(true);
+  it("access: mayEnter allows any account with a verified email", () => {
+    // Allowed: no organization or product is asked for (D29).
+    expect(mayEnter({ email: "ann@example.com", emailVerified: true })).toBe(
+      true,
+    );
     // Refused: no email.
-    expect(mayEnter({ email: null, productIds: ["sky-brain"] })).toBe(false);
-    expect(mayEnter({ email: undefined, productIds: ["sky-brain"] })).toBe(
+    expect(mayEnter({ email: null, emailVerified: true })).toBe(false);
+    expect(mayEnter({ email: undefined, emailVerified: true })).toBe(false);
+    expect(mayEnter({ email: "", emailVerified: true })).toBe(false);
+    // Refused: an email Perminister has not verified, or no word on it.
+    expect(mayEnter({ email: "ann@example.com", emailVerified: false })).toBe(
       false,
     );
-    expect(mayEnter({ email: "", productIds: ["sky-brain"] })).toBe(false);
-    // Refused: organizations for another product only, or none.
-    expect(mayEnter({ email: "ann@example.com", productIds: ["other"] })).toBe(
+    expect(mayEnter({ email: "ann@example.com", emailVerified: null })).toBe(
       false,
     );
-    expect(mayEnter({ email: "ann@example.com", productIds: [] })).toBe(false);
+    expect(
+      mayEnter({ email: "ann@example.com", emailVerified: undefined }),
+    ).toBe(false);
+  });
+});
+
+describe("sign-in allowed", () => {
+  it("sign-in: a verified account with no sky-brain organization gets in", async () => {
+    const { b, done } = await signIn({
+      subjectId: "subject-public",
+      email: "public@example.com",
+      productIds: [],
+    });
+    expect(setsSession(done)).toBe(true);
+    const session = await b.request("/api/auth/get-session");
+    expect(session.body?.user?.email).toBe("public@example.com");
+    expect(await userCount("public@example.com")).toBe(1);
   });
 });
 
 describe("sign-in refused", () => {
-  it("sign-in: an account without sky-brain access gets no access", async () => {
+  it("sign-in: an account whose email is not verified gets no access", async () => {
     const { b, done } = await signIn({
-      subjectId: "subject-noaccess",
-      email: "noaccess@example.com",
-      productIds: ["another-product"],
+      subjectId: "subject-unverified",
+      email: "unverified@example.com",
+      emailVerified: false,
     });
     expect(done.next).toMatch(errorUrl("no_access"));
     expect(setsSession(done)).toBe(false);
     const session = await b.request("/api/auth/get-session");
     expect(session.body?.user).toBeUndefined();
-    expect(await userCount("noaccess@example.com")).toBe(0);
+    expect(await userCount("unverified@example.com")).toBe(0);
 
     const page = await b.request("/sign-in?error=no_access");
     expect(page.status).toBe(200);
@@ -120,22 +130,22 @@ describe("sign-in refused", () => {
     expect(script.text).toContain("error");
   });
 
-  it("sign-in: an invited account without sky-brain access gets no access", async () => {
+  it("sign-in: an invited account whose email is not verified gets no access", async () => {
     const ws = await seedWorkspace(db, { name: "Invited elsewhere" });
     await db.insert(invites).values({
       workspaceId: ws.id,
-      email: "invited-noaccess@example.com",
+      email: "invited-unverified@example.com",
       role: "editor",
       invitedBy: "owner-user",
     });
     const { done } = await signIn({
-      subjectId: "subject-invited-noaccess",
-      email: "invited-noaccess@example.com",
-      productIds: [],
+      subjectId: "subject-invited-unverified",
+      email: "invited-unverified@example.com",
+      emailVerified: false,
     });
     expect(done.next).toMatch(errorUrl("no_access"));
     expect(setsSession(done)).toBe(false);
-    expect(await userCount("invited-noaccess@example.com")).toBe(0);
+    expect(await userCount("invited-unverified@example.com")).toBe(0);
     const [invite] = await db
       .select({ acceptedAt: invites.acceptedAt })
       .from(invites)
@@ -159,19 +169,18 @@ describe("sign-in refused", () => {
     expect(accounts).toHaveLength(0);
   });
 
-  it("sign-in: a person whose access was taken away gets no access at the next sign-in", async () => {
-    // Allowed while Perminister lists sky-brain.
+  it("sign-in: a person whose email is no longer verified gets no access at the next sign-in", async () => {
+    // Allowed while Perminister says the email is verified.
     const first = await signIn({
       subjectId: "subject-revoked",
       email: "revoked@example.com",
-      productIds: ["sky-brain"],
     });
     expect(setsSession(first.done)).toBe(true);
     // Refused once it does not.
     const second = await signIn({
       subjectId: "subject-revoked",
       email: "revoked@example.com",
-      productIds: [],
+      emailVerified: false,
     });
     expect(second.done.next).toMatch(errorUrl("no_access"));
     expect(setsSession(second.done)).toBe(false);
@@ -250,5 +259,26 @@ describe("pages", () => {
     expect(script.text).toContain("/api/auth/sign-in/social");
     expect(script.text).toContain("textContent");
     expect(script.text).not.toContain("innerHTML");
+    // The theme the person picked in the web app applies here too.
+    expect(script.text).toContain("sky-brain-theme");
+  });
+
+  it("pages: the entry page links its own stylesheet and has no inline style", async () => {
+    const page = await server.browser().request("/sign-in");
+    expect(page.text).toContain(
+      '<link rel="stylesheet" href="/auth-pages/sign-in.css" />',
+    );
+    expect(page.text).not.toMatch(/<style|\sstyle="/);
+    // The four memory layers, each with its own explanation to scroll to.
+    for (const id of ["about-me", "board", "inbox", "notebooks"]) {
+      expect(page.text).toContain(`id="${id}"`);
+    }
+    const css = await server.browser().request("/auth-pages/sign-in.css");
+    expect(css.status).toBe(200);
+    expect(css.headers.get("content-type") ?? "").toMatch(/^text\/css/);
+    expect(css.headers.get("content-security-policy")).toContain(
+      "default-src 'self'",
+    );
+    expect(css.text).toContain("prefers-reduced-motion");
   });
 });

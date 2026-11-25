@@ -63,6 +63,9 @@ Perminister client and `PUBLIC_URL` both name it.
 2. URL `https://sky-brain.vercel.app/mcp`. Leave the client ID and secret empty.
 3. Connect, sign in with Perminister, then Allow on the consent page.
 4. In a chat, ask Claude to call `whoami`. It answers with your email and workspaces.
+5. Optional: on https://sky-brain.vercel.app open **Agents**, add a role (say Product owner) and
+   pick it next to Claude. From the next call on, everything this app writes is signed with that
+   role, and `whoami` shows it.
 
 The Claude phone app shows the same connector.
 

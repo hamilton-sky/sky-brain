@@ -1,0 +1,163 @@
+/* The document page (DocPage.tsx): full width like the board; the editor and the comments side
+   by side, stacked on a phone. Comment colors are shared by the panel, the composer and the
+   passage marks (the CSS Custom Highlight API's ::highlight). */
+.pf-dashboard-content:has(.doc-page) {
+  width: 100%;
+  max-width: none;
+}
+.doc-page {
+  --c-yellow: #e8b931;
+  --c-green: #3fb27f;
+  --c-blue: #4f8cff;
+  --c-purple: #a074f0;
+  --c-orange: #f0883e;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+}
+.doc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.doc-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--pf-muted);
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.doc-bar-acts {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.icon-button {
+  min-width: 38px;
+  font-size: 17px;
+  line-height: 1;
+}
+.doc-title-input {
+  all: unset;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  box-sizing: border-box;
+  width: calc(100% + 12px);
+  min-width: 0;
+  border-radius: var(--pf-radius-md);
+}
+.doc-title-input:hover {
+  background: color-mix(in srgb, var(--pf-muted) 8%, transparent);
+}
+.doc-title-input:focus-visible {
+  outline: 2px solid var(--pf-focus);
+}
+.doc-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: var(--pf-radius-md);
+  border-left: 3px solid var(--pf-accent);
+  background: color-mix(in srgb, var(--pf-accent) 8%, transparent);
+}
+.doc-summary textarea {
+  all: unset;
+  font-size: 14px;
+  line-height: 1.5;
+  field-sizing: content;
+  min-height: 2lh;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.doc-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pf-muted);
+}
+.doc-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.doc-work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+.doc-main {
+  min-width: 0;
+}
+.doc-rendered,
+.split > .doc-rendered {
+  padding: 20px 24px;
+  border-radius: var(--pf-radius-lg);
+  border: 1px solid var(--pf-border);
+  background: var(--pf-surface);
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+.split > .doc-rendered {
+  max-height: 75vh;
+  overflow: auto;
+}
+.doc-plain {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 960px) {
+  .doc-work,
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .comments {
+    position: static;
+    max-height: none;
+  }
+  .split > .doc-rendered {
+    max-height: none;
+  }
+}
+@media (max-width: 560px) {
+  .doc-meta {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+  }
+  .doc-bar-acts {
+    margin-left: auto;
+  }
+  .doc-rendered {
+    padding: 14px;
+  }
+  .fmt-group + .fmt-group {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .section-tools .sec-tool {
+    min-width: 24px;
+    padding: 0 3px;
+  }
+}
+

@@ -2,6 +2,7 @@ import type { Server } from "node:http";
 import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { devActorHeaderEnabled, type Config } from "./config.ts";
+import { pushFromEnv } from "./push/push.ts";
 import {
   closeDb,
   createPgliteDb,
@@ -35,7 +36,12 @@ export async function start(config: Config): Promise<Server> {
   const devActorHeader = devActorHeaderEnabled({ NODE_ENV: config.nodeEnv });
   let app;
   try {
-    app = createApp({ db, devActorHeader, auth: authFromConfig(config, db) });
+    app = createApp({
+      db,
+      devActorHeader,
+      auth: authFromConfig(config, db),
+      push: pushFromEnv(process.env),
+    });
   } catch (err) {
     await closeOnce();
     throw err;

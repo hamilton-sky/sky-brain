@@ -1,5 +1,6 @@
 // The board's REST routes as the signed-in browser calls them: the session cookie only, and
 // every write as JSON (the server refuses other bodies from a browser session).
+import type { CommentColor, EntryComment } from "@sky-brain/shared/comments";
 
 export interface Me {
   kind: "human" | "agent";
@@ -49,6 +50,54 @@ export interface Task {
   position: number;
 }
 
+/** A document attached to a goal: the summary only (read the body with `api.entry`). */
+export interface GoalDocument {
+  entry_id: string;
+  kind: string;
+  trust: EntryTrust;
+  title: string;
+  summary: string;
+  version: number;
+  author_kind: "human" | "agent";
+  author: string;
+  quarantined_because: string | null;
+  updated_at: string;
+  attached_by: string;
+  attached_at: string;
+}
+
+export type EntryTrust = "proposed" | "approved" | "rejected" | "quarantined";
+
+/** One memory entry with its body (markdown). */
+export interface Entry {
+  id: string;
+  kind: string;
+  trust: EntryTrust;
+  title: string;
+  body: string;
+  summary: string;
+  version: number;
+  author_kind: "human" | "agent";
+  author: string;
+  quarantined_because: string | null;
+  updated_at: string;
+}
+
+// Comments on a document: the shared wire types (types only, so nothing of zod reaches the page).
+export type { CommentColor, EntryComment } from "@sky-brain/shared/comments";
+export interface AgentProfile {
+  id: string;
+  slug: string;
+  display_name: string;
+  kind: "worker" | "steward";
+}
+
+export interface ConnectedApp {
+  client_id: string;
+  name: string | null;
+  profile_id: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -60,7 +109,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   path: string,
   body?: unknown,
 ): Promise<T> {
@@ -102,12 +151,50 @@ export const api = {
       name,
     }).then((r) => r.project),
   goals: (projectId: string) =>
-    request<{ goals: Goal[] }>(
+    request<{ goals: Goal[]; documents: Record<string, GoalDocument[]> }>(
       "GET",
       `/api/v1/goals?project_id=${encodeURIComponent(projectId)}`,
-    ).then((r) => r.goals),
+    ),
   goal: (goalId: string) =>
-    request<{ goal: Goal; tasks: Task[] }>("GET", `/api/v1/goals/${goalId}`),
+    request<{ goal: Goal; tasks: Task[]; documents: GoalDocument[] }>(
+      "GET",
+      `/api/v1/goals/${goalId}`,
+    ),
+  detachDocument: (goalId: string, entryId: string) =>
+    request<null>("DELETE", `/api/v1/goals/${goalId}/documents/${entryId}`),
+  entry: (entryId: string) =>
+    request<{ entry: Entry; comments: EntryComment[] }>(
+      "GET",
+      `/api/v1/entries/${entryId}`,
+    ),
+  addComment: (
+    entryId: string,
+    comment: { body: string; quote?: string; color: CommentColor },
+  ) =>
+    request<{ comment: EntryComment }>(
+      "POST",
+      `/api/v1/entries/${entryId}/comments`,
+      comment,
+    ).then((r) => r.comment),
+  resolveComment: (entryId: string, commentId: string, resolved: boolean) =>
+    request<{ comment: EntryComment }>(
+      "POST",
+      `/api/v1/entries/${entryId}/comments/${commentId}/resolve`,
+      { resolved },
+    ).then((r) => r.comment),
+  deleteComment: (entryId: string, commentId: string) =>
+    request<null>("DELETE", `/api/v1/entries/${entryId}/comments/${commentId}`),
+  reviseEntry: (
+    entryId: string,
+    change: { title: string; body: string; summary: string },
+  ) =>
+    request<{ entry: Entry }>(
+      "POST",
+      `/api/v1/entries/${entryId}/versions`,
+      change,
+    ).then((r) => r.entry),
+  approveEntry: (entryId: string) =>
+    request<unknown>("POST", `/api/v1/entries/${entryId}/approve`),
   createGoal: (project_id: string, title: string, body: string) =>
     request<{ goal: Goal }>("POST", "/api/v1/goals", {
       project_id,
@@ -119,6 +206,25 @@ export const api = {
     request<{ goal: Goal }>("POST", `/api/v1/goals/${goalId}/${action}`),
   releaseTaskText: (taskId: string) =>
     request<unknown>("POST", `/api/v1/tasks/${taskId}/release-text`),
+  agents: () =>
+    request<{ profiles: AgentProfile[]; apps: ConnectedApp[] }>(
+      "GET",
+      "/api/v1/agents",
+    ),
+  createAgentProfile: (
+    slug: string,
+    display_name: string,
+    kind: AgentProfile["kind"],
+  ) =>
+    request<{ profile: AgentProfile }>("POST", "/api/v1/agents/profiles", {
+      slug,
+      display_name,
+      kind,
+    }),
+  deleteAgentProfile: (id: string) =>
+    request<null>("DELETE", `/api/v1/agents/profiles/${id}`),
+  bindApp: (client_id: string, profile_id: string | null) =>
+    request<unknown>("POST", "/api/v1/agents/bind", { client_id, profile_id }),
   signOut: () =>
     fetch("/api/auth/sign-out", {
       method: "POST",
@@ -126,4 +232,53 @@ export const api = {
       headers: { "content-type": "application/json" },
       body: "{}",
     }),
+};
+
+interface ApprovalItem {
+  kind: "goal" | "entry";
+  id: string;
+  title: string;
+  state: string;
+  changed: boolean;
+}
+
+export interface Approval {
+  id: string;
+  workspace_id: string;
+  status: "pending" | "approved" | "rejected" | "expired" | "superseded";
+  reason: string;
+  requested_by: string;
+  items: ApprovalItem[];
+  path: string;
+  created_at: string;
+  expires_at: string;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export const approvalsApi = {
+  pending: () =>
+    request<{ approvals: Approval[] }>("GET", "/api/v1/approvals").then(
+      (r) => r.approvals,
+    ),
+  get: (id: string) =>
+    request<{ approval: Approval }>("GET", `/api/v1/approvals/${id}`).then(
+      (r) => r.approval,
+    ),
+  decide: (id: string, action: "approve" | "reject") =>
+    request<{ approval: Approval }>(
+      "POST",
+      `/api/v1/approvals/${encodeURIComponent(id)}/${action}`,
+    ).then((r) => r.approval),
+};
+
+export const pushApi = {
+  key: () =>
+    request<{ public_key: string | null }>("GET", "/api/v1/push/key").then(
+      (r) => r.public_key,
+    ),
+  subscribe: (subscription: PushSubscriptionJSON) =>
+    request<unknown>("POST", "/api/v1/push/subscribe", subscription),
+  unsubscribe: (endpoint: string) =>
+    request<unknown>("POST", "/api/v1/push/unsubscribe", { endpoint }),
 };

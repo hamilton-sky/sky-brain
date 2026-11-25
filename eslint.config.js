@@ -34,7 +34,15 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
-    files: ["**/*.test.ts", "apps/server/src/testing/**"],
+    files: ["apps/web/public/sw.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+  {
+    files: [
+      "**/*.test.ts",
+      "apps/server/src/testing/**",
+      "apps/server/src/mcp/test/**",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unsafe-argument": "off",

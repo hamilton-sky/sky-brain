@@ -11,6 +11,11 @@ import { createRateLimiter } from "./guards/ratelimit.ts";
 import { errorHandler } from "./http/error-handler.ts";
 import { requireJsonWrites } from "./http/json-writes.ts";
 import { mountMcp } from "./mcp/route.ts";
+import { entriesRouter, memoriesRouter } from "./memory/memory-router.ts";
+import { agentsRouter } from "./agents/agents-router.ts";
+import { approvalsRouter } from "./approvals/approvals-router.ts";
+import { noPush, type Push } from "./push/push.ts";
+import { pushRouter } from "./push/push-router.ts";
 import { meRouter } from "./projects/me-router.ts";
 import { projectsRouter } from "./projects/projects-router.ts";
 import { mintRouter } from "./run-tokens/mint-router.ts";
@@ -44,6 +49,8 @@ export interface AppOptions {
   webDist?: string;
   /** Better Auth and the origin it serves (`authFromConfig`). Default: no auth routes. */
   auth?: { instance: Auth; publicUrl: string };
+  /** Web push for approval requests (`pushFromEnv`). Default: off. */
+  push?: Push;
 }
 
 const defaultWebDist = fileURLToPath(
@@ -113,6 +120,7 @@ export function createApp(options: AppOptions): express.Express {
   // Check order step 5: one limiter for every board write, per actor and device, on the app
   // clock; the board's routers and the MCP board tools share it.
   const boardLimiter = createRateLimiter({ now: () => now().getTime() });
+  const push = options.push ?? noPush;
 
   // Before /api/v1, the /api 404, express.static and the catch-all, which would shadow it.
   if (options.auth) {
@@ -123,6 +131,7 @@ export function createApp(options: AppOptions): express.Express {
       now,
       limiter: boardLimiter,
       publicUrl: options.auth.publicUrl,
+      push,
     });
   }
 
@@ -157,9 +166,20 @@ export function createApp(options: AppOptions): express.Express {
   app.use("/api/v1/run-tokens", mintRouter({ db, now }));
 
   app.use("/api/v1/me", meRouter({ db }));
+  app.use("/api/v1/agents", agentsRouter({ db }));
   app.use("/api/v1/projects", projectsRouter({ db, limiter: boardLimiter }));
   app.use("/api/v1/goals", goalsRouter({ db, now, limiter: boardLimiter }));
   app.use("/api/v1/tasks", tasksRouter({ db, now, limiter: boardLimiter }));
+  app.use(
+    "/api/v1/memories",
+    memoriesRouter({ db, now, limiter: boardLimiter }),
+  );
+  app.use("/api/v1/entries", entriesRouter({ db, now, limiter: boardLimiter }));
+  app.use(
+    "/api/v1/approvals",
+    approvalsRouter({ db, now, limiter: boardLimiter, push }),
+  );
+  app.use("/api/v1/push", pushRouter({ db, push, limiter: boardLimiter }));
 
   app.use("/api", (_req, res) => {
     res

@@ -1,12 +1,14 @@
 // Test harness (spec.md Interfaces -> How a test reaches the server). Seeds insert rows
 // directly, bypassing the trust rules and guards: tests only.
+import type { Push } from "../push/push.ts";
+import type { AuthorKind, Role } from "@sky-brain/shared/enums";
 import type {
-  AuthorKind,
-  Kind,
-  Role,
-  Source,
-  Status,
-} from "@sky-brain/shared/enums";
+  EntryTopic,
+  KnowledgeKind,
+  MemoryLayer,
+  TrustLevel,
+} from "@sky-brain/shared/memory";
+import { and, eq } from "drizzle-orm";
 import type { Actor } from "@sky-brain/shared/actor";
 import { normalizeGitRemote } from "@sky-brain/shared/git-remote";
 import { randomBytes } from "node:crypto";
@@ -17,11 +19,14 @@ import { createApp } from "../app.ts";
 import { closeDb, createPgliteDb, migrateDb, type Db } from "../db/client.ts";
 import {
   entries,
+  entryVersions,
   features,
   members,
+  memories,
   projects,
   workspaces,
 } from "../db/schema.ts";
+import { createDefaultMemories } from "../memory/memories.ts";
 
 export type { Db };
 
@@ -45,6 +50,8 @@ export async function seedWorkspace(
     .values({ name: opts.name })
     .returning({ id: workspaces.id });
   const id = ws!.id;
+  // Like a sign-in: About me, the default Inbox and the default Notebook.
+  await createDefaultMemories(db, id);
   if (opts.members?.length) {
     await db
       .insert(members)
@@ -91,56 +98,84 @@ export async function seedFeature(
 
 export interface SeedEntry {
   workspaceId: string;
-  projectId?: string;
-  featureId?: string;
-  kind: Kind;
-  status: Status;
+  /** Default: the workspace's default memory of `layer`. */
+  memoryId?: string;
+  /** Default `short` (the Inbox). */
+  layer?: MemoryLayer;
+  kind?: KnowledgeKind;
+  topic?: EntryTopic;
+  trust?: TrustLevel;
   title: string;
   body: string;
+  summary?: string;
   /** Default `human`. */
   authorKind?: AuthorKind;
   /** Default `seed-user`. */
   author?: string;
-  /** Default: the author for a human, `seed-user` for an agent. */
-  onBehalfOf?: string;
-  /** Default: the author kind. */
-  source?: Source;
-  supersedes?: string;
-  replyTo?: string;
   expiresAt?: Date;
-  allowAgentAnswers?: boolean;
-  quarantinedBecause?: string;
 }
 
+/** One entry and its first version, inserted directly: no trust rules, no guards. */
 export async function seedEntry(
   db: Db,
   opts: SeedEntry,
-): Promise<{ id: string; seq: number }> {
+): Promise<{ id: string; memoryId: string }> {
+  const layer = opts.layer ?? "short";
+  let memoryId = opts.memoryId;
+  if (memoryId === undefined) {
+    const [m] = await db
+      .select({ id: memories.id })
+      .from(memories)
+      .where(
+        and(
+          eq(memories.workspaceId, opts.workspaceId),
+          eq(memories.layer, layer),
+          eq(memories.isDefault, true),
+        ),
+      );
+    memoryId = m!.id;
+  }
   const authorKind = opts.authorKind ?? "human";
   const author = opts.author ?? "seed-user";
+  const summary = opts.summary ?? opts.title;
+  const kind = opts.kind ?? "fact";
   const [row] = await db
     .insert(entries)
     .values({
       workspaceId: opts.workspaceId,
-      projectId: opts.projectId ?? null,
-      featureId: opts.featureId ?? null,
-      kind: opts.kind,
-      status: opts.status,
+      memoryId,
+      layer,
+      kind,
+      topic: opts.topic ?? null,
+      trust: opts.trust ?? "approved",
       title: opts.title,
       body: opts.body,
+      summary,
+      summarySource: "writer",
       authorKind,
       author,
-      onBehalfOf:
-        opts.onBehalfOf ?? (authorKind === "human" ? author : "seed-user"),
-      source: opts.source ?? authorKind,
-      supersedes: opts.supersedes ?? null,
-      replyTo: opts.replyTo ?? null,
-      expiresAt: opts.expiresAt ?? null,
-      allowAgentAnswers: opts.allowAgentAnswers ?? false,
-      quarantinedBecause: opts.quarantinedBecause ?? null,
+      onBehalfOf: author,
+      source: authorKind,
+      quarantinedBecause: opts.trust === "quarantined" ? "seed" : null,
+      expiresAt:
+        layer === "short"
+          ? (opts.expiresAt ?? new Date(Date.now() + 86_400_000))
+          : null,
     })
-    .returning({ id: entries.id, seq: entries.seq });
-  return row!;
+    .returning({ id: entries.id });
+  await db.insert(entryVersions).values({
+    entryId: row!.id,
+    version: 1,
+    kind,
+    topic: opts.topic ?? null,
+    title: opts.title,
+    body: opts.body,
+    summary,
+    summarySource: "writer",
+    authorKind,
+    author,
+  });
+  return { id: row!.id, memoryId };
 }
 
 export interface TestResponse {
@@ -174,6 +209,8 @@ export interface TestServerOptions {
   /** Default false. */
   devActorHeader?: boolean;
   webDist?: string;
+  /** Web push for approval requests. Default: off. */
+  push?: Push;
 }
 
 async function toTestResponse(res: Response): Promise<TestResponse> {
@@ -231,6 +268,7 @@ export async function startTestServer(
     devActorHeader: opts.devActorHeader ?? false,
     ...(opts.now ? { now: opts.now } : {}),
     ...(opts.webDist ? { webDist: opts.webDist } : {}),
+    ...(opts.push ? { push: opts.push } : {}),
   });
   const server = await new Promise<Server>((resolve, reject) => {
     const s = app.listen(0, "127.0.0.1", (err?: Error) =>

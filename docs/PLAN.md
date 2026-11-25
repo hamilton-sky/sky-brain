@@ -93,7 +93,9 @@ sky-brain adds:
 | `invites` | workspace_id, email, role, invited_by, accepted_at |
 | `projects` | id, workspace_id, slug, name, git_remote (normalized, unique per workspace) |
 | `features` | id, project_id, slug, name, archived_at |
+| `memories` | id, workspace_id, layer (`core` \| `long` \| `short` \| `working`), name, is_default. One `core` (About me) per workspace |
 | `entries` | see below |
+| `entry_versions` | every version of an entry's text, kind and summary. Append-only |
 | `audit_log` | seq, workspace_id, actor, action, target_id, at, details. Append-only. |
 | `devices` | id, user_id, name, created_at, last_seen_at, revoked_at, secret_hash (the `sbd_` device token's SHA-256) |
 | `device_codes` | the device flow (RFC 8628): device_code_hash, user_code, client_name, expires_at, interval, approved_by, device_id, issued_at |
@@ -103,109 +105,161 @@ sky-brain adds:
 | `task_deps` | task_id, depends_on_id (the DAG; no cycles, same goal) |
 | `task_events` | task_id, kind (`created` \| `claimed` \| `renewed` \| `released` \| `done` \| `failed` \| `reclaimed`), actor, device_id, claim_seq, at. Append-only. |
 
-### `entries`
+### `entries` (memory core, BUILD-PLAN step 1)
+
+The full design is [vision/schema/MEMORY-SCHEMA.md](vision/schema/MEMORY-SCHEMA.md); this is the thin
+part that is built.
 
 | Column | Meaning |
 |---|---|
-| `id` | uuid |
-| `seq` | monotonic number, used as a "what changed since" cursor |
-| `workspace_id`, `project_id`, `feature_id` | the scope; a null project or feature means a wider scope |
-| `kind` | `rule`, `decision`, `claim`, `question`, `answer`, `artifact`, `lesson`, `note` |
-| `status` | `proposed`, `approved`, `open`, `answered`, `superseded`, `expired`, `rejected`, `quarantined` |
-| `title` | one line, up to 200 characters |
-| `body` | markdown, up to 16 KB |
-| `author_kind` | `human` or `agent` |
-| `author` | a user id, or an agent identity such as `claude-code/builder` |
-| `on_behalf_of` | the person whose session or device wrote it |
-| `source` | `human`, `agent`, `code`, `web`, `import` |
-| `refs` | links: URLs, `path@commit`, PR links, other entry ids |
-| `reply_to` | for an answer: the question it answers |
-| `supersedes` | the entry this one replaces |
-| `confidence` | optional, 0 to 1, from the writer |
-| `expires_at` | claims get a default expiry; rules and approved decisions do not |
-| `allow_agent_answers` | set by the asker of a question: whether an agent may answer it (default false) |
-| `quarantined_because` | the id of the quarantine pattern that held the entry, written once when it is stored; null otherwise |
-| `created_at`, `updated_at` | |
-| `search` | generated full-text vector over title and body, with a GIN index |
+| `id`, `seq` | uuid; `seq` moves on every insert and change, a "what changed since" cursor |
+| `workspace_id`, `memory_id`, `layer` | the memory it lives in, for life; `layer` is a copy of the memory's, held by a composite foreign key |
+| `kind` | `fact`, `decision`, `hypothesis`, `observation` (needs a ref as evidence), `external` (D22) |
+| `topic` | optional: `rule`, `question`, `answer`, `lesson`, `note`, `artifact` |
+| `trust` | `quarantined`, `proposed`, `approved`, `rejected` (D22) |
+| `version`, `title`, `body`, `summary`, `summary_source`, `questions`, `refs` | the current version; every version is also in `entry_versions` |
+| `author_kind`, `author`, `on_behalf_of`, `source` | who wrote it; `source` is `human`, `agent`, `web` or `import` |
+| `quarantined_because` | why the text is held (`web_source` or a quarantine pattern), or null |
+| `expires_at` | Inbox (short) entries only: 30 days after capture they leave agents' default search |
+| `search` | generated: title (A), summary and questions (B), body (C), `simple` config with `sb_norm` for Hebrew |
 
-The scope is backed by composite foreign keys: (`project_id`, `workspace_id`) references
-`projects` (`id`, `workspace_id`) and (`feature_id`, `project_id`) references `features`
-(`id`, `project_id`), so an entry can never hang off another workspace's project or another
-project's feature. `seq` comes from one sequence (`entries_seq`) that every insert and every
-status change draws from.
+Database guards (migration 0008): an entry never moves or changes author; its text changes only
+together with a new `entry_versions` row; `entry_versions` is append-only (a workspace delete still
+cascades); an agent-written row can never sit in About me; web or imported text must be kind
+`external`. Each workspace gets About me, a default Inbox and a default Notebook at its first
+sign-in (and by migration for older ones).
 
 `audit_log.workspace_id` has no foreign key, so audit rows outlive a deleted workspace. A
 database trigger refuses `UPDATE`, `DELETE` and `TRUNCATE` on `audit_log`.
 
-Text is never edited after approval. A change is a new entry that supersedes the old one.
-Every status change goes through the API and lands in the audit log.
-
 ## 6. Trust rules
 
-_Not built as an API yet. Step 1 of the build order (D21) replaces this table with two fields,
-kind and trust level (D22); the rules below about agents, quarantine and secrets carry over._
+Built for the memory core (step 1), on the server and with tests for the allowed and refused case:
 
-| Kind | People write it as | Agents write it as | Who can move it on |
+| Who | Writes into | Lands as | Can also |
 |---|---|---|---|
-| `rule` | `approved` | not allowed | people only |
-| `decision` | `approved` | `proposed` | people approve or reject |
-| `claim` | `proposed` | `proposed` | people promote it to a decision, or it expires |
-| `question` | `open` | `open` | answered by a person; by an agent only if the asker allows it |
-| `answer` | allowed | only for questions an agent asked | |
-| `artifact`, `lesson`, `note` | `approved` | `proposed` | people approve or reject |
+| An agent | an Inbox only (the default one, or one named) | `proposed`; a summary is required | read `proposed` and `approved` entries |
+| A person (owner or editor) | any memory they can see | `approved`; a fallback summary if none is sent | approve, reject, write a new version |
+| The owner, in person | About me | `approved` | |
+| A viewer | nothing | | read |
 
 On top of the table:
 
-- Agents never write to the workspace scope, and never approve, reject, release or delete.
-- If an agent supersedes an approved entry, the new entry is `proposed`. The old one stays in
-  force until a person approves the new one.
+- About me is the owner's alone: other members of the workspace never see it.
+- Nothing is edited in place. A person's change is a new version; the old ones stay readable.
+- Only a person approves, rejects or revises, or changes a kind (hard rule 3, D22).
 - Web-sourced text, and text that reads like instructions to an agent ("ignore previous",
-  tool-call syntax, imperative orders to the reader), lands as `quarantined`. Quarantined
-  entries are never served in context until a person releases them.
-- Every write is scanned for secrets (API keys, private keys, tokens, `.env` lines). A hit
-  rejects the write.
-- Claims expire after 30 days unless a person confirms them. The workspace can change this.
+  tool-call syntax, imperative orders to the reader), lands as `quarantined`. Agents never read
+  quarantined or rejected entries; a person releases one by approving it.
+- Every write is scanned for secrets (API keys, private keys, tokens, `.env` lines) in the title,
+  body, summary, questions and refs. A hit rejects the write.
+- Inbox entries fade from agents' search after 30 days; a person still finds them.
 
 ## 7. How agents use it
 
-**Before work**, the agent calls `context` with its scope and a short task description. It
-gets back one packet, budgeted to about 6 KB:
+**Before work**, the agent claims a task, and `claim_task` returns a `context` packet with it
+(thin step 2). The packet is built from the task's title and body, budgeted to 6,000 characters:
 
-1. Rules in force (workspace, then project, then feature).
-2. Decisions in force (approved, not superseded, not expired).
-3. Open questions in scope.
-4. Relevant entries found by full-text search on the task text: claims (marked unverified),
-   artifacts and lessons.
+1. About me: approved entries of the person's About me (only the workspace owner gets them).
+2. Rules in force: approved entries with topic `rule`, outside About me.
+3. Relevant to this task: up to 4 entries found by word search on the task text, approved or
+   proposed (labelled "proposed, unverified"); never quarantined, rejected or faded ones.
+4. Not known: what the brain could not find, for example that nothing matched, or that a
+   decision shown is only proposed.
 
-Each entry is rendered as quoted data with its kind, status, author, source and date. Only
-approved rules sit in the rules section. Everything else is labelled as information, not
-instructions.
+The text rendering sits between `<sky-brain-context>` and `</sky-brain-context>`. Each entry is
+one line of quoted data with its topic or kind, trust, author, source, date and id; newlines and
+fence tags inside stored text are flattened, so stored text cannot leave the fence. When the
+budget runs out, whole entries are dropped from Relevant first, then Rules. The agent uses `get`
+with an id for the full text. Open questions and decisions in force as their own sections come
+later (step 4).
 
 **During work**, it calls `ask` to post a question. It can carry on, or check back later.
 
-**After work**, it calls `post` for what it learned (claims, a proposed decision, a lesson, an
-artifact summary with links) and `supersede` when it found something newer than an old entry.
+**After work**, `report_task` with outcome `done` may carry up to 3 `lessons` (kind, title,
+body, summary). Each is captured into the default Inbox of the task's workspace with topic
+`lesson` and a ref `task:<id>`, in the same transaction as the report: an agent's lessons are
+proposed until the person approves them, and a lesson that is refused (a secret, no summary)
+refuses the whole report. A repeated `done` adds no lessons. Other things it learned go in with
+`capture`.
 
 ## 8. MCP tools and REST API (Layer 1)
 
-The six entry tools below are **planned, not built**. BUILD-PLAN step 2 proposes `capture`,
-`search`, `get` and `context_for_task` in their place.
+The memory tools are built (step 1). The `context` packet on `claim_task` and lessons on
+`report_task` are built (thin step 2); the Digest is not yet.
 
-| MCP tool | Does |
-|---|---|
-| `context` | the ranked, fenced packet for a scope and a task |
-| `search` | full-text search with filters: scope, kind, status, since |
-| `get` | one entry, with its supersede chain and answers |
-| `post` | create an entry: kind, scope, title, body, refs |
-| `supersede` | propose a replacement for an entry |
-| `ask` | post a question; returns its id and any answer so far |
+| MCP tool | REST | Does |
+|---|---|---|
+| `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
+| `search` | `GET /api/v1/entries?q=` | word search, any word may match, ranked; returns summaries, not bodies |
+| `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
+| `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |
+
+People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
+`/approve` and `/reject`. Run tokens have no verb for these routes, so a device cannot reach them
+yet; MCP clients can.
 
 `/mcp` serves MCP over streamable HTTP (`createMcpHandler`, `legacy: "stateless"`, so 2025-era
 clients work too); today it has `whoami`, the connection check, and the task board tools below. An MCP caller is the
 agent `mcp/<client host>` acting for the token's subject, across all of that person's workspaces.
 
+**Agent profiles (D25 part 1, D26).** A person names the roles their agents play (Product owner,
+Doer, Reviewer, Librarian, or any other) on the web page's Agents tab, and picks which role each
+connected app acts as. The binding is stored on the server (`agent_profiles`, `agent_bindings`,
+keyed by the person and the token's `azp`), so an agent never chooses its own role (hard rule 2).
+On every `/mcp` call the server looks the binding up; a bound app becomes the agent
+`mcp/<client host>/<slug>` with a `profile` on its actor, so audit rows, task events, claims and
+entry authors name the role with no other schema change. An unbound app is the Guest agent, as
+before. `whoami` returns `agent: { agent_id, profile }`. Changing a binding takes effect at the
+next call; a task claimed under the old role must be reported under it, so it waits for its lease.
+Profiles give no extra rights yet: scopes, skills and triggers are D25 parts 2 to 4
+([docs/vision/AGENTS.md](vision/AGENTS.md)).
+
+People only, under `/api/v1/agents`: `GET /` (profiles and connected apps), `POST /profiles`
+(`slug`, `display_name`, `kind` worker or steward), `DELETE /profiles/:id` (its bindings go with
+it) and `POST /bind` (`client_id`, `profile_id` or null). A person sees and binds only their own
+profiles and only apps they allowed on the consent page.
+
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
+
+### Approval requests (D31, step 1)
+
+An agent asks the person to approve exact draft goals or proposed entries, and gets a link to
+sky-brain's own page. The person decides there, signed in; no tool approves, and chat text or a
+tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPROVAL.md](vision/HATS-AND-APPROVAL.md).
+
+| MCP tool | REST | Who |
+|---|---|---|
+| `request_approval` | `POST /api/v1/approvals` (`items`: up to 20 of `{kind: goal or entry, id}`, `reason`) | writers; run tokens refused |
+| `approval_status` | `GET /api/v1/approvals/:id` | members of that brain |
+| | `GET /api/v1/approvals` | pending requests in the person's brains |
+| | `POST /api/v1/approvals/:id/approve`, `/reject` | people only, owners and editors |
+
+- Table `approval_requests` (migration 0010): the items with a **pin** each (a goal's status,
+  last change and its tasks' last change; an entry's trust and version), status `pending`,
+  `approved`, `rejected`, `expired` or `superseded`, who decided and when.
+- **What the person saw is what is applied.** Approving checks every pin first; if anything
+  changed, the request becomes `superseded` and nothing is applied. Then, in one transaction, each
+  goal goes through `approveGoal` and each entry through `setTrustInTx`, so every rule of the
+  person's own buttons (quarantine, role, About me owner only) holds. Rejecting applies nothing:
+  the items stay drafts and proposals.
+- A request expires after 60 minutes (410 `expired`), is decided once (409 after), and one agent
+  may have at most 10 open per person (429 `too_many_open`). Every step writes an audit row.
+- Web: an **Approvals** tab lists what is waiting (refreshed every 20 seconds), and `/a/<id>` shows
+  one request with Approve and Reject. A signed-out visit to `/a/<id>` returns there after
+  sign-in.
+- **Web push alerts (D36).** On the Approvals tab, "Tell me when an agent asks" turns alerts on
+  for that browser (permission asked only after the click; on iPhone after Add to Home Screen,
+  with `manifest.webmanifest`). Routes, people only: `GET /api/v1/push/key`,
+  `POST /api/v1/push/subscribe` (the browser's `PushSubscription`, `https` endpoint only) and
+  `POST /api/v1/push/unsubscribe` (own rows only). Table `push_subscriptions` (migration 0012).
+  When an **agent** creates a request, every subscription of its person gets a push with no item
+  text ("An agent is waiting for your approval.") and the `/a/<id>` path; the send is awaited
+  (4-second timeout) and never fails the request; 404 and 410 answers delete the subscription.
+  The service worker (`apps/web/public/sw.js`) shows Approve and Review buttons; Approve posts
+  with the session cookie like the page's button, and opens the page if that fails. Push is on
+  only when `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` are set. Email comes later.
 
 ### The task board (D20)
 
@@ -216,8 +270,8 @@ reject, release, answer, invite, export and delete.
 | `propose_goal` | a draft goal (only a person approves it) |
 | `add_tasks` | tasks with `depends_on` and `files`; a task added to an approved goal waits for approval |
 | `next_task` | the next task the person may take now in a project, or null |
-| `claim_task` / `renew_task` / `release_task` | a 10-minute lease and its `claim_seq` |
-| `report_task` | `done` with proof, or `failed` with a reason |
+| `claim_task` / `renew_task` / `release_task` | a 10-minute lease and its `claim_seq`; `claim_task` also returns the `context` packet (§7) |
+| `report_task` | `done` with proof and up to 3 proposed `lessons`, or `failed` with a reason |
 
 The MCP tools call the REST routers in process with the verified MCP actor, so both doors make
 the same checks. REST routes:
@@ -228,6 +282,8 @@ the same checks. REST routes:
 | `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
+| `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |
+| `DELETE /api/v1/goals/:id/documents/:entryId` | people only |
 | `POST /api/v1/goals/:id/approve`, `/cancel`, `/release` | people only |
 | `GET /api/v1/tasks/ready`, `GET /api/v1/tasks/:id` | members (a run token: its project) |
 | `POST /api/v1/tasks/:id/claim`, `/renew`, `/release`, `/done`, `/fail` | writers; `renew` to `fail` need the holder's `claim_seq` |
@@ -237,17 +293,40 @@ A task is ready when its goal is approved by the caller's own person and not hel
 the text that was approved, every dependency is done, and it is pending (or its lease ran out).
 A claim also waits while another live lease in the project holds an overlapping file. A browser
 session's writes must send `application/json` (415 `json_required` otherwise), so a cross-site
-form cannot approve anything. The web page at `/` lists goals and tasks and has the person-only
-Approve, Cancel and Release buttons.
+form cannot approve anything. The web page at `/` is built for fast review. "Today" is a digest
+of up to ten goals waiting for the person (drafts and held goals, longest-waiting first) with a
+one-line summary of the last day; "All goals" is a card board with four columns (Needs you,
+Running, Waiting to start, Done); hovering a card shows its summary and opening one shows its
+tasks in a dialog. Approve and reject (reject
+cancels the goal) work on one goal or a selection; the page sends one request per goal, so bulk
+review adds no new route and each goal keeps its own checks. Held goals are never approved in
+bulk: the person reads and releases them one by one.
+
+A goal can carry up to 20 documents: entries (markdown with the writer's summary) linked to it
+in `goal_documents`. An agent writes one with `capture` and links it with the `attach_document`
+MCP tool; `GET /goals` and `GET /goals/:id` return each goal's documents as summaries, never
+bodies, and agents see only proposed or approved ones. On the board, hovering a card shows the
+summaries; opening a document goes to its own page, `/docs/<entry id>` (D34). The page reads
+the markdown with a small renderer that never inserts HTML, and edits it in four views (Read,
+Sections, Source, Split) with a formatting bar, section moves, splits and merges, and undo; Save
+writes a new version through `POST /entries/:id/versions`. A held document is shown as plain
+text. People comment on a document (`entry_comments`): a note in a color on a selected passage
+or on the whole text, resolved, reopened or deleted by people with a writer role
+(`POST /entries/:id/comments`, `POST /entries/:id/comments/:commentId/resolve`,
+`DELETE /entries/:id/comments/:commentId`, people only; secret-scanned, 2,000 characters, 200 per
+entry). Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
+`GET /entries/:id`), so the model sees them with `get`. PDFs are not stored yet.
 
 ## 9. Auth
 
 Better Auth runs inside the server.
 
-- **People** sign in with Perminister, which is invite-only for this product. Anyone it signs in
-  with access to the `sky-brain` product may enter (`mayEnter`, D17). Each person gets their own
-  workspace, as `owner`, at their first sign-in. A sky-brain invite adds such a person to another
-  owner's workspace and is accepted at their next sign-in. Everyone else sees "No access".
+- **People** sign in with Perminister's OpenID Connect flow (D24). The app client's registration
+  policy is "Public registration", so anyone with a Perminister account and a verified email may
+  enter (`mayEnter`, D29); no organization or invitation is needed. Each person gets their own
+  private workspace, as `owner`, with About me, an Inbox and a Notebook, at their first sign-in.
+  A sky-brain invite adds such a person to another owner's workspace and is accepted at their
+  next sign-in. An account without a verified email sees "No access".
   A session lasts 7 days from sign-in and is never extended by use, so access taken away in
   Perminister ends at the latest when the session runs out.
 - **MCP clients** (claude.ai, Claude Code, Codex): Better Auth's `mcp()` plugin makes the server

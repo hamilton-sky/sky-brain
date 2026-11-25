@@ -361,3 +361,233 @@ able to make it binding, and keeps hard rule 3 simple to test: no agent write pa
 architecture page and in BUILD-PLAN.md, and the spec's "the Consolidator promotes" wording.
 **Rejected:** automatic promotion by confidence or repetition; a Steward that writes approved
 memory.
+
+### D24. Sign in with Perminister uses its OpenID Connect flow
+
+**Date:** 2026-11-23. **Decided by:** a production bug (every sign-in showed Perminister's
+"Sign-in request unavailable").
+**Decision:** On 2026-11-14 Perminister moved product sign-in to OpenID Connect and kept the old
+request shape only for two named products. sky-brain now sends what it asks for:
+- The authorize URL carries `scope=openid profile email perminister_api`, a 43-character `nonce`
+  and a 43-character `state`. Better Auth 1.7.15 makes a 32-character state and no nonce for a
+  provider without discovery, so an after-hook on `/sign-in/social` finishes the URL
+  (`auth/perminister-oidc.ts`). The state gets an 11-character suffix derived from it, which the
+  `/auth/perminister/callback` route takes off again. The nonce is an HMAC of the PKCE challenge
+  under `BETTER_AUTH_SECRET`, so getToken recomputes it from the verifier; nothing is stored.
+- getToken exchanges the code at `POST /oauth/token` with HTTP Basic client auth, the fixed
+  callback URI and the PKCE verifier; checks the RS256 ID token (signature from
+  `/.well-known/jwks.json`, issuer, audience, expiry, nonce); then reads the account and its
+  organizations from `GET /api/auth/consumer/session` with the access token and client headers.
+  `mayEnter` (D17) is unchanged.
+**Why:** the old `POST /api/auth/consumer/token` request is refused for new products.
+**Rejected:** using Better Auth's discovery mode, because its 32-character state and nonce are
+still refused; an extra redirect hop of our own, because the after-hook keeps one URL.
+
+### D25. Agent profiles: identity, scopes, skills and board triggers per agent (open)
+
+**Date:** 2026-11-23. **Status:** proposed, waiting for shammai.
+**Proposal:** add an agent profile that the person creates and binds when a token is issued
+(never claimed per call). It carries an identity shown on every row the agent writes, scopes that
+start from nothing and can only lower the person's rights, versioned skills served as MCP prompts
+and `get_skills`, and triggers that turn board and memory events into activations an agent claims
+with a lease. Full design: `docs/vision/AGENTS.md`.
+**Why:** today every agent from one app is the same `mcp/<client host>` with the same rights, so a
+byline like "Librarian" cannot be trusted, the Consolidator (step 6) cannot be narrowed, and
+nothing wakes an agent when the board changes. Notion's Custom Agents (Nov 2026) ship these same
+four pieces, which confirms the need.
+**Keeps:** hard rules 1 and 3 (no pushed runs; agents never approve), D1, D20 and D22.
+**Open:** build identity now, during the step 3 measurement, or wait until step 6.
+
+### D26. Agent identity first: profiles bound per connected app (D25 part 1)
+
+**Date:** 2026-11-23. **Decided by:** shammai ("build identity now", then "merge to main").
+**Decision:** build the identity part of D25 now, during the step 3 measurement. A person creates
+agent profiles and binds each app they connected (OAuth client, the token's `azp`) to one. The
+server resolves the binding on every `/mcp` call and the agent id becomes
+`mcp/<client host>/<slug>`, so every existing author and audit column records the role. Unbound
+apps stay the Guest agent. Profiles carry no rights yet.
+**Why:** the measurement can then tell which role wrote which lesson or entry, and later parts
+(scopes, skills, triggers) need an identity to hang on. It changes no permission, so it does not
+disturb what is measured.
+**Rejected:** a profile claim inside the access token chosen on the consent page. It would need a
+change to the Better Auth MCP flow that sign-in depends on (D24 broke sign-in the same day), and a
+token would keep its role until it expires. A binding on the server takes effect at once and can
+be undone. Limit: one role per app per person; to run two roles side by side, connect two apps
+(for example claude.ai as the Product owner, Claude Code as the Doer).
+**Open:** D25 parts 2 to 4 (scopes with step 6, then skills, then triggers); run tokens for
+devices get a profile when Pathly's client exists.
+
+
+### D27. The sign-in page is sky-brain's entry page
+
+**Date:** 2026-11-24. **Decided by:** shammai (picked the "Constellation Night" style, then "the
+landing page will be the entry page").
+**Decision:** `/sign-in` is also the page that explains sky-brain. It shows a 3D star brain
+coloured by memory layer, the sign-in button right under it, and the four layers as rings with
+About me in the centre (Board, Inbox, Notebooks outward). Clicking a ring scrolls to that layer's
+explanation, with what the matching part of a real brain does. The brain itself only lights up
+on hover.
+**Why:** people arriving from Claude still see the button without scrolling, and people who come
+to look first see how the memory works before they sign in. Rings follow the research in
+HUMAN-MEMORY.md: working memory is the active part of long-term memory (Cowan), and the self
+schema sits at the centre (Conway), so the rings show how active a memory is, not a hierarchy.
+**How:** still no inline script or style under `default-src 'self'`: the stylesheet is
+`/auth-pages/sign-in.css`, and the brain (plain canvas, no library) is part of
+`/auth-pages/sign-in.js`. Motion stops under `prefers-reduced-motion`.
+
+
+### D28. One theme for the whole product, with panel-frame-ui in the web app
+
+**Date:** 2026-11-24. **Decided by:** shammai (asked to use panel-frame-ui and one theme style,
+then chose "keep light, fix it" after a design and an accessibility review).
+**Decision:** the web app uses panel-frame-ui (pinned at 0.2.5): its dashboard shell, buttons,
+cards, badges, fields, alerts and confirm dialog. Its `--pf-*` tokens are mapped to the sign-in
+page's Constellation Night colours (`apps/web/src/theme.css`, `pages/base-style.ts`). Dark and
+light both stay. The device setting picks one, and a theme picker in the app can override it.
+The choice is saved as `sky-brain-theme` in localStorage, and the sign-in and consent pages read
+it too. Light is a "dawn star chart": a cool sky, ink stars and brain points, and more solid
+cards. The layer colours were darkened to pass 4.5:1.
+**Why:** light reads better in daylight, for people with astigmatism, and for low vision, and
+it respects the device setting. The old light theme looked weak because it copied the night sky,
+not because light mode is wrong. One look across sign-in, consent and the app makes sky-brain
+feel like one product.
+**How:** no inline script anywhere. The app applies the saved theme before paint with
+`/theme-init.js`, a file. The auth pages do it as the first part of their single script.
+panel-frame-ui's own `getThemeBootstrapScript` is inline, so it is not used.
+
+### D29. Open sign-up: any verified Perminister account gets its own brain
+
+**Date:** 2026-11-24. **Decided by:** shammai ("every user can create their own brain").
+**Decision:** `mayEnter` no longer asks for an organization of the `sky-brain` product. A person
+may enter when Perminister signs them in with an email and the signed ID token says
+`email_verified: true`. The sky-brain production app client in Perminister is set to
+"Public registration", so Perminister itself hands a code to any active account with a verified
+email, and still refuses an account disabled for the product. Everything else in D17 stays:
+the first sign-in makes one private workspace (About me, Inbox, Notebook) owned by that person,
+workspaces are walled off by membership (hard rule 4), sky-brain invites are accepted at sign-in,
+and account linking by email stays off.
+**Why:** sky-brain is for organizations and individuals. Asking Perminister's admin to add each
+person to an organization does not scale, and a fresh workspace per person needs no sharing
+rule to be safe.
+**How:** `email_verified` is read from the ID token, which is signed, not from the session
+answer. Perminister checks the same thing before it issues a code, so this is a second check.
+Taking someone's access away is now done in Perminister by disabling the account for the
+product; their session ends within 7 days (no rolling refresh).
+**Supersedes:** the product-organization rule in D17.
+
+### D30. Hats: one brain, several identities
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built. A hat is a lens by default, a wall
+optionally; no starter hats.
+**Proposal:** a person keeps one brain and one About me, and defines hats (Parent, Engineer,
+Friend). A hat is an optional property of a memory, About me entries can be tagged with one or
+more hats, and each connected app is bound to a hat as well as a role. A hat is a lens (focus,
+can be picked per chat) and, if the person wants, a wall (its own connector and token audience).
+A new brain starts with no hats and gets suggestions. Under a hat, an agent sees
+the shared About me plus that hat's part, reads and writes only that hat's memories and shared
+ones, and captures into that hat's Inbox. Hats only narrow rights and are never a grant; "share
+this hat" writes one grant per memory. Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 1.
+**Why:** people live in several roles with different context (self-aspects, working
+self-concept, encoding specificity). Splitting into several brains would lose what is true in
+every role.
+**Keeps:** one core per person, sharing per memory, D26 bindings, hard rules 3 and 5.
+
+### D31. Approval through the connected model
+
+**Date:** 2026-11-24. **Status:** design agreed by shammai (24 Nov); not built.
+**Proposal:** an agent may ask for approval with `propose_change`; the server creates an
+approval request pinned to the exact versions shown, and the person answers through a channel the
+agent cannot write to: an approval link opened in their own sky-brain session (every client),
+with web inbox, email and later web push to tell them it is waiting. MCP elicitation comes later
+and form mode only for low-risk items, because claude.ai does not support it yet and a client hook
+can answer it. Riskier changes (About me, trust, delete) need the link plus a passkey; sharing
+stays web-only. The web app becomes the place for bulk approval and sharing.
+Full design: `docs/vision/HATS-AND-APPROVAL.md`, Part 2.
+**Why:** the person works in Claude or Codex and should rarely need to open sky-brain, without
+letting a model approve itself.
+**Keeps:** hard rule 3 (agents never approve; a tool argument or chat text is never an approval).
+**Decided (shammai, 24 Nov):** web push is the second alert channel, after the inbox and email.
+
+### D32. Approval requests: the first step of D31
+
+**Date:** 2026-11-24. **Decided by:** shammai ("merge and continue" after D30 and D31).
+**Decision:** build approval requests before hats and alerts. An agent calls `request_approval`
+with draft goals or proposed entries and gets a link to `/a/<id>`; the person approves or rejects
+on that page or on the Approvals tab. Each item is pinned to the state shown; a change makes the
+request `superseded` and nothing is applied. Requests expire after 60 minutes, are decided once,
+and are capped at 10 open per agent. Rejecting a request does not reject its items.
+**Why:** it works in every client today (claude.ai has no elicitation), and email, web push and
+hats all build on it.
+**Keeps:** hard rule 3: the approve and reject routes are people only; no MCP tool approves.
+
+### D33. Documents on goals are linked entries; PDFs wait
+
+**Date:** 2026-11-24. **Decided by:** shammai (chose "md now, PDF later").
+**Decision:** a goal can carry up to 20 documents. A document is an existing entry (markdown with
+the writer's summary, versioned), linked to the goal in a new `goal_documents` table. People and
+agents who may write attach one (`POST /goals/:id/documents`, MCP `attach_document`); only a
+person removes one. The board shows the summaries on hover and in the goal's dialog, and opens a
+document to read it, or to edit it as a new version (its page: D34).
+**Why:** the person wants agents' md files on the cards, with their summaries, readable and
+editable without leaving the board (as Pathly's artifacts work). Entries already carry a
+writer's summary, versions, secret scanning and quarantine, so linking them adds no new trust
+rule; sky-brain still never calls an LLM.
+**How:** the entry must be in the goal's own workspace and readable by the caller (agents never
+see or attach a held one). The web app renders markdown with its own small parser into React
+elements, so no HTML from a document reaches the page; a held document shows as plain text.
+**Not yet:** PDFs and other files. They need storage and a quarantine rule for text that cannot
+be scanned.
+
+### D34. A document page with a Pathly-style editor, and comments people write
+
+**Date:** 2026-11-24. **Decided by:** shammai ("the md editor should not be a modal but a full
+page like the board", with Pathly's comments, split and reorder, and formatting).
+**Decision:** a document opens on its own page, `/docs/<entry id>`, not in a dialog. The page has
+four views: Read (rendered), Sections (a card per heading that can be edited, moved, dragged,
+duplicated, deleted, split at the cursor and merged), Source (markdown with a formatting bar:
+heading sizes, bold, italic, strikethrough, code, lists, quote, link) and Split (source beside
+the rendered text). Edits are a draft with undo and redo until Save writes a new version.
+Comments are stored in a new `entry_comments` table: a person selects a passage (or none),
+writes a note in one of five colors, and resolves, reopens or deletes it. `GET /entries/:id`
+returns the comments, so the model reads them with MCP `get`.
+**Why:** reading and editing long md comfortably needs the whole screen and an address to come
+back to; comments are how the person tells the model what to change without rewriting it.
+**Keeps:** hard rule 3 (agents read comments but never add, resolve or delete them: those routes
+are people only); hard rule 4 (comments filter by the entry's workspace, and a reader of the
+entry is a reader of its comments; agents never see a held entry's); hard rule 6 (secret scan and
+size caps on every comment). Pathly's AI actions are left out: sky-brain never calls an LLM.
+
+### D35. The brain book: one entry point that teaches models to use the brain
+
+**Date:** 2026-11-24. **Status:** proposal from shammai's idea (24 Nov); not built. Revised the
+same day after research (`docs/vision/BOOK-RESEARCH.md`): benchmark first, then a thin book (text in
+tool descriptions, server instructions, one `book { id? }` tool); the rest waits for triggers.
+**Proposal:** a model starts with `book`, a short table of contents of the brain (who you are,
+five rules, chapters with one line each), and opens chapters with `book_read` or finds tools,
+recipes and pages with `book_search`. Chapters: start here, layers, reading, writing, board,
+approval, recipes, errors, and the person's own pages. The built-in text is generated from the
+tool registry (`defineTool` with a `book` block) and chapter files in the server, so it never
+drifts from the tools, and it is built per caller (role, hat, scopes). The person configures and
+extends the book on a Book page (notes, recipes, glossary, order, hide per role). Models propose
+pages with `propose_book_page`; a page is served only after the person approves it through an
+approval request (level 2, like rules). Usage suggestions come from fixed rules over a log of
+tool calls that keeps no arguments. A per-app compact mode exposes 9 tools and reaches the rest
+through `look` (read-only) and `act` (writes), which call the same handlers. Skills (D25 part 3)
+become a "Your job" chapter. Full design: `docs/vision/BOOK.md`; draft text: `docs/vision/book/`.
+**Why:** tools alone do not teach a model how they fit together, and listing every tool in every
+chat costs context. A short contents, read on demand, and worked recipes fix both.
+**Keeps:** hard rules 2, 3 and 6 (the book adds no rights, agents cannot write guidance without
+approval, pages are scanned), D31/D32 approvals, and no model calls inside sky-brain.
+
+### D36. Web push alerts for approval requests
+
+**Date:** 2026-11-24. **Decided by:** shammai (web push before email; Resend later).
+**Decision:** a person turns on alerts per browser from the Approvals tab. When an agent asks for
+approval, sky-brain sends a VAPID web push to each of that person's subscriptions, with generic
+text and the `/a/<id>` path only. The alert's Approve button posts with the person's own session
+cookie, the same request the page's button makes; the server's checks (people only, pins, expiry)
+are unchanged. Push is off unless the three `VAPID_*` settings are set.
+**Why:** no outside account is needed, it works on desktop and Android at once and on iPhone once
+sky-brain is on the Home Screen, and the research of 24 Nov ranked it after the inbox.
+**Keeps:** hard rule 3 (an alert never approves by itself; the approve route is people only) and
+hard rule 5 (nothing secret in a URL; the link carries only the request id).

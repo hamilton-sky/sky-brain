@@ -35,7 +35,7 @@ let server: AuthTestServer;
 
 beforeAll(async () => {
   db = await createTestDb();
-  // Signs in with the fake Perminister's default account (productIds ["sky-brain"]).
+  // Signs in with the fake Perminister's default account (verified email, no organizations).
   server = await startAuthTestServer({
     db,
     cimdDocuments: {
@@ -393,5 +393,26 @@ describe("pages", () => {
       expect(script.text).toContain(needle);
     }
     expect(script.text).not.toContain("innerHTML");
+  });
+
+  it("pages: the consent page links its own stylesheet and has no inline style", async () => {
+    const page = await server.browser().request("/consent");
+    expect(page.text).toContain(
+      '<link rel="stylesheet" href="/auth-pages/consent.css" />',
+    );
+    expect(page.text).not.toMatch(/<style|\sstyle="/);
+    const { status, headers, text } = await server
+      .browser()
+      .request("/auth-pages/consent.css");
+    expect([status, headers.get("content-type")?.split(";")[0]]).toEqual([
+      200,
+      "text/css",
+    ]);
+    expect(headers.get("content-security-policy")).toMatch(
+      /default-src 'self'/,
+    );
+    for (const rule of [".card", ".facts", "prefers-reduced-motion"]) {
+      expect(text).toContain(rule);
+    }
   });
 });

@@ -9,6 +9,9 @@ import type express from "express";
 import type { Auth } from "../auth/auth.ts";
 import type { Db } from "../db/client.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
+import type { Push } from "../push/push.ts";
+import { personOf } from "../actor/keys.ts";
+import { boundProfile, withProfile } from "../agents/profiles.ts";
 import { actorFromMcpClaims } from "./actor.ts";
 import { mcpServerFactory } from "./server.ts";
 
@@ -20,6 +23,7 @@ export interface McpRouteOptions {
   /** The board-write limiter the REST routes share. */
   limiter?: RateLimiter;
   publicUrl: string;
+  push?: Push;
 }
 
 export function mountMcp(app: express.Express, o: McpRouteOptions): void {
@@ -29,6 +33,8 @@ export function mountMcp(app: express.Express, o: McpRouteOptions): void {
     mcpServerFactory(o.db, {
       ...(o.now ? { now: o.now } : {}),
       ...(o.limiter ? { limiter: o.limiter } : {}),
+      publicUrl: o.publicUrl,
+      ...(o.push ? { push: o.push } : {}),
     }),
   );
   const unauthorized = () =>
@@ -48,9 +54,14 @@ export function mountMcp(app: express.Express, o: McpRouteOptions): void {
     );
   const handler = requireMcpAuth(
     o.auth,
-    (request, claims) => {
-      const actor = actorFromMcpClaims(claims);
-      if (!actor) return unauthorized();
+    async (request, claims) => {
+      const client = actorFromMcpClaims(claims);
+      if (!client) return unauthorized();
+      // The role comes from the person's own binding on the server, never from the client.
+      const actor = withProfile(
+        client,
+        await boundProfile(o.db, personOf(client), claims.azp as string),
+      );
       const scope = typeof claims.scope === "string" ? claims.scope : "";
       // Never the raw token: tools get the actor, the client and the scopes only.
       return mcp.fetch(request, {

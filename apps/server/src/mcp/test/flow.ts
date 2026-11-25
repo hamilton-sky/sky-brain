@@ -192,7 +192,7 @@ export interface RpcAnswer {
 }
 
 /** A JSON-RPC answer from an SSE body (`event: message\ndata: {...}`) or a JSON one. */
-export function rpcResult(res: BrowserResponse): RpcAnswer {
+function rpcResult(res: BrowserResponse): RpcAnswer {
   if (res.body) return res.body as RpcAnswer;
   const data = res.text
     .split("\n")
@@ -238,6 +238,10 @@ export interface WhoamiResult {
   email: string;
   user_id: string;
   workspaces: { id: string; name: string; role: string }[];
+  agent?: {
+    agent_id: string;
+    profile: { id: string; slug: string; display_name: string } | null;
+  };
 }
 
 /** `initialize`, then `tools/call whoami`; returns its structuredContent. */
@@ -271,4 +275,36 @@ export function expectChallenge(server: AuthTestServer, res: BrowserResponse) {
   expect(res.headers.get("www-authenticate")).toBe(
     `Bearer resource_metadata="${server.url}/.well-known/oauth-protected-resource/mcp"`,
   );
+}
+
+/** `tools/list` as `token`: the tool names. */
+export async function toolNames(server: AuthTestServer, token: string) {
+  await mcpInitialize(server, token);
+  const res = await mcpPost(server, token, "tools/list", {});
+  return (
+    rpcResult(res).result as unknown as { tools: { name: string }[] }
+  ).tools.map((t) => t.name);
+}
+
+/** `tools/call` as `token`: isError, and the result text parsed as JSON (or the raw text). */
+export async function callTool(
+  server: AuthTestServer,
+  token: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ status: number; isError: boolean; body: any }> {
+  await mcpInitialize(server, token);
+  const res = await mcpPost(server, token, "tools/call", {
+    name,
+    arguments: args,
+  });
+  const result = rpcResult(res).result;
+  const text = result.content?.[0]?.text ?? "null";
+  let body: any;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    body = text;
+  }
+  return { status: res.status, isError: result.isError ?? false, body };
 }
