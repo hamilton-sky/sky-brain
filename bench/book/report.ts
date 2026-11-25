@@ -58,7 +58,7 @@ export function summarize(records: TrialRecord[], trials: number) {
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   ];
   const json: Record<string, unknown> = {};
-  for (const [key, rs] of groups) {
+  for (const [key, rs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
     const [model, arm] = key.split(" ");
     const held = score(rs.filter((r) => r.split === "held"));
     const tune = score(rs.filter((r) => r.split === "tune"));
@@ -87,6 +87,7 @@ const PRICES: Record<string, [number, number, number]> = {
 
 export function cost(records: TrialRecord[]): number {
   return records.reduce((s, r) => {
+    if (r.usage.costUsd !== undefined) return s + r.usage.costUsd;
     const p = PRICES[r.model];
     if (!p) return s;
     const u = r.usage;

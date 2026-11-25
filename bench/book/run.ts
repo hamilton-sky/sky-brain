@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { runTrial, systemPrompt } from "./agent.ts";
+import { runClaudeCode } from "./claude-code.ts";
 import { ARMS, buildArm, missingGuides, type ArmId } from "./arms.ts";
 import { SERVER_INSTRUCTIONS } from "./book.ts";
 import { recording, type Call, type Trace } from "./grade.ts";
@@ -28,6 +29,7 @@ const { values: opt } = parseArgs({
     concurrency: { type: "string", default: "4" },
     label: { type: "string" },
     "base-url": { type: "string", default: "https://api.anthropic.com" },
+    via: { type: "string", default: "api" },
   },
 });
 
@@ -131,17 +133,25 @@ async function pool<T>(
   );
 }
 
-async function bench() {
+/** How a trial reaches a model: the API with a key, or Claude Code with the person's sign-in. */
+function trialRunner(): typeof runClaudeCode {
+  if (opt.via === "claude-code") return runClaudeCode;
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key)
     throw new Error(
-      "Set ANTHROPIC_API_KEY to run models (or use --dry / --tokens).",
+      "Set ANTHROPIC_API_KEY, or use --via claude-code (or --dry / --tokens).",
     );
   const client = new Anthropic({
     apiKey: key,
     baseURL: opt["base-url"],
     maxRetries: 4,
   });
+  return (model, arm, mcp, calls, prompt) =>
+    runTrial(client, model, arm, mcp, calls, prompt);
+}
+
+async function bench() {
+  const runOne = trialRunner();
   const { gold } = await goldRuns(false);
   const arms = opt.arms.split(",") as ArmId[];
   const models = opt.models.split(",");
@@ -169,8 +179,7 @@ async function bench() {
       const run = await fresh();
       const arm = buildArm(armId, run.tools, run.fx);
       const calls: Call[] = [];
-      const result = await runTrial(
-        client,
+      const result = await runOne(
         model,
         arm,
         recording(run.mcp, calls),

@@ -48,6 +48,18 @@ pnpm bench:book --tokens        # size of each arm's tool definitions (counted b
 ANTHROPIC_API_KEY=... pnpm bench:book --models claude-opus-5-5,claude-haiku-5-5 --trials 3
 ```
 
+Without an API key, run it through Claude Code with your own sign-in:
+
+```
+pnpm bench:book --via claude-code --models sonnet --trials 1    # 3 arms x 34 tasks = 102 runs
+```
+
+Each trial serves the arm's tools from a small MCP endpoint on localhost and runs `claude -p` from
+an empty folder with no built-in tools, so the brain's tools are all it has. Arm C's server
+instructions arrive the way a real client gets them, in `initialize`. Your own
+`~/.claude/CLAUDE.md`, if you have one, still loads. Token counts are Claude Code's, which
+include its own system prompt.
+
 Options: `--arms A,B,C`, `--split tune|held|all`, `--tasks id1,id2`, `--concurrency 4`,
 `--label name`, `--base-url` (default `https://api.anthropic.com`). Each trial seeds its own
 PGlite, so a full run takes a while; results go to `results/<label>.json` with every trial's

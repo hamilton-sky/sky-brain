@@ -8,7 +8,7 @@ import type { McpClient } from "./mcp.ts";
 /** At most this many model turns per trial; a model still calling tools after that fails. */
 const MAX_TURNS = 12;
 
-const BASE_SYSTEM =
+export const BASE_SYSTEM =
   "You are an assistant connected to the person's sky-brain over MCP. The person is Ann; she sent the message below and is not available for follow-up questions, so do the whole request now with the tools, then give her a short final answer.";
 
 export interface TrialUsage {
@@ -17,6 +17,8 @@ export interface TrialUsage {
   cacheRead: number;
   cacheWrite: number;
   turns: number;
+  /** What the run cost, when the client reports it (Claude Code does). */
+  costUsd?: number;
 }
 
 export interface TrialResult {
