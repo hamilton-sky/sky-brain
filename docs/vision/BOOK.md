@@ -420,6 +420,10 @@ its own, in `bench/book/`, against a test brain:
    today's tool definitions take. Nothing a model can see changes while the two-week memory-loop
    measurement runs, because new instructions or descriptions would change how models call
    `capture` and `search` and spoil that measurement.
+   *Built 25 Nov 2026:* [`bench/book/`](../../bench/book/README.md) with 34 tasks (12 held out),
+   all three arms, and grading by database state; `pnpm bench:book --dry` checks every grader
+   without a model. Today's 18 tools take about 17,800 characters (roughly 5,100 tokens). The
+   model runs wait for an API key and a go-ahead on cost.
 1. **After the window, about 3 to 4 days, kept only if B or C wins:** `defineTool` with the `book`
    block and the test that every tool has a chapter; use-when and pitfalls rendered into each
    tool's description; server instructions (512 characters, built-in text only) and the claude.ai
