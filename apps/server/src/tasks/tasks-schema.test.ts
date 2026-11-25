@@ -8,7 +8,7 @@ import {
   seedWorkspace,
 } from "../testing/harness.ts";
 import { seedGoal, seedTask } from "../testing/task-seeds.ts";
-import { taskTextHash } from "./task-text.ts";
+import { taskTextHash } from "@sky-brain/board/tasks/task-text";
 import type { Db } from "@sky-brain/db/client";
 import { goals, taskDeps, taskEvents, tasks } from "@sky-brain/db/schema";
 

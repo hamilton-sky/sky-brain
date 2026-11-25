@@ -8,7 +8,7 @@ import {
   world,
 } from "../run-tokens/tests/fixture.ts";
 import { seedGoal, seedTask } from "../testing/task-seeds.ts";
-import { overlaps } from "./file-overlap.ts";
+import { overlaps } from "@sky-brain/board/tasks/file-overlap";
 
 describe("overlaps(a, b)", () => {
   it.each([

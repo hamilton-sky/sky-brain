@@ -121,7 +121,11 @@ Each step is one PR, keeps every test green and changes no behaviour.
    `@sky-brain/memory/<file>`. `memories.test.ts` runs in the package against `createTestDb()`
    (membership filter, About me for the owner only). The older memory tests boot the app or use
    the run-token fixture, so they stay in `apps/server/src/memory/` for now.
-4. **`packages/board`** (tasks, projects, goal documents, devices).
+4. **`packages/board`** (done, 25 Nov). The `tasks` (goals, the task DAG, claim, reports, goal
+   documents), `projects` and `devices` sources moved to `packages/board/src/<folder>/`; the
+   server imports `@sky-brain/board/<folder>/<file>`. The pure tests (`task-text`, `address-key`)
+   moved with them; the tests that boot the app or use the run-token fixture stay in
+   `apps/server/src/<folder>/`.
 5. **`packages/approvals`** (approvals and push).
 
 Vercel needs no change: esbuild already bundles workspace packages into the function, and

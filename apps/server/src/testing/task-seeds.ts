@@ -10,7 +10,7 @@ import type {
 } from "@sky-brain/shared/tasks";
 import { eq, sql } from "drizzle-orm";
 import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
-import { taskTextHash } from "../tasks/task-text.ts";
+import { taskTextHash } from "@sky-brain/board/tasks/task-text";
 import {
   testClient,
   type Db,

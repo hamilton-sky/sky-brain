@@ -62,6 +62,9 @@ importers:
       '@modelcontextprotocol/server':
         specifier: 2.4.0
         version: 2.4.0
+      '@sky-brain/board':
+        specifier: workspace:*
+        version: link:../../packages/board
       '@sky-brain/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -163,6 +166,31 @@ importers:
       tsx:
         specifier: 4.23.15
         version: 4.23.15
+
+  packages/board:
+    dependencies:
+      '@sky-brain/db':
+        specifier: workspace:*
+        version: link:../db
+      '@sky-brain/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      '@sky-brain/memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@sky-brain/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@electric-sql/pglite@0.5.14)(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(kysely@0.29.8)(pg@8.23.1)
+      express:
+        specifier: 5.3.0
+        version: 5.3.0
+    devDependencies:
+      '@types/express':
+        specifier: 5.0.6
+        version: 5.0.6
 
   packages/db:
     dependencies:

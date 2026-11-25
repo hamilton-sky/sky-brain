@@ -20,6 +20,7 @@
     "@modelcontextprotocol/server": "2.4.0",
     "@sky-brain/db": "workspace:*",
     "@sky-brain/kernel": "workspace:*",
+    "@sky-brain/board": "workspace:*",
     "@sky-brain/memory": "workspace:*",
     "@sky-brain/shared": "workspace:*",
     "@vercel/functions": "3.10.4",
