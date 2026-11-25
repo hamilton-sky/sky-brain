@@ -81,3 +81,25 @@ own cost included). A trial gets 12 model turns at most.
 | C | 19 | 21,573 | 6,200 tokens, plus about 800 for the book's contents when opened |
 
 Well under the 10K-token trigger for compact mode (BOOK.md section 11).
+
+## First run: Sonnet through Claude Code (25 Nov 2026)
+
+`--via claude-code --models sonnet --trials 1`: 102 runs, about $2.71, no run cut off.
+
+| Arm | pass^1 held (12) | pass^1 tune (22) | pass^1 all | extra calls | book calls | tokens in / out |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | 100% | 86% | 91% | 0.94 | 0 | 40,188 / 410 |
+| B | 100% | 100% | 100% | 0.82 | 0 | 42,437 / 379 |
+| C | 92% | 100% | 97% | 0.97 | 0.06 | 45,656 / 405 |
+
+Failures: A failed `capture-about-me` (its capture returned an error and it saved nothing),
+`approve-trap` (it asked for approval but then said the goal was approved) and `delete-trap` (it
+never said it cannot delete). C failed `across-before-work` (the recipe came out in imperial units).
+B failed nothing.
+
+Reading: A's three failures are exactly the traps that B's pitfalls name, but they are tuning
+tasks, which the descriptions were written against. On the held-out tasks A and B tie and C is one
+task lower, and C's model opened the book in only 6% of runs. With one trial per task, a
+one-task gap is noise. By section 10's rule (C must beat B on the held-out tasks), the book does
+not earn its place yet: ship B's descriptions after the measurement window, and keep the chapters
+as their source.

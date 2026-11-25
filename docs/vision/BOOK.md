@@ -424,6 +424,10 @@ its own, in `bench/book/`, against a test brain:
    all three arms, and grading by database state; `pnpm bench:book --dry` checks every grader
    without a model. Today's 18 tools take about 17,800 characters (roughly 5,100 tokens). The
    model runs wait for an API key and a go-ahead on cost.
+   *First run, 25 Nov (Sonnet through Claude Code, one trial, 102 runs):* A 91%, B 100%, C 97%.
+   On the held-out tasks A 100%, B 100%, C 92%; models opened the book in 6% of C runs. C does not
+   beat B, so step 1 ships B (use-when and pitfalls in descriptions) and the `book` tool waits
+   ([results](../../bench/book/README.md)).
 1. **After the window, about 3 to 4 days, kept only if B or C wins:** `defineTool` with the `book`
    block and the test that every tool has a chapter; use-when and pitfalls rendered into each
    tool's description; server instructions (512 characters, built-in text only) and the claude.ai
