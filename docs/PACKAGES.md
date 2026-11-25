@@ -1,8 +1,8 @@
 # Package structure
 
-Status: plan, updated 25 Nov 2026 (first written 15 Nov). shammai wants the split so each feature
-can be tested on its own and stays separate from the others. Nothing has moved yet. Each step in
-"How we get there" is its own PR and changes no behaviour.
+Status: done 25 Nov 2026 (planned 15 Nov). shammai wants the split so each feature
+can be tested on its own and stays separate from the others. Each step in "How we get there" was its
+own PR and changed no behaviour.
 
 ## The idea
 
@@ -126,7 +126,12 @@ Each step is one PR, keeps every test green and changes no behaviour.
    server imports `@sky-brain/board/<folder>/<file>`. The pure tests (`task-text`, `address-key`)
    moved with them; the tests that boot the app or use the run-token fixture stay in
    `apps/server/src/<folder>/`.
-5. **`packages/approvals`** (approvals and push).
+5. **`packages/approvals`** (done, 25 Nov). `approvals` and `push` moved to
+   `packages/approvals/src/<folder>/`; the server imports `@sky-brain/approvals/<folder>/<file>`.
+   `push.test.ts` in the package checks that an alert reaches only the person's own
+   subscriptions. `pushFromEnv` takes the environment from the server, which still reads it.
+   `web-push` stays a server dependency too, because the Vercel bundle keeps it external and
+   resolves it from `apps/server` (`knip.json` says so).
 
 Vercel needs no change: esbuild already bundles workspace packages into the function, and
 `migrate-cli.ts` stays in `apps/server`.

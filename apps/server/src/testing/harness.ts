@@ -1,6 +1,6 @@
 // Test harness (spec.md Interfaces -> How a test reaches the server). Seeds insert rows
 // directly, bypassing the trust rules and guards: tests only.
-import type { Push } from "../push/push.ts";
+import type { Push } from "@sky-brain/approvals/push/push";
 import type { AuthorKind, Role } from "@sky-brain/shared/enums";
 import type {
   EntryTopic,

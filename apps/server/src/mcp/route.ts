@@ -9,7 +9,7 @@ import type express from "express";
 import type { Auth } from "../auth/auth.ts";
 import type { Db } from "@sky-brain/db/client";
 import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
-import type { Push } from "../push/push.ts";
+import type { Push } from "@sky-brain/approvals/push/push";
 import { personOf } from "@sky-brain/kernel/actor/keys";
 import { boundProfile, withProfile } from "../agents/profiles.ts";
 import { actorFromMcpClaims } from "./actor.ts";

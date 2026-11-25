@@ -44,7 +44,8 @@ packages/db      Drizzle schema, client, migrations (packages/db/drizzle), creat
 packages/kernel  actor, guards (secret scan), scope, http helpers, run tokens
 packages/memory  memories, entries, comments, the context packet, the memory router
 packages/board   goals, tasks (claim, report), goal documents, projects, devices
-docs/PACKAGES.md planned package split (db, kernel, memory, board, approvals) and border rules
+packages/approvals approval requests and web push
+docs/PACKAGES.md the package split (db, kernel, memory, board, approvals) and border rules
 docs/            plan, roadmap, decisions, tickets
 vercel.json      Vercel project (build, function, rewrites)
 ```

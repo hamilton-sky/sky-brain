@@ -6,7 +6,7 @@ import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { readConfig } from "./config.ts";
 import { createPostgresDb } from "@sky-brain/db/client";
-import { pushFromEnv } from "./push/push.ts";
+import { pushFromEnv } from "@sky-brain/approvals/push/push";
 
 const config = readConfig(process.env);
 if (!config.databaseUrl) {

@@ -18,9 +18,10 @@
     "@better-auth/oauth-provider": "1.7.15",
     "@electric-sql/pglite": "0.5.14",
     "@modelcontextprotocol/server": "2.4.0",
+    "@sky-brain/approvals": "workspace:*",
+    "@sky-brain/board": "workspace:*",
     "@sky-brain/db": "workspace:*",
     "@sky-brain/kernel": "workspace:*",
-    "@sky-brain/board": "workspace:*",
     "@sky-brain/memory": "workspace:*",
     "@sky-brain/shared": "workspace:*",
     "@vercel/functions": "3.10.4",
@@ -36,7 +37,6 @@
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/pg": "8.23.1",
-    "@types/web-push": "3.6.4",
     "auth": "1.7.15",
     "esbuild": "0.28.2"
   }
