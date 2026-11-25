@@ -443,6 +443,10 @@ its own, in `bench/book/`, against a test brain:
    behind `McpServerOptions.book`. The bench arms now come from that option: A today, B
    descriptions, C plus `context`, D plus `context` and the book. Four cross-layer scenarios
    (`--set across`) need About me, both Notebooks, the Inbox and the Board in one answer.
+   *First four-arm run, 25 Nov (Haiku and Sonnet, 120 runs):* on the cross-layer set Sonnet goes
+   from 50% (A, B) to 75% with `context` (C, D); Haiku stays at 88 to 100% in every arm, and D cuts
+   its extra calls from about 11 to 7 per task. Board workflow mistakes do not change in any arm
+   ([results](../../bench/book/README.md)).
 2. **Deferred, each with its trigger:**
 
 | Piece | Build it when |

@@ -140,3 +140,29 @@ arm fixed these, and C's models rarely opened the book.
 Reading: these scenarios separate the models, not the arms. A small model skips steps of a
 workflow (claim before report, report instead of release), and neither descriptions nor an
 unopened book change that. Separating the arms would take harder scenarios.
+
+## Four arms on the cross-layer and complex sets (25 Nov 2026)
+
+`--via claude-code --arms A,B,C,D`, on the step 1 branch. 120 runs, about $2.46. C adds `context`,
+D adds `context` and the book.
+
+| Set | Model | Trials | A | B | C | D |
+| --- | --- | --- | --- | --- | --- | --- |
+| across (4) | Haiku | 2 | 88% | 100% | 88% | 88% |
+| across (4) | Sonnet | 1 | 50% | 50% | 75% | 75% |
+| complex (6) | Haiku | 2 | 83% | 67% | 75% | 75% |
+| complex (6) | Sonnet | 1 | 100% | 100% | 100% | 100% |
+
+Tool use: in the cross-layer set, C's models called `context` in 10 of 12 trials and D's in 7 of 12;
+D's models opened the book in 7 of 12. On Haiku, D cut extra calls per task from about 11 (A) to 7
+at the same pass rate.
+
+Failures: without `context`, Sonnet planned recipe import on the old database (A and B). Sonnet
+failed `y-inbox-conflicts` in all four arms and never called `context` for it. Haiku's board
+mistakes from the complex set (no `report_task` before replanning, release instead of done) are the
+same in every arm.
+
+Reading: on cross-layer questions `context` is the piece that helps (Sonnet 50% to 75%), and
+the book makes runs shorter without raising the pass rate. One or two trials per task, so the
+numbers are noisy. The workflow mistakes need a different fix, such as step order in the
+`claim_task` and `report_task` descriptions.
