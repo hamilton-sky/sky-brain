@@ -628,6 +628,30 @@
       "scope": ".",
       "file": "apps/server/src/auth/pages/sign-in.ts",
       "line": 33
+    },
+    {
+      "fingerprint": "1a8ae54719598e0aef5bbb6e",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/editor.js"
+    },
+    {
+      "fingerprint": "cf10b09f0a1a1e76f3e307c0",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/live.js"
+    },
+    {
+      "fingerprint": "2f5db4e3d32d3440c951c8e1",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/steps.js"
     }
   ]
 }
