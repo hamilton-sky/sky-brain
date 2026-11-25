@@ -591,3 +591,16 @@ are unchanged. Push is off unless the three `VAPID_*` settings are set.
 sky-brain is on the Home Screen, and the research of 24 Nov ranked it after the inbox.
 **Keeps:** hard rule 3 (an alert never approves by itself; the approve route is people only) and
 hard rule 5 (nothing secret in a URL; the link carries only the request id).
+
+### D37. The brain book is organized by layer
+
+**Date:** 2026-11-25. **Decided by:** shammai.
+**Decision:** the book has one entry, `book`. Its chapters start with the brain's layers (About
+me, Notebooks, Inbox, Board); each layer's chapter says what the layer is for, what is in it, how
+to use it, and its APIs. Then come chapters for using the brain across layers, approval, recipes,
+errors and the person's pages. Opening a layer shows its tools as text; the tool list itself stays
+fixed, because clients do not reliably reload tools mid-chat. `search` gains a `layer` filter and a
+new `context { q }` returns the packet for all layers together. Design: `docs/vision/BOOK.md`
+section 14; draft: `docs/vision/book/`.
+**Keeps:** D35 as revised (benchmark first, then a thin book), hard rules 3 and 7.
+

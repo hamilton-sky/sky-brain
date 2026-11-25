@@ -11,7 +11,8 @@ mock of the Book settings page: https://claude.ai/artifact/R17CXKKuHiUM1gq7fsTdD
 > what goes wrong), and the one channel every client delivers is the tool description itself. So
 > the book's **text** is worth shipping soon, and most of its **machinery** waits for a trigger.
 > Sections 10 and 11 hold the revised measurement and build order. Sections 4 to 7 stay as the
-> long-term design, with the corrections in section 12.
+> long-term design, with the corrections in section 12. **Section 14 (25 Nov) organizes the book
+> by layer, as shammai set it; it replaces the chapter list in section 2.**
 
 It answers four ideas shammai raised on 24 Nov 2026:
 
@@ -499,6 +500,47 @@ conflict between layers is reported to the person, never settled silently (chapt
 step 1, after the measurement window, and the bench gets tasks for each scope ("everything I know
 about the theme", "only my decisions", "only what came in this week"). "Your brain now" ships with
 the `book` tool itself.
+
+
+## 14. The book is organized by layer (25 Nov, shammai)
+
+shammai set the shape on 25 Nov 2026: **one entry, `book`, whose chapters start with the brain's
+layers.** Each layer's chapter explains what the layer is for and how to use it, and opening the
+layer shows its APIs. This replaces the chapter list in section 2, which was organized by activity
+(reading, writing). The draft in [book/](book/) is rewritten this way.
+
+```text
+book                      → contents: Your brain now, the five rules, the chapters
+book { id: "about-me" }   → Layer: About me   what it is for · what is in it · how to use it · its APIs
+book { id: "notebooks" }  → Layer: Notebooks
+book { id: "inbox" }      → Layer: Inbox      (the only layer an agent writes to)
+book { id: "board" }      → Layer: Board
+book { id: "across" }     → all layers together: context { q }, scopes, how layers are weighed
+book { id: "approval" | "recipes" | "errors" | "your-pages" }
+```
+
+Every layer chapter has the same four parts, so a model learns the pattern once:
+
+| Part | Says |
+| --- | --- |
+| **What it is for** | The layer's job in the brain, in one paragraph (About me = the self; Notebooks = what lasts; Inbox = what is new; Board = what is being done) |
+| **What is in it** | Which kinds of entries, how many, how long they live |
+| **How to use it** | When to read it, whether you may write it, how to weigh what you find |
+| **Its APIs** (generated) | The tools for this layer with their key arguments and pitfalls, from the tool registry |
+
+**What "opening a layer shows its APIs" means technically.** The chapter returns the layer's tools
+as text (name, arguments, pitfalls), and the tools themselves stay registered all the time. A server
+could instead hide tools and reveal them after `book { id }` with `tools/list_changed`, but the
+research found clients do not support that reliably (ChatGPT needs a manual refresh; claude.ai is
+undocumented), so a model could be stuck with a tool it was told about and cannot call. Two small
+API changes make the layers real in the calls too: `search { layer }` for one layer, and
+`context { q }` for all of them (section 13).
+
+**Does it change the plan?** The chapter structure changes; the build order in section 11 does not.
+It still starts with the benchmark, and step 1 still ships one `book { id? }` tool, the text inside
+tool descriptions, short server instructions, and now `search { layer }` and `context { q }`. The
+bench gets one task per layer ("what do you know about me", "what did we decide", "save this",
+"do the next task") and one across layers.
 
 ## Open questions, answered by the research (for shammai to confirm)
 

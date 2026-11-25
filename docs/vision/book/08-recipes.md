@@ -1,11 +1,11 @@
-# 7. Recipes
+# 8. Recipes
 
 Whole sequences for common jobs. Each step is one call. Each recipe is also served as an MCP
 prompt with the same name, where the client supports prompts.
 
 ## session-start: start a session in this brain
 1. `book`
-2. `book_search { q: "<the person's request>" }`
+2. `context { q: "<the person's request>" }` (planned), or open the layer chapter that fits
 3. Follow the recipe it finds, or read the chapter.
 
 ## next-task: do the next ready task
