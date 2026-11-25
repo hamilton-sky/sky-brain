@@ -19,7 +19,11 @@ import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { memberRole } from "../scope/member-role.ts";
 import { claimHandler } from "./claim.ts";
 import { liveTextHash } from "./eligibility.ts";
-import { assertWriter, boardWriteLimit, pathId } from "./goals-router.ts";
+import {
+  assertWriter,
+  boardWriteLimit,
+  pathId,
+} from "../http/request-checks.ts";
 import { goalNotFound } from "./goals-service.ts";
 import { readyHandler } from "./ready.ts";
 import { reportHandlers } from "./report.ts";

@@ -30,7 +30,7 @@ import { writeAudit } from "../db/audit.ts";
 import type { Db, DbOrTx } from "../db/client.ts";
 import { entries, entryVersions, members, memories } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
-import { heldBecause, refuseSecrets } from "../tasks/write-guards.ts";
+import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
 import { detectInjection } from "../guards/quarantine.ts";
 import {
   defaultMemory,

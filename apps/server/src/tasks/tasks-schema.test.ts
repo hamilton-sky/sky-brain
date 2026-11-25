@@ -8,9 +8,9 @@ import {
   seedWorkspace,
 } from "../testing/harness.ts";
 import { seedGoal, seedTask } from "../testing/task-seeds.ts";
-import { taskTextHash } from "../tasks/task-text.ts";
-import type { Db } from "./client.ts";
-import { goals, taskDeps, taskEvents, tasks } from "./schema.ts";
+import { taskTextHash } from "./task-text.ts";
+import type { Db } from "../db/client.ts";
+import { goals, taskDeps, taskEvents, tasks } from "../db/schema.ts";
 
 let db: Db;
 

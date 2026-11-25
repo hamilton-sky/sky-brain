@@ -30,7 +30,7 @@ import {
   boardWriteLimit,
   parseRequest,
   pathId,
-} from "../tasks/goals-router.ts";
+} from "../http/request-checks.ts";
 import {
   captureEntry,
   entryVersionsOf,
