@@ -6,9 +6,9 @@ import type { Request } from "express";
 import { auditActor } from "../actor/keys.ts";
 import { actorOf } from "../actor/middleware.ts";
 import { runContextOf } from "../actor/run-context.ts";
-import { writeAudit } from "../db/audit.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { tasks } from "../db/schema.ts";
+import { writeAudit } from "@sky-brain/db/audit";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { tasks } from "@sky-brain/db/schema";
 
 /** Every task that depends on `taskId` through `task_deps`, at any depth. */
 const dependentsOf = (taskId: string) =>

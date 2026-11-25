@@ -8,8 +8,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { Request } from "express";
 import type { ActorResolver } from "../actor/middleware.ts";
 import { setRunContext } from "../actor/run-context.ts";
-import type { Db } from "../db/client.ts";
-import { devices, runTokens } from "../db/schema.ts";
+import type { Db } from "@sky-brain/db/client";
+import { devices, runTokens } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 import { hashSecretToken } from "./secret-token.ts";
 

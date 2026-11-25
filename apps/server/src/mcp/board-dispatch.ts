@@ -7,7 +7,7 @@ import type { Actor } from "@sky-brain/shared/actor";
 import express from "express";
 import { inject } from "light-my-request";
 import { attachVerifiedActor } from "../actor/middleware.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import type { Push } from "../push/push.ts";
 import { errorHandler } from "../http/error-handler.ts";

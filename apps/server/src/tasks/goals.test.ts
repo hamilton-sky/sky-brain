@@ -2,7 +2,7 @@
 // approve, cancel and release. Isolation, and what agents may see and write: goals-isolation.test.ts.
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, goals, tasks } from "../db/schema.ts";
+import { auditLog, goals, tasks } from "@sky-brain/db/schema";
 import {
   UUID,
   device,

@@ -10,7 +10,7 @@ import {
   seedWorkspace,
   startTestServer,
 } from "../../../apps/server/src/testing/harness.ts";
-import { auditLog, entries } from "../../../apps/server/src/db/schema.ts";
+import { auditLog, entries } from "../../../packages/db/src/schema.ts";
 
 export type Db = Awaited<ReturnType<typeof createTestDb>>;
 export type Server = Awaited<ReturnType<typeof startTestServer>>;

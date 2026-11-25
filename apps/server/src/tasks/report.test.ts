@@ -3,7 +3,7 @@
 // cloud-task-board ticket 07). Isolation and verbs: report-isolation.test.ts.
 import { and, asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, taskEvents, tasks } from "../db/schema.ts";
+import { auditLog, taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   device,
   expectError,

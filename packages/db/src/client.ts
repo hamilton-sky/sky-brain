@@ -15,9 +15,7 @@ export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 /** A Db, or the transaction handed to `db.transaction(async (tx) => ...)`. */
 export type DbOrTx = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
-const migrationsFolder = fileURLToPath(
-  new URL("../../drizzle", import.meta.url),
-);
+const migrationsFolder = fileURLToPath(new URL("../drizzle", import.meta.url));
 
 interface Driver {
   migrate(): Promise<void>;
@@ -82,7 +80,7 @@ export function createPostgresDb(
   return db;
 }
 
-/** Applies every migration in apps/server/drizzle that has not run yet. */
+/** Applies every migration in packages/db/drizzle that has not run yet. */
 export function migrateDb(db: Db): Promise<void> {
   return driverOf(db).migrate();
 }

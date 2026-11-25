@@ -1,5 +1,5 @@
 // The Drizzle schema of docs/PLAN.md section 5. After a change, run
-// `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
+// `pnpm --filter @sky-brain/db exec drizzle-kit generate`.
 import {
   bigint,
   index,

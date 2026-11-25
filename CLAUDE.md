@@ -40,6 +40,7 @@ These come from the security review behind the plan. Do not weaken them.
 apps/server      API (/api/v1), MCP (/mcp), auth (/api/auth), serves the web build
 apps/web         React app
 packages/shared  entry types and zod schemas
+packages/db      Drizzle schema, client, migrations (packages/db/drizzle), createTestDb
 docs/PACKAGES.md planned package split (db, kernel, memory, board, approvals) and border rules
 docs/            plan, roadmap, decisions, tickets
 vercel.json      Vercel project (build, function, rewrites)
@@ -59,9 +60,9 @@ pnpm health                      RepNix: typecheck, lint, tests, dead code, dupl
 pnpm build                       build the web shell (apps/web/dist)
 pnpm dev                         build the web shell, then run the server on one port
 node tools/dev-smoke.mjs         start pnpm dev, wait for /healthz, print `healthz 200`, stop it
-pnpm --filter @sky-brain/server exec drizzle-kit generate
-                                 write a migration after changing apps/server/src/db/schema.ts
-pnpm --filter @sky-brain/server exec auth generate --config src/auth/cli-config.ts --adapter drizzle --dialect postgresql --output src/db/auth-schema.ts -y
+pnpm --filter @sky-brain/db exec drizzle-kit generate
+                                 write a migration after changing packages/db/src/schema.ts
+pnpm --filter @sky-brain/server exec auth generate --config src/auth/cli-config.ts --adapter drizzle --dialect postgresql --output ../../packages/db/src/auth-schema.ts -y
                                  regenerate Better Auth's tables after changing its plugins
                                  (keep cli-config.ts in step with auth.ts), then drizzle-kit generate
 ```

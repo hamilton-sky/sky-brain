@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Config } from "../config.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import { createAuth, type Auth } from "./auth.ts";
 
 export interface AuthOverrides {

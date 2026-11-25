@@ -4,7 +4,7 @@
 // falls through.
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { runTokens } from "../db/schema.ts";
+import { runTokens } from "@sky-brain/db/schema";
 import { testClient } from "../testing/harness.ts";
 import { mintRunToken, withToken } from "../testing/task-seeds.ts";
 import { hashSecretToken } from "./secret-token.ts";

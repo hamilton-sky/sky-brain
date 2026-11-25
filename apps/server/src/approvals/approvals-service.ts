@@ -12,8 +12,8 @@ import {
 import type { Role } from "@sky-brain/shared/enums";
 import { and, count, desc, eq, gt, inArray, max } from "drizzle-orm";
 import { auditActor, personOf } from "../actor/keys.ts";
-import { writeAudit } from "../db/audit.ts";
-import type { Db, DbOrTx } from "../db/client.ts";
+import { writeAudit } from "@sky-brain/db/audit";
+import type { Db, DbOrTx } from "@sky-brain/db/client";
 import {
   approvalRequests,
   entries,
@@ -21,7 +21,7 @@ import {
   members,
   tasks,
   type PinnedItem,
-} from "../db/schema.ts";
+} from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 import { findEntry, setTrustInTx } from "../memory/entries-service.ts";
 import { memberRole } from "../scope/member-role.ts";

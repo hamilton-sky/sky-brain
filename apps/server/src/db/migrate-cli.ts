@@ -2,7 +2,7 @@
 // MIGRATION_DATABASE_ROLE, when set, is the role to SET ROLE to before any DDL (Nanogres's
 // migration roles must act as the database owner role shown in their connect snippet).
 // On Vercel it runs in the build, and only for production deploys: previews never migrate.
-import { closeDb, createPostgresDb, migrateDb } from "./client.ts";
+import { closeDb, createPostgresDb, migrateDb } from "@sky-brain/db/client";
 
 if (process.env.VERCEL && process.env.VERCEL_ENV !== "production") {
   console.log(`migrate: skipped for VERCEL_ENV=${process.env.VERCEL_ENV}`);

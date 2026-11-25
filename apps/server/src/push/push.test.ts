@@ -4,7 +4,7 @@
 import type { Actor } from "@sky-brain/shared/actor";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { pushSubscriptions } from "../db/schema.ts";
+import { pushSubscriptions } from "@sky-brain/db/schema";
 import {
   closeTestDb,
   createTestDb,

@@ -8,7 +8,7 @@ import express, { type Request, type Router } from "express";
 import { actorOf } from "../actor/middleware.ts";
 import { requireHuman } from "../actor/require-human.ts";
 import { runContextOf } from "../actor/run-context.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import type { Push } from "../push/push.ts";

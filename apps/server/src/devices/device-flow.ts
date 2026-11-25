@@ -14,8 +14,8 @@ import express, {
   type Router,
 } from "express";
 import { randomBytes } from "node:crypto";
-import type { Db } from "../db/client.ts";
-import { deviceCodes, devices } from "../db/schema.ts";
+import type { Db } from "@sky-brain/db/client";
+import { deviceCodes, devices } from "@sky-brain/db/schema";
 import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
 import { hashSecretToken, newSecretToken } from "../run-tokens/secret-token.ts";
 import { addressKey } from "./address-key.ts";

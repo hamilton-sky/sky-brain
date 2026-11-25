@@ -7,7 +7,7 @@ import {
   entries,
   entryVersions,
   memories,
-} from "../../apps/server/src/db/schema.ts";
+} from "../../packages/db/src/schema.ts";
 import { createRateLimiter } from "../../apps/server/src/guards/ratelimit.ts";
 import { boardDispatcher } from "../../apps/server/src/mcp/board-dispatch.ts";
 import {

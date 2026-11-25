@@ -4,7 +4,7 @@
 import { COMMENTS_PER_ENTRY_MAX } from "@sky-brain/shared/comments";
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, entryComments } from "../db/schema.ts";
+import { auditLog, entryComments } from "@sky-brain/db/schema";
 import {
   actorClients,
   expectError,

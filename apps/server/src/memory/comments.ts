@@ -10,9 +10,9 @@ import {
 } from "@sky-brain/shared/comments";
 import { and, asc, count, eq } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
-import { writeAudit } from "../db/audit.ts";
-import type { Db, DbOrTx } from "../db/client.ts";
-import { entryComments } from "../db/schema.ts";
+import { writeAudit } from "@sky-brain/db/audit";
+import type { Db, DbOrTx } from "@sky-brain/db/client";
+import { entryComments } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 import { refuseSecrets } from "../guards/write-guards.ts";
 import { findEntry, type EntryRow } from "./entries-service.ts";

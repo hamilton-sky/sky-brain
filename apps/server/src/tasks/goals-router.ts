@@ -17,8 +17,8 @@ import express, {
 import { actorOf } from "../actor/middleware.ts";
 import { requireHuman } from "../actor/require-human.ts";
 import { runContextOf } from "../actor/run-context.ts";
-import type { Db, DbOrTx } from "../db/client.ts";
-import { features } from "../db/schema.ts";
+import type { Db, DbOrTx } from "@sky-brain/db/client";
+import { features } from "@sky-brain/db/schema";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import {

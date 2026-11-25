@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { Db } from "../db/client.ts";
-import { goals, taskDeps, tasks } from "../db/schema.ts";
+import type { Db } from "@sky-brain/db/client";
+import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
 import { taskTextHash } from "../tasks/task-text.ts";
 import {
   closeTestDb,

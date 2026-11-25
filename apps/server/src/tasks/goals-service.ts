@@ -22,9 +22,9 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { auditActor, personOf } from "../actor/keys.ts";
-import { writeAudit } from "../db/audit.ts";
-import type { Db, DbOrTx } from "../db/client.ts";
-import { goals, members, taskDeps, tasks } from "../db/schema.ts";
+import { writeAudit } from "@sky-brain/db/audit";
+import type { Db, DbOrTx } from "@sky-brain/db/client";
+import { goals, members, taskDeps, tasks } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 import { memberRole } from "../scope/member-role.ts";
 import { liveTextHash } from "./eligibility.ts";

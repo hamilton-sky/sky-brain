@@ -106,7 +106,11 @@ Each step is one PR, keeps every test green and changes no behaviour.
    `http/request-checks.ts`, the tasks schema test from `db/` to `tasks/`, and the `/me` router
    from `projects/` to `agents/` (it uses MCP's `whoami`). ESLint now enforces the folder order
    on source files (`eslint.config.js`, `serverLayers`). Memory no longer imports tasks.
-1. **`packages/db`**, with `createTestDb()`.
+1. **`packages/db`** (done, 25 Nov). Schema, client, audit and the migrations
+   (`packages/db/drizzle`) moved there, with `createTestDb()` in `@sky-brain/db/test-db`.
+   `apps/server/src/db/` keeps only `migrate-cli.ts` (it reads the environment) and two schema
+   tests that need the app's seeds. `testing/harness.ts` re-exports `createTestDb` for older tests
+   and `bench/`.
 2. **`packages/kernel`.**
 3. **`packages/memory`**, and its service tests moved to `createTestDb()`.
 4. **`packages/board`** (tasks, projects, goal documents, devices).

@@ -2,7 +2,7 @@
 // expiry with the fencing number, and who an event names (bars 1, 2, 6, 7; ticket 06).
 import { and, asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, taskEvents, tasks } from "../db/schema.ts";
+import { auditLog, taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   device,
   expectError,

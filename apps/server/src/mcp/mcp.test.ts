@@ -9,7 +9,7 @@ import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { actorMiddleware } from "../actor/middleware.ts";
 import { requireHuman } from "../actor/require-human.ts";
-import { invites, members } from "../db/schema.ts";
+import { invites, members } from "@sky-brain/db/schema";
 import { errorHandler } from "../http/error-handler.ts";
 import {
   startAuthTestServer,

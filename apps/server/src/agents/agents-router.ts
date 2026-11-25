@@ -9,7 +9,7 @@ import express, { type Router } from "express";
 import { personOf } from "../actor/keys.ts";
 import { actorOf } from "../actor/middleware.ts";
 import { requireHuman } from "../actor/require-human.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
 import {

@@ -2,7 +2,7 @@
 // server, shows in whoami, and is the author of what the agent writes. Unbound, it is the Guest.
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { entries } from "../db/schema.ts";
+import { entries } from "@sky-brain/db/schema";
 import {
   startAuthTestServer,
   type AuthTestServer,

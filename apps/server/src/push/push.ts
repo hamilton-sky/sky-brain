@@ -4,8 +4,8 @@
 import type { ApprovalPush } from "@sky-brain/shared/approvals";
 import { and, eq, inArray } from "drizzle-orm";
 import webpush from "web-push";
-import type { DbOrTx } from "../db/client.ts";
-import { pushSubscriptions } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { pushSubscriptions } from "@sky-brain/db/schema";
 
 export interface PushTarget {
   endpoint: string;

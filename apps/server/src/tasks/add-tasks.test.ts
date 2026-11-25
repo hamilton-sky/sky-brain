@@ -2,7 +2,13 @@
 // roles and state. Isolation, get and release-text: tasks-isolation.test.ts.
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, goals, taskDeps, taskEvents, tasks } from "../db/schema.ts";
+import {
+  auditLog,
+  goals,
+  taskDeps,
+  taskEvents,
+  tasks,
+} from "@sky-brain/db/schema";
 import {
   device,
   expectError,

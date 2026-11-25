@@ -8,7 +8,7 @@ import {
   McpServer,
   type McpRequestContext,
 } from "@modelcontextprotocol/server";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
 import type { Push } from "../push/push.ts";
 import { registerApprovalTools } from "./approval-tools.ts";

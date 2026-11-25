@@ -1,7 +1,7 @@
 // Story: A person signs in with Perminister (own workspace, invites, session cookie).
 import { describe, expect, it } from "vitest";
 import { seedWorkspace } from "../../../apps/server/src/testing/harness.ts";
-import { invites, members } from "../../../apps/server/src/db/schema.ts";
+import { invites, members } from "../../../packages/db/src/schema.ts";
 import {
   account,
   accountsForSubject,

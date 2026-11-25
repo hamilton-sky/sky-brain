@@ -9,7 +9,7 @@ import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, expect } from "vitest";
 import { actorMiddleware, actorOf } from "../../actor/middleware.ts";
 import { runContextOf } from "../../actor/run-context.ts";
-import { projects } from "../../db/schema.ts";
+import { projects } from "@sky-brain/db/schema";
 import { errorHandler } from "../../http/error-handler.ts";
 import { memberRole } from "../../scope/member-role.ts";
 import {

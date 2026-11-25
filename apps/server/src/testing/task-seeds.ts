@@ -9,7 +9,7 @@ import type {
   TaskStatus,
 } from "@sky-brain/shared/tasks";
 import { eq, sql } from "drizzle-orm";
-import { goals, taskDeps, tasks } from "../db/schema.ts";
+import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
 import { taskTextHash } from "../tasks/task-text.ts";
 import {
   testClient,

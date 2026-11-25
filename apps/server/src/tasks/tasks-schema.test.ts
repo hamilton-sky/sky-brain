@@ -9,8 +9,8 @@ import {
 } from "../testing/harness.ts";
 import { seedGoal, seedTask } from "../testing/task-seeds.ts";
 import { taskTextHash } from "./task-text.ts";
-import type { Db } from "../db/client.ts";
-import { goals, taskDeps, taskEvents, tasks } from "../db/schema.ts";
+import type { Db } from "@sky-brain/db/client";
+import { goals, taskDeps, taskEvents, tasks } from "@sky-brain/db/schema";
 
 let db: Db;
 

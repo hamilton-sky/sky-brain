@@ -1,7 +1,7 @@
 // `/api/v1/agents` (D25 part 1): only a person manages profiles and bindings, each person sees
 // only their own, and an app can be bound only by the person who connected it.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { oauthClient, oauthConsent, user } from "../db/schema.ts";
+import { oauthClient, oauthConsent, user } from "@sky-brain/db/schema";
 import {
   closeTestDb,
   createTestDb,

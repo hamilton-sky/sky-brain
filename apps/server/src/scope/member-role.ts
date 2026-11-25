@@ -3,8 +3,8 @@ import type { Actor } from "@sky-brain/shared/actor";
 import type { Role } from "@sky-brain/shared/enums";
 import { and, eq } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { members } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { members } from "@sky-brain/db/schema";
 
 /** Undefined when the person has no `members` row there: the caller answers 404. */
 export async function memberRole(

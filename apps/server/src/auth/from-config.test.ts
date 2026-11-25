@@ -32,7 +32,7 @@ function devConfig(pgliteDataDir: string): Config {
 async function startSignAndStop(dataDir: string): Promise<string> {
   vi.resetModules();
   const { createPgliteDb, migrateDb, closeDb } =
-    await import("../db/client.ts");
+    await import("@sky-brain/db/client");
   const { authFromConfig } = await import("./from-config.ts");
   const db = await createPgliteDb(dataDir);
   try {

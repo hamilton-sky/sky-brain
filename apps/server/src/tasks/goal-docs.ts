@@ -8,8 +8,8 @@ import {
 } from "@sky-brain/shared/goal-docs";
 import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { entries, goalDocuments } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { entries, goalDocuments } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 import { findEntry } from "../memory/entries-service.ts";
 import { audit } from "./goals-service.ts";

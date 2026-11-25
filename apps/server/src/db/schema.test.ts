@@ -8,8 +8,8 @@ import {
   seedProject,
   seedWorkspace,
 } from "../testing/harness.ts";
-import type { Db } from "./client.ts";
-import { writeAudit } from "./audit.ts";
+import type { Db } from "@sky-brain/db/client";
+import { writeAudit } from "@sky-brain/db/audit";
 import {
   auditLog,
   entries,
@@ -18,7 +18,7 @@ import {
   members,
   projects,
   workspaces,
-} from "./schema.ts";
+} from "@sky-brain/db/schema";
 
 let db: Db;
 

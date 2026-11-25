@@ -3,7 +3,12 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { onSignIn } from "../auth/on-sign-in.ts";
-import { entries, entryVersions, members, memories } from "../db/schema.ts";
+import {
+  entries,
+  entryVersions,
+  members,
+  memories,
+} from "@sky-brain/db/schema";
 import {
   closeTestDb,
   createTestDb,

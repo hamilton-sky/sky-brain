@@ -6,7 +6,7 @@ import {
   type Task,
   type TaskStatus,
 } from "@sky-brain/shared/tasks";
-import type { goals, tasks } from "../db/schema.ts";
+import type { goals, tasks } from "@sky-brain/db/schema";
 
 export type GoalRow = typeof goals.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;

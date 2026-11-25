@@ -2,7 +2,7 @@
 // The same answer as the MCP `whoami` tool; identity comes from the session or token only.
 import express, { type Router } from "express";
 import { actorOf } from "../actor/middleware.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import { HttpError } from "../http/http-error.ts";
 import { whoami } from "../mcp/whoami.ts";
 
