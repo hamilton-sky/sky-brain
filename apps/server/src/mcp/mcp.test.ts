@@ -7,10 +7,10 @@ import express from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { actorMiddleware } from "../actor/middleware.ts";
-import { requireHuman } from "../actor/require-human.ts";
+import { actorMiddleware } from "@sky-brain/kernel/actor/middleware";
+import { requireHuman } from "@sky-brain/kernel/actor/require-human";
 import { invites, members } from "@sky-brain/db/schema";
-import { errorHandler } from "../http/error-handler.ts";
+import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import {
   startAuthTestServer,
   type AuthTestServer,

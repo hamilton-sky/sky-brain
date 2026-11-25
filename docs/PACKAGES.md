@@ -111,7 +111,11 @@ Each step is one PR, keeps every test green and changes no behaviour.
    `apps/server/src/db/` keeps only `migrate-cli.ts` (it reads the environment) and two schema
    tests that need the app's seeds. `testing/harness.ts` re-exports `createTestDb` for older tests
    and `bench/`.
-2. **`packages/kernel`.**
+2. **`packages/kernel`** (done, 25 Nov). `actor`, `guards`, `scope`, `http` and `run-tokens`
+   moved to `packages/kernel/src/<folder>/`; the server imports `@sky-brain/kernel/<folder>/<file>`.
+   Their tests that boot the app (`actor.test.ts`, `resolve-scope.test.ts`, the run-token route
+   tests and their fixture) stay in `apps/server/src/<folder>/`. ESLint now also enforces the
+   package order (`packageRules`).
 3. **`packages/memory`**, and its service tests moved to `createTestDb()`.
 4. **`packages/board`** (tasks, projects, goal documents, devices).
 5. **`packages/approvals`** (approvals and push).

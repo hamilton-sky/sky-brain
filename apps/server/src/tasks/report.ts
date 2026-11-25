@@ -15,23 +15,27 @@ import type { Lesson } from "@sky-brain/shared/memory";
 import { and, eq, gt, inArray, sql, type SQL } from "drizzle-orm";
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import type { Request, RequestHandler } from "express";
-import { auditActor, personOf } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { captureInTx } from "../memory/entries-service.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { LEASE_SECONDS } from "./claim.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { blockDependents } from "./fail-cascade.ts";
-import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
+import {
+  assertWriter,
+  parseRequest,
+  pathId,
+} from "@sky-brain/kernel/http/request-checks";
 import { dependsOnMany } from "./ready.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { findTask } from "./tasks-router.ts";
-import { withholdSecrets } from "../guards/write-guards.ts";
+import { withholdSecrets } from "@sky-brain/kernel/guards/write-guards";
 import { toWireTask, type TaskRow } from "./wire.ts";
 
 type Verb = "renew" | "release" | "done" | "fail";

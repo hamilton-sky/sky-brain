@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-25T15:10:45.558Z",
+  "generatedAt": "2026-11-25T22:42:38.780Z",
   "entries": [
     {
       "fingerprint": "070b8236e1e834612017c559",
@@ -19,6 +19,30 @@
       "file": "tools/dev-smoke.mjs"
     },
     {
+      "fingerprint": "1a8ae54719598e0aef5bbb6e",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/editor.js"
+    },
+    {
+      "fingerprint": "cf10b09f0a1a1e76f3e307c0",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/live.js"
+    },
+    {
+      "fingerprint": "2f5db4e3d32d3440c951c8e1",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-file",
+      "scope": ".",
+      "file": ".feature-flow/feature_flow/_forkboard/assets/steps.js"
+    },
+    {
       "fingerprint": "b01961cec1da44aa8dff2473",
       "provider": "Knip",
       "category": "dead-code",
@@ -27,13 +51,13 @@
       "file": "apps/server/src/auth/cli-config.ts"
     },
     {
-      "fingerprint": "09588d878c71ee621c452f00",
+      "fingerprint": "f1728d0a27dacf80014e8867",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-dependency",
       "scope": ".",
       "file": "apps/server/package.json",
-      "line": 37
+      "line": 38
     },
     {
       "fingerprint": "3fe6b43379aa1197c74cdc2d",
@@ -117,31 +141,31 @@
       "line": 22
     },
     {
-      "fingerprint": "0aeeb2c4b65cab69c9fc5696",
+      "fingerprint": "62b22594f6fe58d0b5048615",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-export",
       "scope": ".",
       "file": "apps/server/src/devices/device-flow.ts",
-      "line": 24
+      "line": 30
     },
     {
-      "fingerprint": "3a965f095828a19bb215c6a4",
+      "fingerprint": "bb5a760c2fba380295bff000",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-export",
       "scope": ".",
       "file": "apps/server/src/devices/device-flow.ts",
-      "line": 25
+      "line": 31
     },
     {
-      "fingerprint": "7e17f8101a7715b74045e835",
+      "fingerprint": "468f0cecca42b2358ca45842",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-export",
       "scope": ".",
       "file": "apps/server/src/devices/device-flow.ts",
-      "line": 34
+      "line": 40
     },
     {
       "fingerprint": "7bbbabefd071cde32c79942e",
@@ -331,33 +355,6 @@
       "scope": ".",
       "file": "devices/device-flow-guards.test.ts",
       "line": 66
-    },
-    {
-      "fingerprint": "6768948911993442f97d752a",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "guards/ratelimit.test.ts",
-      "line": 49
-    },
-    {
-      "fingerprint": "1844fdcda66069fa5c29cb20",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "guards/secrets.test.ts",
-      "line": 10
-    },
-    {
-      "fingerprint": "48634819baee3c3dd79ca8c0",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "guards/secrets.test.ts",
-      "line": 58
     },
     {
       "fingerprint": "54542e70a5165ce8bb563d8d",
@@ -603,55 +600,31 @@
       "line": 99
     },
     {
-      "fingerprint": "8a44ea53afa9316ff993b329",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
+      "fingerprint": "6768948911993442f97d752a",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
       "scope": ".",
-      "file": "apps/server/src/auth/auth.ts",
-      "line": 32
+      "file": "guards/ratelimit.test.ts",
+      "line": 49
     },
     {
-      "fingerprint": "cb3622a3f8674e4f24b903a7",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
+      "fingerprint": "1844fdcda66069fa5c29cb20",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
       "scope": ".",
-      "file": "apps/server/src/auth/pages/sign-in.ts",
-      "line": 4
+      "file": "guards/secrets.test.ts",
+      "line": 10
     },
     {
-      "fingerprint": "d38c23786e98db197679efab",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
+      "fingerprint": "48634819baee3c3dd79ca8c0",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
       "scope": ".",
-      "file": "apps/server/src/auth/pages/sign-in.ts",
-      "line": 33
-    },
-    {
-      "fingerprint": "1a8ae54719598e0aef5bbb6e",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/editor.js"
-    },
-    {
-      "fingerprint": "cf10b09f0a1a1e76f3e307c0",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/live.js"
-    },
-    {
-      "fingerprint": "2f5db4e3d32d3440c951c8e1",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/steps.js"
+      "file": "guards/secrets.test.ts",
+      "line": 58
     }
   ]
 }

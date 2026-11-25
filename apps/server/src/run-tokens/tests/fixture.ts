@@ -7,11 +7,11 @@ import express from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, expect } from "vitest";
-import { actorMiddleware, actorOf } from "../../actor/middleware.ts";
-import { runContextOf } from "../../actor/run-context.ts";
+import { actorMiddleware, actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { projects } from "@sky-brain/db/schema";
-import { errorHandler } from "../../http/error-handler.ts";
-import { memberRole } from "../../scope/member-role.ts";
+import { errorHandler } from "@sky-brain/kernel/http/error-handler";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import {
   closeTestDb,
   createTestDb,
@@ -29,9 +29,12 @@ import {
   mintRunToken,
   withToken,
 } from "../../testing/task-seeds.ts";
-import { runTokenResolver } from "../resolver.ts";
-import { assertRunScope, effectiveRole } from "../run-scope.ts";
-import { verbMiddleware } from "../verbs.ts";
+import { runTokenResolver } from "@sky-brain/kernel/run-tokens/resolver";
+import {
+  assertRunScope,
+  effectiveRole,
+} from "@sky-brain/kernel/run-tokens/run-scope";
+import { verbMiddleware } from "@sky-brain/kernel/run-tokens/verbs";
 
 /** A uuid no row has. */
 export const UUID = "11111111-2222-4333-8444-555555555555";

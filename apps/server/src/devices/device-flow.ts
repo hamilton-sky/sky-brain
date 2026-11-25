@@ -16,8 +16,14 @@ import express, {
 import { randomBytes } from "node:crypto";
 import type { Db } from "@sky-brain/db/client";
 import { deviceCodes, devices } from "@sky-brain/db/schema";
-import { createRateLimiter, type RateLimiter } from "../guards/ratelimit.ts";
-import { hashSecretToken, newSecretToken } from "../run-tokens/secret-token.ts";
+import {
+  createRateLimiter,
+  type RateLimiter,
+} from "@sky-brain/kernel/guards/ratelimit";
+import {
+  hashSecretToken,
+  newSecretToken,
+} from "@sky-brain/kernel/run-tokens/secret-token";
 import { addressKey } from "./address-key.ts";
 import { formatUserCode, newUserCode } from "./user-code.ts";
 

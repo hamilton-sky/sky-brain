@@ -12,7 +12,7 @@ import {
   type SQLWrapper,
 } from "drizzle-orm";
 import type { Request } from "express";
-import { runContextOf } from "../actor/run-context.ts";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { goals, members, taskDeps, tasks } from "@sky-brain/db/schema";
 
 export interface Eligibility {

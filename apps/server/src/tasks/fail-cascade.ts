@@ -3,9 +3,9 @@
 // the caller's transaction, with a `task.status` audit row each.
 import { and, eq, sql } from "drizzle-orm";
 import type { Request } from "express";
-import { auditActor } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { auditActor } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { tasks } from "@sky-brain/db/schema";

@@ -41,6 +41,7 @@ apps/server      API (/api/v1), MCP (/mcp), auth (/api/auth), serves the web bui
 apps/web         React app
 packages/shared  entry types and zod schemas
 packages/db      Drizzle schema, client, migrations (packages/db/drizzle), createTestDb
+packages/kernel  actor, guards (secret scan), scope, http helpers, run tokens
 docs/PACKAGES.md planned package split (db, kernel, memory, board, approvals) and border rules
 docs/            plan, roadmap, decisions, tickets
 vercel.json      Vercel project (build, function, rewrites)

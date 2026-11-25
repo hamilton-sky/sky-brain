@@ -7,23 +7,23 @@ import type { Actor } from "@sky-brain/shared/actor";
 import type { Role } from "@sky-brain/shared/enums";
 import { eq } from "drizzle-orm";
 import express, { type Router } from "express";
-import { auditActor } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { requireHuman } from "../actor/require-human.ts";
+import { auditActor } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { requireHuman } from "@sky-brain/kernel/actor/require-human";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
-import type { RateLimiter } from "../guards/ratelimit.ts";
-import { HttpError } from "../http/http-error.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
-import { memberRole } from "../scope/member-role.ts";
+import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import { claimHandler } from "./claim.ts";
 import { liveTextHash } from "./eligibility.ts";
 import {
   assertWriter,
   boardWriteLimit,
   pathId,
-} from "../http/request-checks.ts";
+} from "@sky-brain/kernel/http/request-checks";
 import { goalNotFound } from "./goals-service.ts";
 import { readyHandler } from "./ready.ts";
 import { reportHandlers } from "./report.ts";

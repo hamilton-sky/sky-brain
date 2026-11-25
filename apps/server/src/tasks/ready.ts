@@ -4,15 +4,15 @@
 import { ReadyQuerySchema } from "@sky-brain/shared/tasks";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { RequestHandler } from "express";
-import { personOf } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { personOf } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
-import { validate } from "../http/validate.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
-import { resolveScope } from "../scope/resolve-scope.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
+import { validate } from "@sky-brain/kernel/http/validate";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
+import { resolveScope } from "@sky-brain/kernel/scope/resolve-scope";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { toWireTask } from "./wire.ts";
 

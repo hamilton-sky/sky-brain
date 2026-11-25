@@ -1,7 +1,10 @@
 // A fixed-window limit per key, in memory, for one server instance: at most `limit` takes in the
 // `windowMs` that starts at a key's first take. Device approval uses it, because the spec counts
 // "5 per 15 minutes", which a refilling token bucket does not hold to.
-import type { RateLimiter, TakeResult } from "../guards/ratelimit.ts";
+import type {
+  RateLimiter,
+  TakeResult,
+} from "@sky-brain/kernel/guards/ratelimit";
 
 export type WindowLimiterOptions = {
   limit: number;

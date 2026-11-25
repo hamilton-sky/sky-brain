@@ -14,22 +14,22 @@ import express, {
   type RequestHandler,
   type Router,
 } from "express";
-import { actorOf } from "../actor/middleware.ts";
-import { requireHuman } from "../actor/require-human.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { requireHuman } from "@sky-brain/kernel/actor/require-human";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { features } from "@sky-brain/db/schema";
-import type { RateLimiter } from "../guards/ratelimit.ts";
-import { HttpError } from "../http/http-error.ts";
+import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
 import {
   assertWriter,
   boardWriteLimit,
   parseRequest,
   pathId,
-} from "../http/request-checks.ts";
-import { validate } from "../http/validate.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
-import { resolveScope } from "../scope/resolve-scope.ts";
+} from "@sky-brain/kernel/http/request-checks";
+import { validate } from "@sky-brain/kernel/http/validate";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
+import { resolveScope } from "@sky-brain/kernel/scope/resolve-scope";
 import { addTasksHandler } from "./add-tasks.ts";
 import { attachDocument, detachDocument, documentsOf } from "./goal-docs.ts";
 import {
@@ -44,7 +44,10 @@ import {
   releaseGoal,
 } from "./goals-service.ts";
 import type { GoalRow } from "./wire.ts";
-import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
+import {
+  heldBecause,
+  refuseSecrets,
+} from "@sky-brain/kernel/guards/write-guards";
 
 export interface GoalsRouterOptions {
   db: Db;

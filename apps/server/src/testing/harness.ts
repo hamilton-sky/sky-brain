@@ -14,7 +14,7 @@ import { normalizeGitRemote } from "@sky-brain/shared/git-remote";
 import { randomBytes } from "node:crypto";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import type { ActorResolver } from "../actor/middleware.ts";
+import type { ActorResolver } from "@sky-brain/kernel/actor/middleware";
 import { createApp } from "../app.ts";
 import type { Db } from "@sky-brain/db/client";
 import {

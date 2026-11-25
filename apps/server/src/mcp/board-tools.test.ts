@@ -4,7 +4,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { members, projects, user } from "@sky-brain/db/schema";
-import { createRateLimiter } from "../guards/ratelimit.ts";
+import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import {
   startAuthTestServer,
   type AuthTestServer,

@@ -3,9 +3,9 @@
 // run context, never from a body; tickets 05 (created), 06 and 07 use it.
 import type { TaskEventKind } from "@sky-brain/shared/tasks";
 import type { Request } from "express";
-import { auditActor, personOf } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { taskEvents } from "@sky-brain/db/schema";
 

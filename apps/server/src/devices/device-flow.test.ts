@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { hashSecretToken } from "../run-tokens/secret-token.ts";
+import { hashSecretToken } from "@sky-brain/kernel/run-tokens/secret-token";
 import { deviceCodes, devices } from "@sky-brain/db/schema";
 import {
   closeTestDb,

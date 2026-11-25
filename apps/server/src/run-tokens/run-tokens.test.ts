@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { auditLog, devices, runTokens } from "@sky-brain/db/schema";
 import { mintRunToken, withToken } from "../testing/task-seeds.ts";
-import { hashSecretToken } from "./secret-token.ts";
+import { hashSecretToken } from "@sky-brain/kernel/run-tokens/secret-token";
 import {
   UUID,
   device,

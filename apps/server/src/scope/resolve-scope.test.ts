@@ -9,8 +9,8 @@ import {
   seedWorkspace,
   type Db,
 } from "../testing/harness.ts";
-import { memberRole } from "./member-role.ts";
-import { resolveScope } from "./resolve-scope.ts";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
+import { resolveScope } from "@sky-brain/kernel/scope/resolve-scope";
 
 const owner: Actor = { kind: "human", user_id: "owner-1" };
 const viewer: Actor = { kind: "human", user_id: "viewer-1" };

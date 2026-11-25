@@ -6,11 +6,11 @@
 import type { Actor } from "@sky-brain/shared/actor";
 import express from "express";
 import { inject } from "light-my-request";
-import { attachVerifiedActor } from "../actor/middleware.ts";
+import { attachVerifiedActor } from "@sky-brain/kernel/actor/middleware";
 import type { Db } from "@sky-brain/db/client";
-import type { RateLimiter } from "../guards/ratelimit.ts";
+import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import type { Push } from "../push/push.ts";
-import { errorHandler } from "../http/error-handler.ts";
+import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { approvalsRouter } from "../approvals/approvals-router.ts";
 import { entriesRouter, memoriesRouter } from "../memory/memory-router.ts";
 import { projectsRouter } from "../projects/projects-router.ts";

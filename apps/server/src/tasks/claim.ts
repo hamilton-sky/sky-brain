@@ -6,18 +6,22 @@
 import { ClaimRequestSchema } from "@sky-brain/shared/tasks";
 import { and, eq, gt, ne, sql } from "drizzle-orm";
 import type { Request, RequestHandler } from "express";
-import { auditActor, personOf } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { tasks } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { buildPacket } from "../memory/packet.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { overlaps } from "./file-overlap.ts";
-import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
+import {
+  assertWriter,
+  parseRequest,
+  pathId,
+} from "@sky-brain/kernel/http/request-checks";
 import { dependsOnMany } from "./ready.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { findTask } from "./tasks-router.ts";
