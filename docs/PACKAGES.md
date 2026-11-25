@@ -1,88 +1,128 @@
 # Package structure
 
-Status: agreed direction (15 Nov 2026), not built yet. Nothing has moved. This page says where
-code goes as sky-brain grows, so each concern gets its own package as it is built.
+Status: plan, updated 25 Nov 2026 (first written 15 Nov). shammai wants the split so each feature
+can be tested on its own and stays separate from the others. Nothing has moved yet. Each step in
+"How we get there" is its own PR and changes no behaviour.
 
 ## The idea
 
-sky-brain stays one repo, one deploy and one Postgres database. Inside the repo, the code is split
-into packages with clear borders. That gives each concern its own place, the way Zakai's projects
-are each focused on one job, without separate repos or services. Those cost a lot for a one-person
-project whose parts all share one database, one trust rule (D22) and one permission model.
+sky-brain stays one repo, one Vercel deploy and one Postgres database. Inside the repo, the server
+code is split into workspace packages with clear borders and a one-way dependency order. A package
+can be type-checked and tested alone (`pnpm --filter @sky-brain/memory test`), and a lint rule
+refuses imports that break the order.
+
+Separate repos or services stay out: every part shares one database, one trust rule and one
+permission model, and one person runs it.
+
+## Where the code is today (25 Nov)
+
+Everything lives in folders under `apps/server/src`. Lines of code, without tests:
+
+| Folder | Lines | What it is |
+| --- | --- | --- |
+| `tasks` | 2,050 | goals, the task DAG, claim and lease, reports, goal documents |
+| `auth` | 1,960 | Perminister sign-in, Better Auth, OAuth for MCP clients |
+| `db` | 1,360 | the one Drizzle schema, client, audit log, migrations |
+| `memory` | 1,270 | entries, versions, comments, the context packet |
+| `mcp` | 1,130 | the MCP server and every tool |
+| `testing` | 990 | the app test harness (fake Perminister, seeds) |
+| `run-tokens`, `devices` | 1,100 | devices that pull approved tasks (D20) and their run tokens |
+| `approvals`, `push` | 720 | approval requests (D32) and web push alerts (D36) |
+| `agents`, `projects`, `actor`, `guards`, `scope`, `http` | 1,080 | small shared pieces |
+
+Folders already give each feature a place, but nothing stops one from reaching into another, and
+some already do:
+
+- **memory and tasks import each other.** Tasks use memory (goal documents, reports, the packet
+  at claim). Memory imports `tasks/write-guards.ts` (secret scan, quarantine) and a helper from
+  `tasks/goals-router.ts`. Those helpers are not about tasks; they are in the wrong folder.
+- **`tasks/goals-router.ts` is a shared toolbox.** `projects`, `push` and `approvals` import its
+  `boardWriteLimit`, `parseRequest`, `pathId` and `assertWriter`.
+- **`db` tests import `tasks`** (`taskTextHash`).
+- **Most tests boot the whole app** through `testing/harness.ts`, with sign-in. That is why a
+  memory change today runs against auth, MCP and the board.
+
+## The packages
 
 ```
-apps/web  ──HTTP──▶  apps/server  ──▶  packages/memory ─┐
-(frontend)           (backend)    ──▶  packages/board  ─┼──▶ db handle from the server ──▶ Postgres
-                                  ──▶  packages/shared ◀┘
+packages/shared      types and zod schemas (exists)
+      ▲
+packages/db          schema, client, migrations, audit, a PGlite test db
+      ▲
+packages/kernel      actor, guards (incl. secret scan), scope, http helpers
+      ▲
+packages/memory      entries, versions, comments, packet
+      ▲
+packages/board       goals, tasks, projects, goal documents, devices, run tokens
+      ▲
+packages/approvals   approval requests and web push
+      ▲
+apps/server          auth, agents, MCP, config, app wiring, Vercel entry, migrate CLI
+apps/web             React app; talks to the server over HTTP only
 ```
 
-## The pieces
+Each arrow means "may import". Nothing imports upward.
 
-### `apps/server`: the backend
+- **`packages/db`.** One schema and one migration history, as today, so there is never a second
+  migration stream for the shared database. It also exports `createTestDb()` (PGlite, migrated)
+  so every package can test against a real database without the app.
+- **`packages/kernel`.** The pieces every feature needs: the actor (who is calling), guards
+  (identity, membership, the secret scan and quarantine now in `tasks/write-guards.ts`), scope,
+  and the Express helpers now in `tasks/goals-router.ts` and `http/`.
+- **`packages/memory`, `packages/board`, `packages/approvals`.** Each holds its service code and
+  its Express router. They receive a db handle and an actor; they never read environment
+  variables or open a connection. Auth, MCP and sign-in stay out of them.
+- **`apps/server`.** Reads the environment, opens the database, signs people in, registers MCP
+  tools (and later the book's `defineTool` registry) and mounts the routers. Agents stay here
+  because they are about who is connected, which is auth's job.
 
-- Express on Vercel: REST (`/api/v1`), MCP (`/mcp`) and auth (`/api/auth`, Perminister and
-  Better Auth). It also serves the web build.
-- **The only piece that connects to Postgres.** It reads `DATABASE_URL`, opens the connection and
-  passes a db handle to the feature packages.
-- Owns everything that is about the outside world: routes, MCP tool registration, sign-in,
-  tokens, devices, the actor (who is calling), rate limits and config.
-- Owns the one Drizzle schema and the one migration history (`apps/server/src/db`), so there is
-  never more than one migration stream for the shared database.
-- Enforces the hard rules in `CLAUDE.md` at the edge (identity from the token only, membership
-  filter, secret scan). Feature packages enforce them again on their own writes.
+## Tests
 
-### `apps/web`: the frontend
-
-- The React app (Vite).
-- Talks to the backend over HTTP only. It never imports a feature package and never touches the
-  database.
-- May import types and zod schemas from `packages/shared`.
-
-### `packages/shared`: shared types (exists today)
-
-- Types and zod schemas used by the server, the web app and Pathly.
-- No logic that reads or writes data, no database, no Node-only code (the web app imports it).
-
-### `packages/memory`: the brain's memory (planned, build plan step 1)
-
-- Entries with `kind` and trust level (D22), the append-only `entry_versions` table, links and
-  `supersedes`, as-of queries.
-- Later: hybrid search (step 4), the context packet and cognitive signals (step 5), and the logic
-  the Consolidator uses (step 6).
-- Gets a db handle and an actor from the server. It knows nothing about HTTP, MCP or sign-in.
-- Owns the trust rule: agents write at `proposed` (external text at `quarantined`), and only a
-  person raises trust or changes a kind.
-
-### `packages/board`: the task board (planned)
-
-- Projects, goals, the task DAG, claim and lease, reports, and question items that wake a role.
-- Today this code lives in `apps/server/src/tasks` (and the board part of `apps/server/src/mcp`).
-  It moves into the package the next time it needs real work, not as a separate rewrite.
-- Gets a db handle and an actor from the server. It knows nothing about HTTP, MCP or sign-in.
-- May call `packages/memory` through its exported functions (for example, to link a finished
-  goal to the memory it produced).
-
-### Later, if needed
-
-- `packages/stewards`: Steward jobs (Curator, Consolidator, Archivist, Auditor) once step 6
-  starts. They run as board jobs, so this may simply stay inside `packages/board` and
-  `packages/memory`. Decide then.
-- A piece moves into its **own repo** only once it is stable and another app wants it. Two likely
-  candidates: the benchmark harness (step 0), and a bridge that lets Perminister sign people in
-  to MCP clients.
+- **Package tests** call the service directly with `createTestDb()` and a made-up actor. Each
+  hard rule a package owns (membership filter, agents cannot approve, secret scan) keeps its
+  allowed and refused test inside that package.
+- **App tests** stay in `apps/server`: sign-in, OAuth, MCP over HTTP, and one end-to-end path per
+  feature. They keep using `testing/harness.ts`.
+- CI runs every package; locally `pnpm --filter <package> test` runs one.
 
 ## Border rules
 
-1. `apps/web` talks to `apps/server` over HTTP only.
-2. Only `apps/server` opens a database connection or reads environment variables. Feature
-   packages receive a db handle and an actor as arguments.
-3. Feature packages never import from `apps/*`.
-4. Packages import each other only through what a package exports in its `package.json`
-   (`@sky-brain/memory`, `@sky-brain/board`, `@sky-brain/shared`), never through a path into
-   another package's `src`.
-5. No import cycles: `board` may use `memory`; `memory` does not use `board`. Both may use
-   `shared`.
-6. Tables live in the one server schema. Each table has one owning package that writes it; other
-   packages read it through that package's functions, not with their own queries.
-7. Each package has its own tests (Vitest with PGlite), including the workspace-isolation test
-   that `CLAUDE.md` asks for on every new query.
+1. `apps/web` talks to `apps/server` over HTTP only. It may import `packages/shared`.
+2. Only `apps/server` opens a database connection or reads environment variables.
+3. Packages never import from `apps/*`, and import each other only in the order above, through
+   what a package exports in its `package.json`.
+4. No import cycles. ESLint (`no-restricted-imports` per package) refuses a wrong import, and
+   `pnpm health` runs it.
+5. Every table is owned by one package; another package reads it only through the owner's
+   exported functions.
+
+## How we get there
+
+Each step is one PR, keeps every test green and changes no behaviour.
+
+0. **Untangle in place.** Move the secret scan and quarantine helpers from `tasks/write-guards.ts`
+   to `guards/`, the router helpers from `tasks/goals-router.ts` to `http/`, and `taskTextHash`
+   out of the `db` test's way. Add the lint rule for the folder order. After this, memory no
+   longer imports tasks.
+1. **`packages/db`**, with `createTestDb()`.
+2. **`packages/kernel`.**
+3. **`packages/memory`**, and its service tests moved to `createTestDb()`.
+4. **`packages/board`** (tasks, projects, goal documents, devices, run tokens).
+5. **`packages/approvals`** (approvals and push).
+
+Vercel needs no change: esbuild already bundles workspace packages into the function, and
+`migrate-cli.ts` stays in `apps/server`.
+
+## Working alongside the book and the benchmark
+
+The benchmark (`bench/`) runs outside the server, so the split does not touch it. The thin book
+adds `defineTool` and tool descriptions in `apps/server/src/mcp`, which stays in the server. The
+moves that could clash are memory's `packet.ts` (the book's `context` tool) and the MCP files
+that import memory and tasks; do steps 3 and 4 when no book PR is open on those files.
+
+## Later, if needed
+
+- `packages/stewards` for Steward jobs (Curator, Consolidator, Archivist, Auditor) when build
+  step 6 starts. They may simply live in `packages/board` and `packages/memory`.
+- A package moves to its own repo only once it is stable and another app (for example Pathly)
+  wants it.
