@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { runTokens } from "@sky-brain/db/schema";
 import { testClient } from "../testing/harness.ts";
 import { mintRunToken, withToken } from "../testing/task-seeds.ts";
-import { hashSecretToken } from "./secret-token.ts";
+import { hashSecretToken } from "@sky-brain/kernel/run-tokens/secret-token";
 import {
   device,
   expectError,

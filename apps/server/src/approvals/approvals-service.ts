@@ -11,7 +11,7 @@ import {
 } from "@sky-brain/shared/approvals";
 import type { Role } from "@sky-brain/shared/enums";
 import { and, count, desc, eq, gt, inArray, max } from "drizzle-orm";
-import { auditActor, personOf } from "../actor/keys.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import {
@@ -22,9 +22,9 @@ import {
   tasks,
   type PinnedItem,
 } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { findEntry, setTrustInTx } from "../memory/entries-service.ts";
-import { memberRole } from "../scope/member-role.ts";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import { approveGoal, findGoal } from "../tasks/goals-service.ts";
 
 export type ApprovalRow = typeof approvalRequests.$inferSelect;

@@ -3,7 +3,7 @@
 import type { Actor, AgentProfileRef } from "@sky-brain/shared/actor";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { asc, eq } from "drizzle-orm";
-import { personOf } from "../actor/keys.ts";
+import { personOf } from "@sky-brain/kernel/actor/keys";
 import type { Db } from "@sky-brain/db/client";
 import { members, user, workspaces } from "@sky-brain/db/schema";
 

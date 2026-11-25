@@ -1,8 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { invites, members, workspaces } from "@sky-brain/db/schema";
-import { resolveScope } from "../scope/resolve-scope.ts";
-import { memberRole } from "../scope/member-role.ts";
+import { resolveScope } from "@sky-brain/kernel/scope/resolve-scope";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import {
   startAuthTestServer,
   type AuthTestServer,

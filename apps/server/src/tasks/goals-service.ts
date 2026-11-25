@@ -21,12 +21,12 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import { auditActor, personOf } from "../actor/keys.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { goals, members, taskDeps, tasks } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
-import { memberRole } from "../scope/member-role.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
+import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import { liveTextHash } from "./eligibility.ts";
 import { countTasks, toWireGoal, toWireTask, type GoalRow } from "./wire.ts";
 

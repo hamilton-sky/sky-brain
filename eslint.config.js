@@ -43,6 +43,39 @@ const layerRules = serverLayers.map((layer, i) => {
   };
 });
 
+// Package order (docs/PACKAGES.md): shared, db, kernel, memory, board, approvals. A package
+// imports only packages before it, and never apps/*.
+const packageOrder = ["shared", "db", "kernel", "memory", "board", "approvals"];
+const packageRules = packageOrder.map((pkg, i) => ({
+  files: [`packages/${pkg}/src/**/*.ts`],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            group: [
+              ...packageOrder
+                .slice(i + 1)
+                .flatMap((later) => [
+                  `@sky-brain/${later}`,
+                  `@sky-brain/${later}/*`,
+                ]),
+              "@sky-brain/server",
+              "@sky-brain/server/*",
+              "@sky-brain/web",
+              "@sky-brain/web/*",
+              "**/apps/*",
+            ],
+            message:
+              "Package order (docs/PACKAGES.md): import only earlier packages, never apps/*.",
+          },
+        ],
+      },
+    ],
+  },
+}));
+
 export default tseslint.config(
   {
     ignores: [
@@ -94,27 +127,5 @@ export default tseslint.config(
     },
   },
   ...layerRules,
-  {
-    // Packages never import from apps/* (docs/PACKAGES.md border rule 3); db needs only shared.
-    files: ["packages/*/src/**/*.ts"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "@sky-brain/server",
-                "@sky-brain/server/*",
-                "@sky-brain/web",
-                "@sky-brain/web/*",
-                "**/apps/*",
-              ],
-              message: "Packages never import from apps/* (docs/PACKAGES.md).",
-            },
-          ],
-        },
-      ],
-    },
-  },
+  ...packageRules,
 );

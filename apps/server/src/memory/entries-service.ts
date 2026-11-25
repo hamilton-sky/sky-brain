@@ -25,7 +25,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { auditActor, personOf } from "../actor/keys.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import {
@@ -34,9 +34,12 @@ import {
   members,
   memories,
 } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
-import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
-import { detectInjection } from "../guards/quarantine.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
+import {
+  heldBecause,
+  refuseSecrets,
+} from "@sky-brain/kernel/guards/write-guards";
+import { detectInjection } from "@sky-brain/kernel/guards/quarantine";
 import {
   defaultMemory,
   findMemory,

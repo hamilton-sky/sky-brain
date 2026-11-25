@@ -4,7 +4,7 @@ import express from "express";
 import { request as httpRequest, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { errorHandler } from "../http/error-handler.ts";
+import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import {
   closeTestDb,
   createTestDb,
@@ -12,9 +12,9 @@ import {
   type Db,
   type TestServer,
 } from "../testing/harness.ts";
-import { actorKey, auditActor, personOf } from "./keys.ts";
-import { actorMiddleware, actorOf } from "./middleware.ts";
-import { requireHuman } from "./require-human.ts";
+import { actorKey, auditActor, personOf } from "@sky-brain/kernel/actor/keys";
+import { actorMiddleware, actorOf } from "@sky-brain/kernel/actor/middleware";
+import { requireHuman } from "@sky-brain/kernel/actor/require-human";
 
 const alice: Actor = { kind: "human", user_id: "alice" };
 const builder: Actor = {

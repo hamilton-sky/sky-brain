@@ -11,20 +11,27 @@ import {
 } from "@sky-brain/shared/tasks";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Request, RequestHandler } from "express";
-import { auditActor, personOf } from "../actor/keys.ts";
-import { actorOf } from "../actor/middleware.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { taskDeps, tasks } from "@sky-brain/db/schema";
-import { HttpError } from "../http/http-error.ts";
-import { assertRunScope } from "../run-tokens/run-scope.ts";
-import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
+import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
+import {
+  assertWriter,
+  parseRequest,
+  pathId,
+} from "@sky-brain/kernel/http/request-checks";
 import { findGoal } from "./goals-service.ts";
 import { taskTextHash } from "./task-text.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { toWireTask, type GoalRow } from "./wire.ts";
-import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
+import {
+  heldBecause,
+  refuseSecrets,
+} from "@sky-brain/kernel/guards/write-guards";
 
 const badDependency = (i: number) =>
   new HttpError(

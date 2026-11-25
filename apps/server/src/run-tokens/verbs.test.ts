@@ -11,7 +11,7 @@ import {
   useRunTokenFixture,
   world,
 } from "./tests/fixture.ts";
-import { verbFor } from "./verbs.ts";
+import { verbFor } from "@sky-brain/kernel/run-tokens/verbs";
 
 const ctx = useRunTokenFixture();
 

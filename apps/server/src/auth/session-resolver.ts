@@ -2,7 +2,7 @@
 // the cookie is handed to Better Auth: never a bearer token, never the body (hard rule 2).
 import { ActorSchema } from "@sky-brain/shared/actor";
 import { fromNodeHeaders } from "better-auth/node";
-import type { ActorResolver } from "../actor/middleware.ts";
+import type { ActorResolver } from "@sky-brain/kernel/actor/middleware";
 import type { Auth } from "./auth.ts";
 
 export function sessionActorResolver(auth: Auth): ActorResolver {

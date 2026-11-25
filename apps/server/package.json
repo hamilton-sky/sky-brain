@@ -19,6 +19,7 @@
     "@electric-sql/pglite": "0.5.14",
     "@modelcontextprotocol/server": "2.4.0",
     "@sky-brain/db": "workspace:*",
+    "@sky-brain/kernel": "workspace:*",
     "@sky-brain/shared": "workspace:*",
     "@vercel/functions": "3.10.4",
     "better-auth": "1.7.15",

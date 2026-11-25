@@ -5,19 +5,19 @@
 import type { Actor } from "@sky-brain/shared/actor";
 import { ApprovalCreateRequestSchema } from "@sky-brain/shared/approvals";
 import express, { type Request, type Router } from "express";
-import { actorOf } from "../actor/middleware.ts";
-import { requireHuman } from "../actor/require-human.ts";
-import { runContextOf } from "../actor/run-context.ts";
+import { actorOf } from "@sky-brain/kernel/actor/middleware";
+import { requireHuman } from "@sky-brain/kernel/actor/require-human";
+import { runContextOf } from "@sky-brain/kernel/actor/run-context";
 import type { Db } from "@sky-brain/db/client";
-import type { RateLimiter } from "../guards/ratelimit.ts";
-import { HttpError } from "../http/http-error.ts";
+import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
+import { HttpError } from "@sky-brain/kernel/http/http-error";
 import type { Push } from "../push/push.ts";
 import {
   assertWriter,
   boardWriteLimit,
   parseRequest,
   pathId,
-} from "../http/request-checks.ts";
+} from "@sky-brain/kernel/http/request-checks";
 import {
   approvalWire,
   createApproval,
