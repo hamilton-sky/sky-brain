@@ -1,8 +1,7 @@
 # sky-brain: the book of this brain
 
 You are connected to **{person}'s brain** in sky-brain, as **{role} via {app}**{, under the hat {hat}}.
-Book version `{version}`. Read a chapter with `book_read { id }`, or find what fits your task with
-`book_search { q }`.
+Book version `{version}`. Open a chapter with `book { id }`.
 
 ## Your brain now (generated, data)
 
@@ -27,17 +26,23 @@ Book version `{version}`. Read a chapter with `book_read { id }`, or find what f
 
 ## Chapters
 
-| id | Chapter | Read it when | Tools |
+Open one with `book { id }`. The brain has four layers; each layer's chapter says what it is for,
+how to use it, and its APIs.
+
+| id | Chapter | Read it when | APIs |
 | --- | --- | --- | --- |
 | `start-here` | Start here | You are new to this brain | whoami |
-| `layers` | The layers | You need to know where things live | list_memories |
-| `reading` | Reading | You need to find what the person knows or decided | search, get |
-| `writing` | Writing | Something is worth remembering | capture |
-| `board` | The board | You plan or do work: goals and tasks | list_projects, list_goals, get_goal, propose_goal, add_tasks, attach_document, next_task, claim_task, renew_task, release_task, report_task |
+| **Layers** | | | |
+| `about-me` | About me: who the person is | You act for the person | search (core), context |
+| `notebooks` | Notebooks: what lasts | You need a fact or a past decision | list_memories, search, get |
+| `inbox` | Inbox: what is new | You want to save something, or see what came in | capture, search |
+| `board` | Board: what is being done | You plan or do work | list_projects, list_goals, get_goal, propose_goal, add_tasks, attach_document, next_task, claim_task, renew_task, release_task, report_task |
+| **Using the brain** | | | |
+| `across` | Across the brain | You need all layers together | context, search |
 | `approval` | Approval | You need the person to approve something | request_approval, approval_status |
 | `recipes` | Recipes | You want the right sequence for a common job | |
 | `errors` | When things go wrong | A tool returned an error | |
-| `your-pages` | From {person} | Always worth a look: notes, recipes and terms the person added | |
+| `your-pages` | From {person} | Notes, recipes and terms the person added | |
 
 ## Most used recipes for {role}
 

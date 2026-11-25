@@ -3,11 +3,14 @@
 The text a connected model reads, for the tools sky-brain has today (main, plus `attach_document`
 from PR #31). The design is in [../BOOK.md](../BOOK.md).
 
-| File | What `book` / `book_read` returns |
+| File | What `book` returns |
 | --- | --- |
 | `00-contents.md` | `book`: the contents, as built for one caller |
-| `01-start-here.md` ... `08-when-things-go-wrong.md` | `book_read { id: "<chapter>" }` |
-| `09-your-pages.md` | the person's pages (examples only) |
+| `01-start-here.md` | `book { id: "start-here" }` |
+| `02-about-me.md` ... `05-board.md` | one chapter per layer: what it is for, how to use it, its APIs |
+| `06-across-the-brain.md` | reading all layers together |
+| `07-approval.md` ... `09-when-things-go-wrong.md` | approval, recipes, errors |
+| `10-your-pages.md` | the person's pages (examples only) |
 
 Sections marked **(generated)** are built from the tool registry when the book is served; they are
 written out here so the draft reads as the model will see it. Values in `{braces}` in the contents are

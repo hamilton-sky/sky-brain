@@ -192,7 +192,7 @@ export interface RpcAnswer {
 }
 
 /** A JSON-RPC answer from an SSE body (`event: message\ndata: {...}`) or a JSON one. */
-function rpcResult(res: BrowserResponse): RpcAnswer {
+export function rpcResult(res: BrowserResponse): RpcAnswer {
   if (res.body) return res.body as RpcAnswer;
   const data = res.text
     .split("\n")

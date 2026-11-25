@@ -9,6 +9,7 @@ import {
 } from "@sky-brain/shared/comments";
 import {
   CaptureRequestSchema,
+  ContextQuerySchema,
   MemoriesListQuerySchema,
   MemoryCreateRequestSchema,
   ReviseRequestSchema,
@@ -50,6 +51,7 @@ import {
   ownWorkspace,
   workspaceRoles,
 } from "./memories.ts";
+import { packetFor } from "./packet.ts";
 import { entryWire, versionWire } from "./wire.ts";
 
 export interface MemoryRouterOptions {
@@ -137,6 +139,17 @@ export function entriesRouter({
         ...entryWire(h.entry, false),
         rank: h.rank,
       })),
+    });
+  });
+
+  // The context packet for any question (BOOK.md 13), in the caller's own brain by default.
+  // Before "/:id", which would take "context" as an id.
+  router.get("/context", async (req, res) => {
+    const query = validate(ContextQuerySchema, req.query);
+    const actor = actorOf(req);
+    const workspaceId = query.workspace_id ?? (await ownWorkspace(db, actor));
+    res.status(200).json({
+      context: await packetFor(db, actor, workspaceId, query.q, now()),
     });
   });
 

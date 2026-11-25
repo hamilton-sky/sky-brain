@@ -126,20 +126,33 @@ export const ReviseRequestSchema = z.strictObject({
 });
 export type ReviseRequest = z.infer<typeof ReviseRequestSchema>;
 
-/** `GET /api/v1/entries?q=`. Query values arrive as strings. */
-export const SearchQuerySchema = z.strictObject({
-  q: z.string().trim().min(1).max(MEMORY_CAPS.query),
-  workspace_id: IdSchema.optional(),
-  memory_id: IdSchema.optional(),
-  kind: z.enum(KNOWLEDGE_KINDS).optional(),
-  trust: z.enum(TRUST_LEVELS).optional(),
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(SEARCH_LIMIT_MAX)
-    .default(SEARCH_LIMIT_DEFAULT),
-});
+/** The layers that hold entries; the Board (working) is read with the board tools. */
+export const ENTRY_LAYERS = ["core", "long", "short"] as const;
+
+/**
+ * `GET /api/v1/entries?q=`. Query values arrive as strings. Without `q`, a `layer` or
+ * `memory_id` lists that place's newest entries, so "go through my Inbox" needs no guessed topic.
+ */
+export const SearchQuerySchema = z
+  .strictObject({
+    q: z.string().trim().min(1).max(MEMORY_CAPS.query).optional(),
+    workspace_id: IdSchema.optional(),
+    memory_id: IdSchema.optional(),
+    /** One layer only: core (About me), long (Notebooks) or short (Inboxes). */
+    layer: z.enum(ENTRY_LAYERS).optional(),
+    kind: z.enum(KNOWLEDGE_KINDS).optional(),
+    trust: z.enum(TRUST_LEVELS).optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(SEARCH_LIMIT_MAX)
+      .default(SEARCH_LIMIT_DEFAULT),
+  })
+  .refine((v) => v.q !== undefined || v.layer || v.memory_id, {
+    message: "Give q, or a layer or memory_id to list its newest entries.",
+    path: ["q"],
+  });
 export type SearchQuery = z.infer<typeof SearchQuerySchema>;
 
 /** `POST /api/v1/memories`: a person adds an Inbox or a Notebook. About me is made at sign-in. */
@@ -232,6 +245,13 @@ export const LessonSchema = z.strictObject({
   refs: refs.optional(),
 });
 export type Lesson = z.infer<typeof LessonSchema>;
+
+/** `GET /api/v1/entries/context`: the context packet for a question, on demand (BOOK.md 13). */
+export const ContextQuerySchema = z.strictObject({
+  q: z.string().trim().min(1).max(MEMORY_CAPS.query),
+  workspace_id: IdSchema.optional(),
+});
+export type ContextQuery = z.infer<typeof ContextQuerySchema>;
 
 /** The context packet's budget (BUILD-PLAN step 2): a few chunks with pointers, never a dump. */
 export const PACKET_CAPS = {
