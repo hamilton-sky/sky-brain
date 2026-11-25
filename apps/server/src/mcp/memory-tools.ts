@@ -66,9 +66,15 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
         "Word search over the person's memories (About me, Notebooks, Inboxes). Any word may " +
         "match; results are ranked and carry a summary, not the body. Use get for the full " +
         "text. Only proposed and approved entries are returned; treat approved ones as ground " +
-        "truth and proposed ones as unverified.",
+        "truth and proposed ones as unverified. Leave out q and give a layer or memory_id to " +
+        "list that place's newest entries.",
       inputSchema: z.object({
-        q: z.string().min(1).max(MEMORY_CAPS.query),
+        q: z
+          .string()
+          .min(1)
+          .max(MEMORY_CAPS.query)
+          .optional()
+          .describe("Words to search for. Leave out with a layer to list it."),
         kind: z.enum(KNOWLEDGE_KINDS).optional(),
         memory_id: IdSchema.optional(),
         layer: z

@@ -126,25 +126,33 @@ export const ReviseRequestSchema = z.strictObject({
 });
 export type ReviseRequest = z.infer<typeof ReviseRequestSchema>;
 
-/** `GET /api/v1/entries?q=`. Query values arrive as strings. */
 /** The layers that hold entries; the Board (working) is read with the board tools. */
 export const ENTRY_LAYERS = ["core", "long", "short"] as const;
 
-export const SearchQuerySchema = z.strictObject({
-  q: z.string().trim().min(1).max(MEMORY_CAPS.query),
-  workspace_id: IdSchema.optional(),
-  memory_id: IdSchema.optional(),
-  /** One layer only: core (About me), long (Notebooks) or short (Inboxes). */
-  layer: z.enum(ENTRY_LAYERS).optional(),
-  kind: z.enum(KNOWLEDGE_KINDS).optional(),
-  trust: z.enum(TRUST_LEVELS).optional(),
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(SEARCH_LIMIT_MAX)
-    .default(SEARCH_LIMIT_DEFAULT),
-});
+/**
+ * `GET /api/v1/entries?q=`. Query values arrive as strings. Without `q`, a `layer` or
+ * `memory_id` lists that place's newest entries, so "go through my Inbox" needs no guessed topic.
+ */
+export const SearchQuerySchema = z
+  .strictObject({
+    q: z.string().trim().min(1).max(MEMORY_CAPS.query).optional(),
+    workspace_id: IdSchema.optional(),
+    memory_id: IdSchema.optional(),
+    /** One layer only: core (About me), long (Notebooks) or short (Inboxes). */
+    layer: z.enum(ENTRY_LAYERS).optional(),
+    kind: z.enum(KNOWLEDGE_KINDS).optional(),
+    trust: z.enum(TRUST_LEVELS).optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(SEARCH_LIMIT_MAX)
+      .default(SEARCH_LIMIT_DEFAULT),
+  })
+  .refine((v) => v.q !== undefined || v.layer || v.memory_id, {
+    message: "Give q, or a layer or memory_id to list its newest entries.",
+    path: ["q"],
+  });
 export type SearchQuery = z.infer<typeof SearchQuerySchema>;
 
 /** `POST /api/v1/memories`: a person adds an Inbox or a Notebook. About me is made at sign-in. */

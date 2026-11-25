@@ -35,6 +35,16 @@ prompt with the same name, where the client supports prompts.
 1. `capture { kind: "fact" or "decision", title, body, summary }` (the summary shows on the card)
 2. `attach_document { goal_id, entry_id }`
 
+## cannot-do: a task you hold cannot be done
+1. `report_task { outcome: "failed", reason }`: never `release_task`, which puts it back as ready
+2. Only then `add_tasks` for what is missing, on the same goal
+
+## check-inbox: go through the Inbox and find contradictions
+1. `search { layer: "short" }` with no `q`: the Inbox's newest entries
+2. For each entry, `context { q: "<its topic>" }` to see About me, the Notebooks and the rules
+3. Where a proposed entry disagrees with an approved one, `capture { kind: "observation", refs: [both ids] }`
+4. Tell the person which side is approved
+
 ## end-of-task-lessons: close a task and teach the next one
 1. `report_task { outcome: "done", proof, lessons: [≤3, each with a summary] }`
 2. If a lesson is about how to use sky-brain itself: `propose_book_page { kind: "note", ... }`

@@ -464,8 +464,14 @@ export async function searchEntries(
   servedOnly = false,
 ): Promise<{ entry: EntryRow; rank: number }[]> {
   if (query.workspace_id) await workspaceRoles(db, actor, query.workspace_id);
-  const tsquery = sql`to_tsquery('simple', replace(plainto_tsquery('simple', sb_norm(${query.q}))::text, '&', '|'))`;
-  const rank = sql<number>`ts_rank_cd(${entries.search}, ${tsquery})`;
+  // No q: list the layer's or memory's newest entries (rank 0, newest first).
+  const tsquery =
+    query.q === undefined
+      ? undefined
+      : sql`to_tsquery('simple', replace(plainto_tsquery('simple', sb_norm(${query.q}))::text, '&', '|'))`;
+  const rank = tsquery
+    ? sql<number>`ts_rank_cd(${entries.search}, ${tsquery})`
+    : sql<number>`0::real`;
   const trustFilter =
     actor.kind === "agent" || servedOnly
       ? and(
@@ -483,7 +489,7 @@ export async function searchEntries(
     .innerJoin(members, memberOfEntryWorkspace(actor))
     .where(
       and(
-        sql`${entries.search} @@ ${tsquery}`,
+        tsquery ? sql`${entries.search} @@ ${tsquery}` : undefined,
         or(ne(memories.layer, "core"), eq(members.role, "owner")),
         query.workspace_id
           ? eq(entries.workspaceId, query.workspace_id)
@@ -494,7 +500,7 @@ export async function searchEntries(
         trustFilter,
       ),
     )
-    .orderBy(desc(rank), desc(entries.seq))
+    .orderBy(...(tsquery ? [desc(rank)] : []), desc(entries.seq))
     .limit(query.limit);
   return rows;
 }

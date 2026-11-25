@@ -45,7 +45,7 @@ const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
     useWhen:
       "you are about to do a task. Keep claim_seq for renew, release and report.",
     pitfalls:
-      "always end a claim: report_task when finished or failed, release_task to give it back.",
+      "always end a claim with report_task: outcome done when the work is finished, outcome failed (with a reason) when it cannot be done. Do this before planning follow-up tasks. release_task only when you stop without finishing or failing.",
   },
   renew_task: {
     useWhen:
@@ -53,14 +53,15 @@ const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
   },
   release_task: {
     useWhen:
-      "you hold a task but will not finish it: it goes back to ready and no attempt is counted.",
-    pitfalls: "not report_task failed, which counts an attempt.",
+      "you hold a task and stop before finishing it, for someone else to pick up: it goes back to ready, NOT done.",
+    pitfalls:
+      "never to mark a task done (use report_task outcome done) or to say it cannot be done (use report_task outcome failed with the reason).",
   },
   report_task: {
     useWhen:
-      "a task you hold is finished (outcome done, with proof) or could not be done (outcome failed, with reason).",
+      "a task you hold is finished (outcome done, with proof) or cannot be done (outcome failed, with the reason). Claim it first with claim_task.",
     pitfalls:
-      "to give a task back without a failure, use release_task instead.",
+      "when a task cannot be done, report it failed before adding replacement tasks with add_tasks.",
   },
   capture: {
     useWhen:
@@ -70,7 +71,7 @@ const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
   },
   search: {
     useWhen:
-      "looking up what the brain knows: facts about the person (About me), past decisions (Notebooks), recent items (Inbox).",
+      'looking up what the brain knows: facts about the person (About me), past decisions (Notebooks), recent items (Inbox). To go through a whole layer ("my inbox"), leave out q and pass layer.',
     pitfalls:
       "results are summaries: use get for the full body or the history. Weigh trust: approved is truth, proposed is a guess. For one layer pass layer (core, long or short); for one Notebook, its memory_id from list_memories. For context across layers, use context.",
   },

@@ -107,7 +107,7 @@ export const acrossTasks: BenchTask[] = [
     prompt: () =>
       "Go through my inbox and find anything that contradicts what is approved elsewhere in my brain. For each contradiction, save an observation that cites both entries, and tell me which side is approved.",
     async gold(c, fx) {
-      await json(c, "search", { q: "coffee", layer: "short" });
+      await json(c, "search", { layer: "short" });
       await json(c, "context", { q: "coffee milk black" });
       await json(c, "capture", {
         kind: "observation",

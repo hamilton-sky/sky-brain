@@ -96,6 +96,34 @@ describe("search by layer", () => {
       expect(e.layer).toBe("long");
   });
 
+  it("lists a layer's newest entries when there is no q", async () => {
+    const inbox = await server
+      .as(aliceAgent)
+      .get("/api/v1/entries?layer=short");
+    expect(inbox.status).toBe(200);
+    const titles = (
+      inbox.body.entries as { title: string; layer: string }[]
+    ).map((e) => e.title);
+    expect(titles).toContain("Recipe site idea");
+    for (const e of inbox.body.entries as { layer: string }[])
+      expect(e.layer).toBe("short");
+  });
+
+  it("refuses a search with neither q nor a layer", async () => {
+    const res = await server.as(alice).get("/api/v1/entries");
+    expect(res.status).toBe(400);
+  });
+
+  it("listing a layer never shows another person's brain", async () => {
+    const res = await server.as(bob).get("/api/v1/entries?layer=long");
+    expect(res.status).toBe(200);
+    expect(res.body.entries).toEqual([]);
+    const theirs = await server
+      .as(bob)
+      .get(`/api/v1/entries?layer=long&workspace_id=${wsA}`);
+    expect(theirs.status).toBe(404);
+  });
+
   it("refuses an unknown layer", async () => {
     const res = await server
       .as(alice)

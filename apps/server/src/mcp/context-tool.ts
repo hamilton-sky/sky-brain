@@ -21,7 +21,8 @@ export function registerContextTool(server: McpServer, call: BoardCall): void {
         "Use when: a request needs the person's context from several layers at once (planning " +
         "around their preferences, past decisions and rules), or before you act for them.\n" +
         "Pitfalls: it reads memory only; the Board is read with list_goals and get_goal. For one " +
-        "layer, use search with layer.",
+        "layer, use search with layer. To find contradictions, list the Inbox first (search " +
+        "with layer short and no q), then call context on each entry's topic.",
       inputSchema: z.object({
         q: z
           .string()
