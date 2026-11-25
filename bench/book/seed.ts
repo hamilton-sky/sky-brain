@@ -8,7 +8,7 @@ import {
   entryVersions,
   memories,
 } from "../../packages/db/src/schema.ts";
-import { createRateLimiter } from "../../apps/server/src/guards/ratelimit.ts";
+import { createRateLimiter } from "../../packages/kernel/src/guards/ratelimit.ts";
 import { boardDispatcher } from "../../apps/server/src/mcp/board-dispatch.ts";
 import {
   createTestDb,
