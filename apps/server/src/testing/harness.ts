@@ -26,7 +26,7 @@ import {
   projects,
   workspaces,
 } from "@sky-brain/db/schema";
-import { createDefaultMemories } from "../memory/memories.ts";
+import { createDefaultMemories } from "@sky-brain/memory/memories";
 
 export type { Db };
 

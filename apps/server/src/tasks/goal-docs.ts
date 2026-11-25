@@ -11,7 +11,7 @@ import { personOf } from "@sky-brain/kernel/actor/keys";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { entries, goalDocuments } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
-import { findEntry } from "../memory/entries-service.ts";
+import { findEntry } from "@sky-brain/memory/entries-service";
 import { audit } from "./goals-service.ts";
 import type { GoalRow } from "./wire.ts";
 

@@ -22,7 +22,7 @@ import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { goals, taskDeps, tasks } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
-import { captureInTx } from "../memory/entries-service.ts";
+import { captureInTx } from "@sky-brain/memory/entries-service";
 import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { LEASE_SECONDS } from "./claim.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";

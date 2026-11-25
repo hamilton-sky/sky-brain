@@ -12,7 +12,7 @@ import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import type { Push } from "../push/push.ts";
 import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { approvalsRouter } from "../approvals/approvals-router.ts";
-import { entriesRouter, memoriesRouter } from "../memory/memory-router.ts";
+import { entriesRouter, memoriesRouter } from "@sky-brain/memory/memory-router";
 import { projectsRouter } from "../projects/projects-router.ts";
 import { goalsRouter } from "../tasks/goals-router.ts";
 import { tasksRouter } from "../tasks/tasks-router.ts";

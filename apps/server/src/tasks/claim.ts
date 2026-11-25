@@ -13,7 +13,7 @@ import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { tasks } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
-import { buildPacket } from "../memory/packet.ts";
+import { buildPacket } from "@sky-brain/memory/packet";
 import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { overlaps } from "./file-overlap.ts";
