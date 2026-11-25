@@ -4,8 +4,13 @@
 // run again on the same database.
 import { inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { closeDb, createPostgresDb, migrateDb, type Db } from "../db/client.ts";
-import { tasks } from "../db/schema.ts";
+import {
+  closeDb,
+  createPostgresDb,
+  migrateDb,
+  type Db,
+} from "@sky-brain/db/client";
+import { tasks } from "@sky-brain/db/schema";
 import { expectError, world } from "../run-tokens/tests/fixture.ts";
 import { startTestServer, type TestServer } from "../testing/harness.ts";
 import { seedGoal, seedTask } from "../testing/task-seeds.ts";

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-11T20:27:48.712Z",
+  "generatedAt": "2026-11-25T15:10:45.558Z",
   "entries": [
     {
       "fingerprint": "070b8236e1e834612017c559",
@@ -19,30 +19,6 @@
       "file": "tools/dev-smoke.mjs"
     },
     {
-      "fingerprint": "1a8ae54719598e0aef5bbb6e",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/editor.js"
-    },
-    {
-      "fingerprint": "cf10b09f0a1a1e76f3e307c0",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/live.js"
-    },
-    {
-      "fingerprint": "2f5db4e3d32d3440c951c8e1",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-file",
-      "scope": ".",
-      "file": ".feature-flow/feature_flow/_forkboard/assets/steps.js"
-    },
-    {
       "fingerprint": "b01961cec1da44aa8dff2473",
       "provider": "Knip",
       "category": "dead-code",
@@ -51,40 +27,13 @@
       "file": "apps/server/src/auth/cli-config.ts"
     },
     {
-      "fingerprint": "1ef24803c291aac70c5fa0c2",
+      "fingerprint": "09588d878c71ee621c452f00",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-dependency",
       "scope": ".",
       "file": "apps/server/package.json",
-      "line": 36
-    },
-    {
-      "fingerprint": "28fa33c0cd1e616f94101290",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "plans/login-mcp/acceptance/helpers.ts",
-      "line": 50
-    },
-    {
-      "fingerprint": "05cb3ac97d8163d69d26f068",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "plans/login-mcp/acceptance/helpers.ts",
-      "line": 106
-    },
-    {
-      "fingerprint": "2d841915c1b15da3fbe49f83",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "plans/login-mcp/acceptance/helpers.ts",
-      "line": 145
+      "line": 37
     },
     {
       "fingerprint": "3fe6b43379aa1197c74cdc2d",
@@ -114,13 +63,31 @@
       "line": 390
     },
     {
-      "fingerprint": "8a44ea53afa9316ff993b329",
+      "fingerprint": "28fa33c0cd1e616f94101290",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-export",
       "scope": ".",
-      "file": "apps/server/src/auth/auth.ts",
-      "line": 32
+      "file": "plans/login-mcp/acceptance/helpers.ts",
+      "line": 50
+    },
+    {
+      "fingerprint": "05cb3ac97d8163d69d26f068",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "plans/login-mcp/acceptance/helpers.ts",
+      "line": 106
+    },
+    {
+      "fingerprint": "2d841915c1b15da3fbe49f83",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "plans/login-mcp/acceptance/helpers.ts",
+      "line": 145
     },
     {
       "fingerprint": "e6c68b8ef94391831ab89e89",
@@ -175,24 +142,6 @@
       "scope": ".",
       "file": "apps/server/src/devices/device-flow.ts",
       "line": 34
-    },
-    {
-      "fingerprint": "cb3622a3f8674e4f24b903a7",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/auth/pages/sign-in.ts",
-      "line": 4
-    },
-    {
-      "fingerprint": "d38c23786e98db197679efab",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/auth/pages/sign-in.ts",
-      "line": 33
     },
     {
       "fingerprint": "7bbbabefd071cde32c79942e",
@@ -319,24 +268,6 @@
       "scope": ".",
       "file": "db/audit.test.ts",
       "line": 97
-    },
-    {
-      "fingerprint": "64ec8e9a1f42fa739290e3d9",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "db/auth-schema.ts",
-      "line": 191
-    },
-    {
-      "fingerprint": "c2961074744af7b0ae23ef49",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "db/auth-schema.ts",
-      "line": 202
     },
     {
       "fingerprint": "424daaf5dd5e3b2d97f1a1bd",
@@ -483,49 +414,40 @@
       "line": 98
     },
     {
-      "fingerprint": "5545de7464e69df4bfc71ce4",
+      "fingerprint": "8b87801814d26350bf6a89a4",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/add-tasks.test.ts",
-      "line": 5
+      "line": 11
     },
     {
-      "fingerprint": "5545de7464e69df4bfc71ce4",
+      "fingerprint": "4038a2cd1b2f850b7b50cebf",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/add-tasks.test.ts",
-      "line": 5
+      "line": 19
     },
     {
-      "fingerprint": "5d3d71de15765e55c509bab6",
+      "fingerprint": "c1ee3b5eba42b7a525895be8",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/add-tasks.test.ts",
-      "line": 13
+      "line": 31
     },
     {
-      "fingerprint": "fe8789fd20abda3890878e47",
+      "fingerprint": "09588c5f6054a9e1bdc6e418",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/add-tasks.test.ts",
-      "line": 25
-    },
-    {
-      "fingerprint": "5f8b12571c1ab137e9c1785b",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "tasks/add-tasks.test.ts",
-      "line": 51
+      "line": 57
     },
     {
       "fingerprint": "a4cf8f4ca392521e6b78100e",
@@ -555,22 +477,22 @@
       "line": 27
     },
     {
-      "fingerprint": "444301aed79d6263a86ecff9",
+      "fingerprint": "2c6fce9cbe47db06eab5ceab",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/claim-race.pg.test.ts",
-      "line": 64
+      "line": 69
     },
     {
-      "fingerprint": "444301aed79d6263a86ecff9",
+      "fingerprint": "2c6fce9cbe47db06eab5ceab",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
       "file": "tasks/claim-race.pg.test.ts",
-      "line": 64
+      "line": 69
     },
     {
       "fingerprint": "3d9ac9d03a2178d26b3dae42",
@@ -627,6 +549,15 @@
       "line": 3
     },
     {
+      "fingerprint": "aabba1e4c970198883e7a8c8",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "tasks/report-isolation.test.ts",
+      "line": 6
+    },
+    {
       "fingerprint": "ef6c348230acb29edd3a904f",
       "provider": "jscpd",
       "category": "duplication",
@@ -645,21 +576,30 @@
       "line": 180
     },
     {
-      "fingerprint": "8452a79f26a6710ad18c64f5",
+      "fingerprint": "ec614e42f237dec3630da139",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
-      "file": "App.tsx",
-      "line": 176
+      "file": "auth-schema.ts",
+      "line": 191
     },
     {
-      "fingerprint": "71b0418bd5c6aed6dd4e6dc8",
+      "fingerprint": "3c9b86aa6c6147de612e3ef4",
       "provider": "jscpd",
       "category": "duplication",
       "type": "duplication",
       "scope": ".",
-      "file": "db/schema.ts",
+      "file": "auth-schema.ts",
+      "line": 202
+    },
+    {
+      "fingerprint": "07d14fd7a77efb8b8e41b614",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "schema.ts",
       "line": 99
     }
   ]

@@ -4,7 +4,7 @@
 import { GOAL_DOCUMENTS_MAX } from "@sky-brain/shared/goal-docs";
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, goalDocuments } from "../db/schema.ts";
+import { auditLog, goalDocuments } from "@sky-brain/db/schema";
 import {
   actorClients,
   expectError,

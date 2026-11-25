@@ -6,7 +6,7 @@ import {
   type AuthTestServer,
   type Browser,
 } from "../testing/auth-harness.ts";
-import { session } from "../db/schema.ts";
+import { session } from "@sky-brain/db/schema";
 import { closeTestDb, createTestDb, type Db } from "../testing/harness.ts";
 import type { Auth } from "./auth.ts";
 import { sessionActorResolver } from "./session-resolver.ts";

@@ -3,7 +3,7 @@
 // agent), then the next task claimed and reported, and another person's project refused.
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { members, projects, user } from "../db/schema.ts";
+import { members, projects, user } from "@sky-brain/db/schema";
 import { createRateLimiter } from "../guards/ratelimit.ts";
 import {
   startAuthTestServer,

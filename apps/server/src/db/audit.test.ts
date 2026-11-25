@@ -5,9 +5,9 @@ import {
   createTestDb,
   seedWorkspace,
 } from "../testing/harness.ts";
-import { writeAudit } from "./audit.ts";
-import type { Db } from "./client.ts";
-import { auditLog } from "./schema.ts";
+import { writeAudit } from "@sky-brain/db/audit";
+import type { Db } from "@sky-brain/db/client";
+import { auditLog } from "@sky-brain/db/schema";
 
 let db: Db;
 let workspaceId: string;

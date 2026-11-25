@@ -3,7 +3,7 @@
 import type { Verb } from "@sky-brain/shared/run-tokens";
 import { asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { taskEvents, tasks } from "../db/schema.ts";
+import { taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   device,
   expectError,

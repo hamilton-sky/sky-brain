@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm";
 import type { Request } from "express";
 import { runContextOf } from "../actor/run-context.ts";
-import { goals, members, taskDeps, tasks } from "../db/schema.ts";
+import { goals, members, taskDeps, tasks } from "@sky-brain/db/schema";
 
 export interface Eligibility {
   /** The human, or the person the agent acts for. */

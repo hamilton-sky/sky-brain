@@ -9,7 +9,7 @@ import {
   members,
   projects,
   workspaces,
-} from "../../../apps/server/src/db/schema.ts";
+} from "../../../packages/db/src/schema.ts";
 import {
   agent,
   auditRows,

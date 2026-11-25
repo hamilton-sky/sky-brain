@@ -7,7 +7,7 @@ import type { AddressInfo } from "node:net";
 import { createApp } from "../app.ts";
 import { authFromConfig } from "../auth/from-config.ts";
 import type { Config } from "../config.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import {
   createFakePerminister,
   type PerministerAccount,

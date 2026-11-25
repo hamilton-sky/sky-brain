@@ -7,7 +7,7 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "better-auth/node";
 import type express from "express";
 import type { Auth } from "../auth/auth.ts";
-import type { Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import type { Push } from "../push/push.ts";
 import { personOf } from "../actor/keys.ts";

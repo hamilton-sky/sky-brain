@@ -8,13 +8,13 @@ import type {
 } from "@sky-brain/shared/agents";
 import type { Actor } from "@sky-brain/shared/actor";
 import { and, asc, eq } from "drizzle-orm";
-import type { DbOrTx } from "../db/client.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
 import {
   agentBindings,
   agentProfiles,
   oauthClient,
   oauthConsent,
-} from "../db/schema.ts";
+} from "@sky-brain/db/schema";
 
 type ProfileRow = typeof agentProfiles.$inferSelect;
 

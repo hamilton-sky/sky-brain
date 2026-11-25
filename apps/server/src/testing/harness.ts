@@ -16,7 +16,7 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { ActorResolver } from "../actor/middleware.ts";
 import { createApp } from "../app.ts";
-import { closeDb, createPgliteDb, migrateDb, type Db } from "../db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import {
   entries,
   entryVersions,
@@ -25,21 +25,13 @@ import {
   memories,
   projects,
   workspaces,
-} from "../db/schema.ts";
+} from "@sky-brain/db/schema";
 import { createDefaultMemories } from "../memory/memories.ts";
 
 export type { Db };
 
-/** A fresh in-memory PGlite with every migration applied. */
-export async function createTestDb(): Promise<Db> {
-  const db = await createPgliteDb();
-  await migrateDb(db);
-  return db;
-}
-
-export function closeTestDb(db: Db): Promise<void> {
-  return closeDb(db);
-}
+// createTestDb lives in packages/db; re-exported so existing tests and bench/ keep working.
+export { closeTestDb, createTestDb } from "@sky-brain/db/test-db";
 
 export async function seedWorkspace(
   db: Db,

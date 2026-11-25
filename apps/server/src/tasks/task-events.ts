@@ -6,8 +6,8 @@ import type { Request } from "express";
 import { auditActor, personOf } from "../actor/keys.ts";
 import { actorOf } from "../actor/middleware.ts";
 import { runContextOf } from "../actor/run-context.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { taskEvents } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { taskEvents } from "@sky-brain/db/schema";
 
 export interface TaskEvent {
   task: { id: string; workspaceId: string; claimSeq: number };

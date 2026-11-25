@@ -1,6 +1,6 @@
 // Memory core tables, thin step 1 (docs/vision/schema/MEMORY-SCHEMA.md, BUILD-PLAN step 1),
 // re-exported from schema.ts. After a change, run
-// `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
+// `pnpm --filter @sky-brain/db exec drizzle-kit generate`.
 //
 // Like tasks-schema.ts, this module loads before schema.ts finishes, so anything from schema.ts
 // is used only inside callbacks, and `author_kind` is text with a check.

@@ -1,7 +1,7 @@
 // The verb check and project binding of run tokens (cloud-task-board ticket 02).
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { members } from "../db/schema.ts";
+import { members } from "@sky-brain/db/schema";
 import type { TestResponse } from "../testing/harness.ts";
 import { mintRunToken, withToken } from "../testing/task-seeds.ts";
 import {

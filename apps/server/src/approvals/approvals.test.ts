@@ -3,7 +3,7 @@
 import type { Actor } from "@sky-brain/shared/actor";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { entries, goals } from "../db/schema.ts";
+import { entries, goals } from "@sky-brain/db/schema";
 import {
   closeTestDb,
   createTestDb,

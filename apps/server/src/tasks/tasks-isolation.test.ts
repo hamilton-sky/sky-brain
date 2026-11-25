@@ -2,7 +2,7 @@
 // by a run token's project (CLAUDE.md hard rule 4, bar 4; cloud-task-board ticket 05).
 import { and, eq, like } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, taskEvents, tasks } from "../db/schema.ts";
+import { auditLog, taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   UUID,
   device,

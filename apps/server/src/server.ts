@@ -9,7 +9,7 @@ import {
   createPostgresDb,
   migrateDb,
   type Db,
-} from "./db/client.ts";
+} from "@sky-brain/db/client";
 
 /** Postgres when DATABASE_URL is set (migrated before deploy); else PGlite, migrated here. */
 async function openDb(config: Config): Promise<Db> {

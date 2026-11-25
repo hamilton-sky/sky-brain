@@ -2,7 +2,7 @@
 // claim verb (cloud-task-board ticket 06).
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { taskEvents, tasks } from "../db/schema.ts";
+import { taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   device,
   expectError,

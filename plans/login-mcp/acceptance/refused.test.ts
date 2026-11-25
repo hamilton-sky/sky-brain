@@ -2,7 +2,7 @@
 // and every forged or refused callback, gets no user and no session.
 import { describe, expect, it } from "vitest";
 import { seedWorkspace } from "../../../apps/server/src/testing/harness.ts";
-import { invites } from "../../../apps/server/src/db/schema.ts";
+import { invites } from "../../../packages/db/src/schema.ts";
 import {
   account,
   accountsForSubject,

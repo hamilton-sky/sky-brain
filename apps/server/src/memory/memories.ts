@@ -6,8 +6,8 @@ import type { Role } from "@sky-brain/shared/enums";
 import type { Memory, MemoryLayer } from "@sky-brain/shared/memory";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { members, memories } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { members, memories } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 
 export type MemoryRow = typeof memories.$inferSelect;

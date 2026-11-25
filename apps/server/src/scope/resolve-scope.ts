@@ -5,8 +5,8 @@ import type { Role } from "@sky-brain/shared/enums";
 import type { ScopeRef } from "@sky-brain/shared/scope";
 import { and, eq } from "drizzle-orm";
 import { personOf } from "../actor/keys.ts";
-import type { DbOrTx } from "../db/client.ts";
-import { features, members, projects, workspaces } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { features, members, projects, workspaces } from "@sky-brain/db/schema";
 import { HttpError } from "../http/http-error.ts";
 
 export interface ResolvedScope {

@@ -1,6 +1,6 @@
 // Task board tables (cloud-task-board spec.md Interfaces, Events and audit), re-exported from
 // schema.ts so drizzle.config.ts and client.ts see them. After a change, run
-// `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
+// `pnpm --filter @sky-brain/db exec drizzle-kit generate`.
 //
 // This module loads before schema.ts finishes (schema.ts re-exports it), so anything from
 // schema.ts is used only inside callbacks. That is why `author_kind` is text with a check here,

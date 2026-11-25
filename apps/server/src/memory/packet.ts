@@ -11,8 +11,8 @@ import {
   type PacketItem,
 } from "@sky-brain/shared/memory";
 import { and, desc, eq, ne } from "drizzle-orm";
-import type { DbOrTx } from "../db/client.ts";
-import { entries, members, memories } from "../db/schema.ts";
+import type { DbOrTx } from "@sky-brain/db/client";
+import { entries, members, memories } from "@sky-brain/db/schema";
 import {
   memberOfEntryWorkspace,
   searchEntries,

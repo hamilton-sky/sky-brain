@@ -2,7 +2,7 @@
 // It builds the same instance as the app, with every plugin on, from placeholder values: it
 // never connects to a database or Perminister.
 import { drizzle } from "drizzle-orm/node-postgres";
-import * as schema from "../db/schema.ts";
+import * as schema from "@sky-brain/db/schema";
 import { createAuth } from "./auth.ts";
 
 export const auth = createAuth({

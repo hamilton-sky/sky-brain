@@ -4,7 +4,7 @@ import { actorMiddleware, type ActorResolver } from "./actor/middleware.ts";
 import type { Auth } from "./auth/auth.ts";
 import { mountAuth } from "./auth/routes.ts";
 import { sessionActorResolver } from "./auth/session-resolver.ts";
-import type { Db } from "./db/client.ts";
+import type { Db } from "@sky-brain/db/client";
 import { deviceFlowRouter } from "./devices/device-flow.ts";
 import { devicesRouter } from "./devices/devices-router.ts";
 import { createRateLimiter } from "./guards/ratelimit.ts";

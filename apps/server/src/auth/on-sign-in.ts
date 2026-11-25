@@ -3,8 +3,8 @@
 // Runs as Better Auth's `databaseHooks.session.create.after`, so on every sign-in. The user id
 // and email come from the session row and the `user` table, never from the request.
 import { and, eq, isNull, sql } from "drizzle-orm";
-import type { Db } from "../db/client.ts";
-import { invites, members, user, workspaces } from "../db/schema.ts";
+import type { Db } from "@sky-brain/db/client";
+import { invites, members, user, workspaces } from "@sky-brain/db/schema";
 import { createDefaultMemories } from "../memory/memories.ts";
 
 export async function onSignIn(

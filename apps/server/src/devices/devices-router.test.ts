@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { auditLog, devices } from "../db/schema.ts";
+import { auditLog, devices } from "@sky-brain/db/schema";
 import {
   closeTestDb,
   createTestDb,

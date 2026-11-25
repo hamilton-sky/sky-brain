@@ -52,7 +52,7 @@ export default tseslint.config(
       "scripts/**",
       ".feature-flow/**",
       ".claude/**",
-      "apps/server/drizzle/**",
+      "packages/db/drizzle/**",
     ],
   },
   js.configs.recommended,
@@ -94,4 +94,27 @@ export default tseslint.config(
     },
   },
   ...layerRules,
+  {
+    // Packages never import from apps/* (docs/PACKAGES.md border rule 3); db needs only shared.
+    files: ["packages/*/src/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@sky-brain/server",
+                "@sky-brain/server/*",
+                "@sky-brain/web",
+                "@sky-brain/web/*",
+                "**/apps/*",
+              ],
+              message: "Packages never import from apps/* (docs/PACKAGES.md).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

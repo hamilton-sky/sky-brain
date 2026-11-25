@@ -1,6 +1,6 @@
 // Device login tables (cloud-task-board spec.md Design), re-exported from schema.ts so
 // drizzle.config.ts and client.ts see them. After a change, run
-// `pnpm --filter @sky-brain/server exec drizzle-kit generate`.
+// `pnpm --filter @sky-brain/db exec drizzle-kit generate`.
 import { sql } from "drizzle-orm";
 import {
   check,

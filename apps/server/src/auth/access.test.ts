@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { invites } from "../db/schema.ts";
+import { invites } from "@sky-brain/db/schema";
 import {
   startAuthTestServer,
   type AuthTestServer,

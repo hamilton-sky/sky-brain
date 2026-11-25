@@ -4,7 +4,7 @@
 // the task's Inbox as proposed, in the done transaction.
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { entries, tasks } from "../db/schema.ts";
+import { entries, tasks } from "@sky-brain/db/schema";
 import * as fx from "../run-tokens/tests/fixture.ts";
 import { seedEntry } from "../testing/harness.ts";
 import * as seeds from "../testing/task-seeds.ts";

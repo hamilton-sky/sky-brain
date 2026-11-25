@@ -1,7 +1,7 @@
 // Story: Nothing poisoned or secret gets in: the rate limit and the audit log.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestServer } from "../../../apps/server/src/testing/harness.ts";
-import { auditLog } from "../../../apps/server/src/db/schema.ts";
+import { auditLog } from "../../../packages/db/src/schema.ts";
 import {
   AGENT_ID,
   agent,
