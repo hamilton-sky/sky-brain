@@ -601,6 +601,33 @@
       "scope": ".",
       "file": "schema.ts",
       "line": 99
+    },
+    {
+      "fingerprint": "8a44ea53afa9316ff993b329",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/auth/auth.ts",
+      "line": 32
+    },
+    {
+      "fingerprint": "cb3622a3f8674e4f24b903a7",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/auth/pages/sign-in.ts",
+      "line": 4
+    },
+    {
+      "fingerprint": "d38c23786e98db197679efab",
+      "provider": "Knip",
+      "category": "dead-code",
+      "type": "unused-export",
+      "scope": ".",
+      "file": "apps/server/src/auth/pages/sign-in.ts",
+      "line": 33
     }
   ]
 }
