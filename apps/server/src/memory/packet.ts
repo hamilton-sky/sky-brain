@@ -120,12 +120,33 @@ function fit(p: Omit<ContextPacket, "text">): ContextPacket {
 }
 
 /** The packet for a task in `workspaceId`, found by the words of its title and body. */
-export async function buildPacket(
+export function buildPacket(
   db: DbOrTx,
   actor: Actor,
   task: { workspaceId: string; title: string; body: string },
   now: Date,
 ): Promise<ContextPacket> {
+  return packetFor(
+    db,
+    actor,
+    task.workspaceId,
+    `${task.title} ${task.body}`,
+    now,
+  );
+}
+
+/**
+ * The packet for any question (`context { q }`, BOOK.md 13): About me, the rules in force and
+ * the entries from every other layer that match the words of `q`.
+ */
+export async function packetFor(
+  db: DbOrTx,
+  actor: Actor,
+  workspaceId: string,
+  words: string,
+  now: Date,
+): Promise<ContextPacket> {
+  const task = { workspaceId };
   const aboutMe = await approved(
     db,
     actor,
@@ -141,7 +162,7 @@ export async function buildPacket(
     PACKET_CAPS.rules,
   );
   const shown = new Set([...aboutMe, ...rules].map((r) => r.id));
-  const q = `${task.title} ${task.body}`.slice(0, MEMORY_CAPS.query);
+  const q = words.slice(0, MEMORY_CAPS.query);
   const hits = await searchEntries(
     db,
     actor,

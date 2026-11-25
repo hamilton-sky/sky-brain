@@ -438,6 +438,11 @@ its own, in `bench/book/`, against a test brain:
    or recipe), marked `readOnlyHint: true, destructiveHint: false`; error messages that point to
    `book { id: "errors" }`; the "Your brain now" block in `book`; `context { q }` and a `layer`
    filter on `search` (section 13).
+   *Built 25 Nov 2026 on a branch, not live (D38):* `book`, `context`, the `layer` filter, server
+   instructions (428 characters) and use-when and pitfalls on every tool, all in the real server
+   behind `McpServerOptions.book`. The bench arms now come from that option: A today, B
+   descriptions, C plus `context`, D plus `context` and the book. Four cross-layer scenarios
+   (`--set across`) need About me, both Notebooks, the Inbox and the Board in one answer.
 2. **Deferred, each with its trigger:**
 
 | Piece | Build it when |

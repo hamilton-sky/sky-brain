@@ -103,12 +103,8 @@ export async function runTrial(
     const results: Anthropic.ToolResultBlockParam[] = [];
     for (const use of uses) {
       const args = (use.input ?? {}) as Record<string, unknown>;
-      const local = await arm.local(use.name, args);
       let out: { isError: boolean; text: string };
-      if (local !== undefined) {
-        out = { isError: false, text: local };
-        calls.push({ name: use.name, args, ...out });
-      } else if (arm.tools.some((t) => t.name === use.name)) {
+      if (arm.tools.some((t) => t.name === use.name)) {
         out = await mcp.callTool(use.name, args).catch((e: unknown) => ({
           isError: true,
           text: String(e instanceof Error ? e.message : e),

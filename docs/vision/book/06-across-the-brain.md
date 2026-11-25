@@ -4,8 +4,8 @@
 
 | You need | Call |
 | --- | --- |
-| Everything the brain knows about a topic | `context { q }` (planned): About me, approved rules and the best entries from every layer, in one fenced packet |
-| One layer | `search { q, layer }` with `core`, `long` or `short` (planned); the Board through its own tools |
+| Everything the brain knows about a topic | `context { q }`: About me, approved rules and the best entries from every layer, in one fenced packet |
+| One layer | `search { q, layer }` with `core`, `long` or `short`; the Board through its own tools |
 | One memory, such as the Family notebook | `search { q, memory_id }` |
 | Whatever matches, from any memory | `search { q }` (today's default: About me, Notebooks and Inboxes) |
 
@@ -30,8 +30,8 @@ only for what it does not cover.
 
 ## Its APIs (generated)
 
-- **context** · read-only · `q`, `limit?` (planned) → `{ about_me, rules, relevant, unknown, text }`.
-- **search** · read-only · `q`; `layer?` (planned), `memory_id?`, `kind?`, `limit?`.
+- **context** · read-only · `q`, `workspace_id?` → `{ about_me, rules, relevant, not_known, text }`.
+- **search** · read-only · `q`; `layer?`, `memory_id?`, `kind?`, `limit?`.
 
 ## Recipe: start work without a task
 

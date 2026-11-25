@@ -489,6 +489,7 @@ export async function searchEntries(
           ? eq(entries.workspaceId, query.workspace_id)
           : undefined,
         query.memory_id ? eq(entries.memoryId, query.memory_id) : undefined,
+        query.layer ? eq(entries.layer, query.layer) : undefined,
         query.kind ? eq(entries.kind, query.kind) : undefined,
         trustFilter,
       ),

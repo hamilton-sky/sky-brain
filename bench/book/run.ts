@@ -2,15 +2,14 @@
 //
 //   pnpm bench:book --dry                 check every grader against its gold run; no model
 //   pnpm bench:book --tokens              size of the tool definitions per arm
-//   pnpm bench:book --arms A,B,C --models claude-opus-5-5,claude-haiku-5-5 --trials 3
+//   pnpm bench:book --arms A,B,C,D --models claude-opus-5-5,claude-haiku-5-5 --trials 3
 import Anthropic from "@anthropic-ai/sdk";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { runTrial, systemPrompt } from "./agent.ts";
 import { runClaudeCode } from "./claude-code.ts";
-import { ARMS, buildArm, missingGuides, type ArmId } from "./arms.ts";
-import { SERVER_INSTRUCTIONS } from "./book.ts";
+import { ARM_PARTS, ARMS, type Arm, type ArmId } from "./arms.ts";
 import { recording, type Call, type Trace } from "./grade.ts";
 import { mcpClient, type McpTool } from "./mcp.ts";
 import { cost, summarize, type TrialRecord } from "./report.ts";
@@ -21,7 +20,7 @@ const { values: opt } = parseArgs({
   options: {
     dry: { type: "boolean", default: false },
     tokens: { type: "boolean", default: false },
-    arms: { type: "string", default: "A,B,C" },
+    arms: { type: "string", default: "A,B,C,D" },
     models: { type: "string", default: "claude-opus-5-5" },
     trials: { type: "string", default: "3" },
     split: { type: "string", default: "all" },
@@ -34,10 +33,17 @@ const { values: opt } = parseArgs({
   },
 });
 
-async function fresh() {
+/** A fresh test brain behind the arm's server variant. Gold runs use D, which has every tool. */
+async function fresh(id: ArmId = "D") {
   const fx = await seedBrain();
-  const mcp = mcpClient(fx.db, AGENT, () => NOW);
-  return { fx, mcp, tools: await mcp.listTools() };
+  const mcp = mcpClient(fx.db, AGENT, ARM_PARTS[id], () => NOW);
+  const instructions = await mcp.instructions();
+  const arm: Arm = {
+    id,
+    tools: await mcp.listTools(),
+    ...(instructions ? { instructions } : {}),
+  };
+  return { fx, mcp, tools: arm.tools, arm };
 }
 
 const selected = TASKS.filter(
@@ -80,19 +86,12 @@ function sizeOf(tools: McpTool[], instructions = "") {
 }
 
 async function tokens() {
-  const run = await fresh();
-  console.log(
-    `missing guides for: ${missingGuides(run.tools).join(", ") || "none"}`,
-  );
-  console.log(
-    `server instructions: ${SERVER_INSTRUCTIONS.length} characters (limit 512)`,
-  );
   const key = process.env.ANTHROPIC_API_KEY;
   const client = key
     ? new Anthropic({ apiKey: key, baseURL: opt["base-url"] })
     : undefined;
   for (const id of ARMS) {
-    const arm = buildArm(id, run.tools, run.fx);
+    const { arm, mcp } = await fresh(id);
     const s = sizeOf(arm.tools, arm.instructions);
     let counted = "";
     if (client) {
@@ -114,12 +113,17 @@ async function tokens() {
     console.log(
       `arm ${id}: ${s.tools} tools, ${s.chars} characters, about ${s.estTokens} tokens${counted}`,
     );
+    if (arm.instructions)
+      console.log(
+        `  server instructions: ${arm.instructions.length} characters (limit 512)`,
+      );
+    if (arm.tools.some((t) => t.name === "book")) {
+      const contents = (await mcp.callTool("book", {})).text;
+      console.log(
+        `  book contents: ${contents.length} characters, about ${Math.round(contents.length / 3.5)} tokens`,
+      );
+    }
   }
-  const book = buildArm("C", run.tools, run.fx);
-  const contents = (await book.local("book", {})) ?? "";
-  console.log(
-    `book contents: ${contents.length} characters, about ${Math.round(contents.length / 3.5)} tokens`,
-  );
 }
 
 async function pool<T>(
@@ -178,8 +182,8 @@ async function bench() {
     jobs,
     Number(opt.concurrency),
     async ({ model, arm: armId, task, trial }) => {
-      const run = await fresh();
-      const arm = buildArm(armId, run.tools, run.fx);
+      const run = await fresh(armId);
+      const arm = run.arm;
       const calls: Call[] = [];
       const result = await runOne(
         model,

@@ -24,7 +24,7 @@ every earlier version. Nothing is edited in place: a change is a new version.
 ## Its APIs (generated)
 
 - **list_memories** · read-only → every memory with id, name and layer; pick a Notebook's id.
-- **search** · read-only · `q`; `layer: "long"` (planned), `memory_id?`, `kind?`, `limit?` (≤50) →
+- **search** · read-only · `q`; `layer: "long"`, `memory_id?`, `kind?`, `limit?` (≤50) →
   ranked summaries.
 - **get** · read-only · `entry_id` → full body and version history.
 

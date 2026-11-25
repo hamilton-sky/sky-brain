@@ -35,7 +35,7 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-/** The arm as an MCP server: its tools, its instructions, the book answered locally. */
+/** The arm as an MCP server on localhost: its tools and instructions, calls passed through. */
 function armEndpoint(arm: Arm, mcp: McpClient, calls: Call[]) {
   async function answer(rpc: Rpc): Promise<unknown> {
     switch (rpc.method) {
@@ -51,12 +51,8 @@ function armEndpoint(arm: Arm, mcp: McpClient, calls: Call[]) {
       case "tools/call": {
         const name = rpc.params?.name ?? "";
         const args = rpc.params?.arguments ?? {};
-        const local = await arm.local(name, args);
         let out: { isError: boolean; text: string };
-        if (local !== undefined) {
-          out = { isError: false, text: local };
-          calls.push({ name, args, ...out });
-        } else if (arm.tools.some((t) => t.name === name)) {
+        if (arm.tools.some((t) => t.name === name)) {
           out = await mcp.callTool(name, args);
         } else {
           out = { isError: true, text: `Unknown tool: ${name}` };

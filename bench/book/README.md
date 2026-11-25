@@ -9,14 +9,21 @@ so the two-week memory-loop measurement is not disturbed.
 
 ## The arms
 
+Each arm is a variant of the real server (`McpServerOptions.book` in
+`apps/server/src/mcp/server.ts`), so the bench measures exactly what would ship.
+
 | Arm | What the model sees |
 | --- | --- |
-| A | Today's 18 tools, exactly as `tools/list` returns them |
-| B | The same tools, with "Use when" and "Pitfalls" added to each description (`arms.ts`) |
-| C | B, plus server instructions (347 characters) and one read-only tool `book { id? }` that serves the chapters in `docs/vision/book/` with a live "Your brain now" block (`book.ts`) |
+| A | Today's 18 tools, exactly as the live server lists them |
+| B | The same tools, with "Use when" and "Pitfalls" added to each description (`tool-guides.ts`) |
+| C | B, plus `context { q }`: the fenced packet for a question, from every layer at once |
+| D | C, plus server instructions (428 characters) and `book { id? }`, the chapters in `docs/vision/book/` with a live "Your brain now" |
 
-The decisive comparison is **C against B on the held-out tasks**. If C does not beat B, ship B
-only and keep the chapters as the source of the descriptions.
+The questions: does C beat B (is cross-layer context worth a tool), and does D beat C (does the
+book add anything once `context` exists)? Both on the held-out and cross-layer tasks.
+
+Until 25 Nov there were three arms, built in the bench, and **C meant "B plus the book" with no
+`context`**. The first two result sections below use that meaning.
 
 ## The tasks
 
@@ -43,7 +50,7 @@ fails an empty one, with no model.
 ## Running it
 
 ```
-pnpm bench:book --dry           # 34 of 34 graders pass gold and fail empty; no model, no key
+pnpm bench:book --dry --set all # 44 of 44 graders pass gold and fail empty; no model, no key
 pnpm bench:book --tokens        # size of each arm's tool definitions (counted by the API with a key)
 ANTHROPIC_API_KEY=... pnpm bench:book --models claude-opus-5-5,claude-haiku-5-5 --trials 3
 ```
@@ -51,7 +58,7 @@ ANTHROPIC_API_KEY=... pnpm bench:book --models claude-opus-5-5,claude-haiku-5-5 
 Without an API key, run it through Claude Code with your own sign-in:
 
 ```
-pnpm bench:book --via claude-code --models sonnet --trials 1    # 3 arms x 34 tasks = 102 runs
+pnpm bench:book --via claude-code --models sonnet --trials 1    # 4 arms x 34 tasks = 136 runs
 ```
 
 Each trial serves the arm's tools from a small MCP endpoint on localhost and runs `claude -p` from
@@ -64,7 +71,12 @@ Six complex scenarios (`tasks-complex.ts`, several tools across layers in order)
 after the first run and count as held out. Run them with `--set complex` (`--set all` for every
 task).
 
-Options: `--arms A,B,C`, `--split tune|held|all`, `--tasks id1,id2`, `--concurrency 4`,
+Four cross-layer scenarios (`tasks-across.ts`) need About me, both Notebooks, the Inbox and the
+Board in one answer: a brief for a new helper, a plan that must follow Ann's units and the
+database decision, finding a conflict nobody named, and a weekly review. Run them with
+`--set across`.
+
+Options: `--arms A,B,C,D`, `--split tune|held|all`, `--tasks id1,id2`, `--concurrency 4`,
 `--label name`, `--base-url` (default `https://api.anthropic.com`). Each trial seeds its own
 PGlite, so a full run takes a while; results go to `results/<label>.json` with every trial's
 calls, answer, verdict and token use.
@@ -80,9 +92,10 @@ own cost included). A trial gets 12 model turns at most.
 
 | Arm | Tools | Characters | About |
 | --- | --- | --- | --- |
-| A | 18 | 17,796 | 5,100 tokens |
-| B | 18 | 20,698 | 5,900 tokens |
-| C | 19 | 21,573 | 6,200 tokens, plus about 800 for the book's contents when opened |
+| A | 18 | 17,937 | 5,100 tokens |
+| B | 18 | 20,875 | 6,000 tokens |
+| C | 19 | 22,157 | 6,300 tokens |
+| D | 20 | 23,300 | 6,700 tokens, plus about 700 for the book's contents when opened |
 
 Well under the 10K-token trigger for compact mode (BOOK.md section 11).
 

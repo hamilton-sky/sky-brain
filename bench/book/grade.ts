@@ -19,6 +19,7 @@ export interface Trace {
 /** Wraps a client so every call is recorded in `calls`. */
 export function recording(client: McpClient, calls: Call[]): McpClient {
   return {
+    instructions: () => client.instructions(),
     listTools: () => client.listTools(),
     async callTool(name, args): Promise<ToolAnswer> {
       const answer = await client

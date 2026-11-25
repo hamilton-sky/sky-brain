@@ -4,6 +4,7 @@
 // `proposed`, and never approves, rejects or edits (CLAUDE.md hard rule 3, D22).
 import type { McpServer } from "@modelcontextprotocol/server";
 import {
+  ENTRY_LAYERS,
   ENTRY_TOPICS,
   KNOWLEDGE_KINDS,
   MEMORY_CAPS,
@@ -70,6 +71,12 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
         q: z.string().min(1).max(MEMORY_CAPS.query),
         kind: z.enum(KNOWLEDGE_KINDS).optional(),
         memory_id: IdSchema.optional(),
+        layer: z
+          .enum(ENTRY_LAYERS)
+          .optional()
+          .describe(
+            "One layer only: core (About me), long (Notebooks), short (Inboxes).",
+          ),
         workspace_id: IdSchema.optional(),
         limit: z.int().min(1).max(SEARCH_LIMIT_MAX).optional(),
       }),

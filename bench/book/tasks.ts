@@ -1,5 +1,6 @@
 // Every bench task, with its split. A third is held out (BOOK.md section 10): never read while
 // writing arm B's descriptions or the book, and the decisive C-against-B comparison is on those.
+import { acrossTasks } from "./tasks-across.ts";
 import { approvalTasks } from "./tasks-approval.ts";
 import { boardTasks } from "./tasks-board.ts";
 import { complexTasks } from "./tasks-complex.ts";
@@ -7,7 +8,7 @@ import { memoryTasks } from "./tasks-memory.ts";
 import type { BenchTask } from "./task-types.ts";
 
 export type Split = "tune" | "held";
-export type TaskSet = "core" | "complex";
+export type TaskSet = "core" | "complex" | "across";
 
 /** Fixed by id so adding a task never moves another between splits. */
 const HELD = new Set([
@@ -35,6 +36,11 @@ export const TASKS: (BenchTask & { split: Split; set: TaskSet })[] = [
   ...complexTasks.map((t) => ({
     ...t,
     set: "complex" as const,
+    split: "held" as const,
+  })),
+  ...acrossTasks.map((t) => ({
+    ...t,
+    set: "across" as const,
     split: "held" as const,
   })),
 ];

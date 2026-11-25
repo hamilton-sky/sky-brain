@@ -24,8 +24,8 @@ plus your hat's part.
 
 ## Its APIs (generated)
 
-- **search** · read-only · `q`, `layer: "core"` (planned) → About me entries with summaries.
-- **context** · read-only · `q` (planned) → About me comes first in every packet.
+- **search** · read-only · `q`, `layer: "core"` → About me entries with summaries.
+- **context** · read-only · `q` → About me comes first in every packet.
 No write tool: About me is people-only (hard rule 3).
 
 ## Recipe: answer "what do you know about me?"

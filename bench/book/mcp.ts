@@ -4,6 +4,7 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { Actor } from "@sky-brain/shared/actor";
 import type { Db } from "../../apps/server/src/testing/harness.ts";
 import { mcpServerFactory } from "../../apps/server/src/mcp/server.ts";
+import type { BookParts } from "./arms.ts";
 
 export interface McpTool {
   name: string;
@@ -18,17 +19,25 @@ export interface ToolAnswer {
 }
 
 export interface McpClient {
+  /** The server instructions `initialize` returns, if any. */
+  instructions(): Promise<string | undefined>;
   listTools(): Promise<McpTool[]>;
   callTool(name: string, args: Record<string, unknown>): Promise<ToolAnswer>;
 }
 
 let rpcId = 0;
 
-export function mcpClient(db: Db, actor: Actor, now?: () => Date): McpClient {
+export function mcpClient(
+  db: Db,
+  actor: Actor,
+  book: BookParts,
+  now?: () => Date,
+): McpClient {
   const handler = createMcpHandler(
     mcpServerFactory(db, {
       ...(now ? { now } : {}),
       publicUrl: "http://localhost:3000",
+      book,
     }),
   );
   async function rpc(method: string, params: Record<string, unknown>) {
@@ -66,6 +75,14 @@ export function mcpClient(db: Db, actor: Actor, now?: () => Date): McpClient {
     return answer.result!;
   }
   return {
+    async instructions() {
+      const result = await rpc("initialize", {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "bench", version: "0.0.0" },
+      });
+      return result.instructions as string | undefined;
+    },
     async listTools() {
       const result = await rpc("tools/list", {});
       return result.tools as McpTool[];
