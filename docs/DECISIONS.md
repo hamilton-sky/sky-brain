@@ -602,5 +602,7 @@ errors and the person's pages. Opening a layer shows its tools as text; the tool
 fixed, because clients do not reliably reload tools mid-chat. `search` gains a `layer` filter and a
 new `context { q }` returns the packet for all layers together. Design: `docs/vision/BOOK.md`
 section 14; draft: `docs/vision/book/`.
+**Also decided (25 Nov):** model pages need level 2 approval; full mode stays the default; the usage
+log keeps counts only.
 **Keeps:** D35 as revised (benchmark first, then a thin book), hard rules 3 and 7.
 

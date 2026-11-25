@@ -542,9 +542,11 @@ tool descriptions, short server instructions, and now `search { layer }` and `co
 bench gets one task per layer ("what do you know about me", "what did we decide", "save this",
 "do the next task") and one across layers.
 
-## Open questions, answered by the research (for shammai to confirm)
+## Decided
 
-1. **Approval level for model pages:** level 2 for any free text served to models. Structured
-   recipes could move to level 1 later, once the bench and a review history exist.
-2. **Default mode:** full stays the default; compact mode is deferred.
-3. **Usage log:** counts only at first.
+By shammai, 25 Nov 2026:
+
+1. **Model-proposed pages need level 2 approval**, like rules.
+2. **Full mode stays the default**; all tools stay visible. Compact mode is deferred.
+3. **The usage log keeps counts only** at first.
+4. **The book is organized by layer** (section 14, D37).
