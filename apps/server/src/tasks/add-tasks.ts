@@ -19,12 +19,12 @@ import type { Db, DbOrTx } from "../db/client.ts";
 import { taskDeps, tasks } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
-import { assertWriter, parseRequest, pathId } from "./goals-router.ts";
+import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
 import { findGoal } from "./goals-service.ts";
 import { taskTextHash } from "./task-text.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { toWireTask, type GoalRow } from "./wire.ts";
-import { heldBecause, refuseSecrets } from "./write-guards.ts";
+import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
 
 const badDependency = (i: number) =>
   new HttpError(

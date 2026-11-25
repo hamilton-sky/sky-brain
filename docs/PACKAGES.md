@@ -49,11 +49,11 @@ packages/shared      types and zod schemas (exists)
       ▲
 packages/db          schema, client, migrations, audit, a PGlite test db
       ▲
-packages/kernel      actor, guards (incl. secret scan), scope, http helpers
+packages/kernel      actor, guards (incl. secret scan), scope, http helpers, run tokens
       ▲
 packages/memory      entries, versions, comments, packet
       ▲
-packages/board       goals, tasks, projects, goal documents, devices, run tokens
+packages/board       goals, tasks, projects, goal documents, devices
       ▲
 packages/approvals   approval requests and web push
       ▲
@@ -67,8 +67,9 @@ Each arrow means "may import". Nothing imports upward.
   migration stream for the shared database. It also exports `createTestDb()` (PGlite, migrated)
   so every package can test against a real database without the app.
 - **`packages/kernel`.** The pieces every feature needs: the actor (who is calling), guards
-  (identity, membership, the secret scan and quarantine now in `tasks/write-guards.ts`), scope,
-  and the Express helpers now in `tasks/goals-router.ts` and `http/`.
+  (identity, membership, the secret scan and quarantine in `guards/write-guards.ts`), scope,
+  the Express request checks in `http/request-checks.ts`, and run tokens, because a run token
+  caps the caller's role and memory checks it too.
 - **`packages/memory`, `packages/board`, `packages/approvals`.** Each holds its service code and
   its Express router. They receive a db handle and an actor; they never read environment
   variables or open a connection. Auth, MCP and sign-in stay out of them.
@@ -100,14 +101,15 @@ Each arrow means "may import". Nothing imports upward.
 
 Each step is one PR, keeps every test green and changes no behaviour.
 
-0. **Untangle in place.** Move the secret scan and quarantine helpers from `tasks/write-guards.ts`
-   to `guards/`, the router helpers from `tasks/goals-router.ts` to `http/`, and `taskTextHash`
-   out of the `db` test's way. Add the lint rule for the folder order. After this, memory no
-   longer imports tasks.
+0. **Untangle in place** (done, 25 Nov). The secret scan and quarantine helpers moved from
+   `tasks/write-guards.ts` to `guards/`, the request checks from `tasks/goals-router.ts` to
+   `http/request-checks.ts`, the tasks schema test from `db/` to `tasks/`, and the `/me` router
+   from `projects/` to `agents/` (it uses MCP's `whoami`). ESLint now enforces the folder order
+   on source files (`eslint.config.js`, `serverLayers`). Memory no longer imports tasks.
 1. **`packages/db`**, with `createTestDb()`.
 2. **`packages/kernel`.**
 3. **`packages/memory`**, and its service tests moved to `createTestDb()`.
-4. **`packages/board`** (tasks, projects, goal documents, devices, run tokens).
+4. **`packages/board`** (tasks, projects, goal documents, devices).
 5. **`packages/approvals`** (approvals and push).
 
 Vercel needs no change: esbuild already bundles workspace packages into the function, and

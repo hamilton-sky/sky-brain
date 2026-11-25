@@ -19,7 +19,7 @@ import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
 import { validate } from "../http/validate.ts";
 import { resolveScope } from "../scope/resolve-scope.ts";
-import { boardWriteLimit } from "../tasks/goals-router.ts";
+import { boardWriteLimit } from "../http/request-checks.ts";
 
 type ProjectRow = typeof projects.$inferSelect;
 

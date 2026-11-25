@@ -27,11 +27,11 @@ import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { LEASE_SECONDS } from "./claim.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { blockDependents } from "./fail-cascade.ts";
-import { assertWriter, parseRequest, pathId } from "./goals-router.ts";
+import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
 import { dependsOnMany } from "./ready.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { findTask } from "./tasks-router.ts";
-import { withholdSecrets } from "./write-guards.ts";
+import { withholdSecrets } from "../guards/write-guards.ts";
 import { toWireTask, type TaskRow } from "./wire.ts";
 
 type Verb = "renew" | "release" | "done" | "fail";
