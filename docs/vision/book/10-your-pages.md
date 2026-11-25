@@ -1,4 +1,4 @@
-# 9. From shammai
+# 10. From shammai
 
 > Example pages, to show what this chapter looks like. They are not real yet: in the product,
 > every page here is written or approved by the person.

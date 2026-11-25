@@ -191,9 +191,17 @@ The memory tools are built (step 1). The `context` packet on `claim_task` and le
 | MCP tool | REST | Does |
 |---|---|---|
 | `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
-| `search` | `GET /api/v1/entries?q=` | word search, any word may match, ranked; returns summaries, not bodies |
+| `search` | `GET /api/v1/entries?q=&layer=` | word search, any word may match, ranked; returns summaries, not bodies; `layer` (core, long, short) narrows it to one layer |
+| `context` | `GET /api/v1/entries/context?q=` | the fenced context packet for a free question, across every layer: About me, approved rules, relevant entries, what is not known |
 | `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
 | `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |
+| `book` | none (built-in text) | the book of this brain (D37, D38): no id gives the contents with a live "Your brain now"; an id gives a chapter, or the chapter that documents a tool |
+
+Every MCP tool's description ends with "Use when" and, where there is one, "Pitfalls"
+(`apps/server/src/mcp/tool-guides.ts`), and `initialize` returns server instructions of at most 512
+characters, built-in text only (`serverInstructions` in `book-tool.ts`). The chapters are served
+from `book-chapters.ts`, generated from `docs/vision/book/` by `pnpm book:gen`; a test fails when
+it is stale.
 
 People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
 `/approve` and `/reject`. Run tokens have no verb for these routes, so a device cannot reach them

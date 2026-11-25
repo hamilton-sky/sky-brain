@@ -1,4 +1,4 @@
-# 6. Asking for approval
+# 7. Asking for approval
 
 ## Why you cannot approve
 
@@ -38,6 +38,6 @@ requests. Batch items into one request instead of asking one by one.
 
 ## Tools in this chapter (generated)
 
-**request_approval** · writes · `items[]` (1 to 20, `{kind: goal | entry, id}`), `reason` (one
-line) → the request with `id`, `status: pending` and `approval.url`.
-**approval_status** · read-only · `id` → the request and its status.
+- **request_approval** · writes · `items[]` (1 to 20, `{kind: goal | entry, id}`), `reason` (one
+  line) → the request with `id`, `status: pending` and `approval.url`.
+- **approval_status** · read-only · `id` → the request and its status.

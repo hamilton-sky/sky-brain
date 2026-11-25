@@ -1,4 +1,4 @@
-# 8. When things go wrong
+# 9. When things go wrong
 
 A tool error comes back with `isError: true`, an HTTP-like `status` and an `error.code`. Read the
 code; do not retry blindly.

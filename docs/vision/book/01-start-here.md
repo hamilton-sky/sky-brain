@@ -37,12 +37,12 @@ sees who wrote what.
 
 ## Tools in this chapter (generated)
 
-**whoami** · read-only · no arguments
-Use when: you need the person's workspace ids, or want to know your own role.
-Returns: `email`, `user_id`, `workspaces[]` (id, name, role), `agent` (agent_id, profile).
+- **whoami** · read-only · no arguments
+  Use when: you need the person's workspace ids, or want to know your own role.
+  Returns: `email`, `user_id`, `workspaces[]` (id, name, role), `agent` (agent_id, profile).
 
 ## Recipe: start a session
 
 1. `book` (you are here) for the contents and your role.
 2. `whoami` only if you need a `workspace_id` you do not have.
-3. `book_search { q: "<the person's request in a few words>" }` to find the recipe that fits.
+3. Open the layer chapter that fits the request (`book { id: "inbox" }` to save, `"notebooks"` to look something up, `"board"` to work).

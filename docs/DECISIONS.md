@@ -591,3 +591,31 @@ are unchanged. Push is off unless the three `VAPID_*` settings are set.
 sky-brain is on the Home Screen, and the research of 24 Nov ranked it after the inbox.
 **Keeps:** hard rule 3 (an alert never approves by itself; the approve route is people only) and
 hard rule 5 (nothing secret in a URL; the link carries only the request id).
+
+### D37. The brain book is organized by layer
+
+**Date:** 2026-11-25. **Decided by:** shammai.
+**Decision:** the book has one entry, `book`. Its chapters start with the brain's layers (About
+me, Notebooks, Inbox, Board); each layer's chapter says what the layer is for, what is in it, how
+to use it, and its APIs. Then come chapters for using the brain across layers, approval, recipes,
+errors and the person's pages. Opening a layer shows its tools as text; the tool list itself stays
+fixed, because clients do not reliably reload tools mid-chat. `search` gains a `layer` filter and a
+new `context { q }` returns the packet for all layers together. Design: `docs/vision/BOOK.md`
+section 14; draft: `docs/vision/book/`.
+**Also decided (25 Nov):** model pages need level 2 approval; full mode stays the default; the usage
+log keeps counts only.
+**Keeps:** D35 as revised (benchmark first, then a thin book), hard rules 3 and 7.
+
+### D38. Build the book with cross-layer context now, ship it after the measurement window
+
+**Date:** 2026-11-25. **Decided by:** shammai.
+**Decision:** the bench did not show the book beating B's descriptions on single tasks, but the
+book's purpose is complex requests that pull context from several layers at once. So step 1 is
+built now, together, on a branch: `context { q }` (the packet for a free question, across every
+layer), a `layer` filter on `search`, the `book { id? }` tool with "Your brain now", server
+instructions, and use-when and pitfalls on every tool description. It ships after the two-week
+memory-loop window. The bench measures it with arms from the real server (C adds `context`, D adds
+`context` and the book) on cross-layer scenarios.
+**Keeps:** D35 and D37 (one `book` entry, layer-first chapters), hard rules 3, 4 and 7 (both new
+tools are read-only, workspace-filtered, and the packet stays fenced). The live server shows
+models nothing new until the PR merges.

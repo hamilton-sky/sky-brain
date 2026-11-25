@@ -11,7 +11,8 @@ mock of the Book settings page: https://claude.ai/artifact/R17CXKKuHiUM1gq7fsTdD
 > what goes wrong), and the one channel every client delivers is the tool description itself. So
 > the book's **text** is worth shipping soon, and most of its **machinery** waits for a trigger.
 > Sections 10 and 11 hold the revised measurement and build order. Sections 4 to 7 stay as the
-> long-term design, with the corrections in section 12.
+> long-term design, with the corrections in section 12. **Section 14 (25 Nov) organizes the book
+> by layer, as shammai set it; it replaces the chapter list in section 2.**
 
 It answers four ideas shammai raised on 24 Nov 2026:
 
@@ -419,6 +420,17 @@ its own, in `bench/book/`, against a test brain:
    today's tool definitions take. Nothing a model can see changes while the two-week memory-loop
    measurement runs, because new instructions or descriptions would change how models call
    `capture` and `search` and spoil that measurement.
+   *Built 25 Nov 2026:* [`bench/book/`](../../bench/book/README.md) with 34 tasks (12 held out),
+   all three arms, and grading by database state; `pnpm bench:book --dry` checks every grader
+   without a model. Today's 18 tools take about 17,800 characters (roughly 5,100 tokens). The
+   model runs wait for an API key and a go-ahead on cost.
+   *First run, 25 Nov (Sonnet through Claude Code, one trial, 102 runs):* A 91%, B 100%, C 97%.
+   On the held-out tasks A 100%, B 100%, C 92%; models opened the book in 6% of C runs. C does not
+   beat B, so step 1 ships B (use-when and pitfalls in descriptions) and the `book` tool waits
+   ([results](../../bench/book/README.md)).
+   *Complex scenarios, 25 Nov (6 multi-step tasks, 144 runs):* Sonnet and Opus 100% in every arm;
+   Haiku 75% / 71% / 75% (A / B / C), failing the same workflow steps in every arm and opening the
+   book in 0.17 calls per run. Same decision: B ships, the book waits.
 1. **After the window, about 3 to 4 days, kept only if B or C wins:** `defineTool` with the `book`
    block and the test that every tool has a chapter; use-when and pitfalls rendered into each
    tool's description; server instructions (512 characters, built-in text only) and the claude.ai
@@ -426,6 +438,15 @@ its own, in `bench/book/`, against a test brain:
    or recipe), marked `readOnlyHint: true, destructiveHint: false`; error messages that point to
    `book { id: "errors" }`; the "Your brain now" block in `book`; `context { q }` and a `layer`
    filter on `search` (section 13).
+   *Built 25 Nov 2026 on a branch, not live (D38):* `book`, `context`, the `layer` filter, server
+   instructions (428 characters) and use-when and pitfalls on every tool, all in the real server
+   behind `McpServerOptions.book`. The bench arms now come from that option: A today, B
+   descriptions, C plus `context`, D plus `context` and the book. Four cross-layer scenarios
+   (`--set across`) need About me, both Notebooks, the Inbox and the Board in one answer.
+   *First four-arm run, 25 Nov (Haiku and Sonnet, 120 runs):* on the cross-layer set Sonnet goes
+   from 50% (A, B) to 75% with `context` (C, D); Haiku stays at 88 to 100% in every arm, and D cuts
+   its extra calls from about 11 to 7 per task. Board workflow mistakes do not change in any arm
+   ([results](../../bench/book/README.md)).
 2. **Deferred, each with its trigger:**
 
 | Piece | Build it when |
@@ -500,9 +521,52 @@ step 1, after the measurement window, and the bench gets tasks for each scope ("
 about the theme", "only my decisions", "only what came in this week"). "Your brain now" ships with
 the `book` tool itself.
 
-## Open questions, answered by the research (for shammai to confirm)
 
-1. **Approval level for model pages:** level 2 for any free text served to models. Structured
-   recipes could move to level 1 later, once the bench and a review history exist.
-2. **Default mode:** full stays the default; compact mode is deferred.
-3. **Usage log:** counts only at first.
+## 14. The book is organized by layer (25 Nov, shammai)
+
+shammai set the shape on 25 Nov 2026: **one entry, `book`, whose chapters start with the brain's
+layers.** Each layer's chapter explains what the layer is for and how to use it, and opening the
+layer shows its APIs. This replaces the chapter list in section 2, which was organized by activity
+(reading, writing). The draft in [book/](book/) is rewritten this way.
+
+```text
+book                      → contents: Your brain now, the five rules, the chapters
+book { id: "about-me" }   → Layer: About me   what it is for · what is in it · how to use it · its APIs
+book { id: "notebooks" }  → Layer: Notebooks
+book { id: "inbox" }      → Layer: Inbox      (the only layer an agent writes to)
+book { id: "board" }      → Layer: Board
+book { id: "across" }     → all layers together: context { q }, scopes, how layers are weighed
+book { id: "approval" | "recipes" | "errors" | "your-pages" }
+```
+
+Every layer chapter has the same four parts, so a model learns the pattern once:
+
+| Part | Says |
+| --- | --- |
+| **What it is for** | The layer's job in the brain, in one paragraph (About me = the self; Notebooks = what lasts; Inbox = what is new; Board = what is being done) |
+| **What is in it** | Which kinds of entries, how many, how long they live |
+| **How to use it** | When to read it, whether you may write it, how to weigh what you find |
+| **Its APIs** (generated) | The tools for this layer with their key arguments and pitfalls, from the tool registry |
+
+**What "opening a layer shows its APIs" means technically.** The chapter returns the layer's tools
+as text (name, arguments, pitfalls), and the tools themselves stay registered all the time. A server
+could instead hide tools and reveal them after `book { id }` with `tools/list_changed`, but the
+research found clients do not support that reliably (ChatGPT needs a manual refresh; claude.ai is
+undocumented), so a model could be stuck with a tool it was told about and cannot call. Two small
+API changes make the layers real in the calls too: `search { layer }` for one layer, and
+`context { q }` for all of them (section 13).
+
+**Does it change the plan?** The chapter structure changes; the build order in section 11 does not.
+It still starts with the benchmark, and step 1 still ships one `book { id? }` tool, the text inside
+tool descriptions, short server instructions, and now `search { layer }` and `context { q }`. The
+bench gets one task per layer ("what do you know about me", "what did we decide", "save this",
+"do the next task") and one across layers.
+
+## Decided
+
+By shammai, 25 Nov 2026:
+
+1. **Model-proposed pages need level 2 approval**, like rules.
+2. **Full mode stays the default**; all tools stay visible. Compact mode is deferred.
+3. **The usage log keeps counts only** at first.
+4. **The book is organized by layer** (section 14, D37).
