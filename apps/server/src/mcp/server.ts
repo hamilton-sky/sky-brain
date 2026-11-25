@@ -13,7 +13,7 @@ import {
   createRateLimiter,
   type RateLimiter,
 } from "@sky-brain/kernel/guards/ratelimit";
-import type { Push } from "../push/push.ts";
+import type { Push } from "@sky-brain/approvals/push/push";
 import { registerApprovalTools } from "./approval-tools.ts";
 import { boardDispatcher } from "./board-dispatch.ts";
 import { registerBoardTools } from "./board-tools.ts";

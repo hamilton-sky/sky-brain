@@ -2,7 +2,7 @@ import type { Server } from "node:http";
 import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { devActorHeaderEnabled, type Config } from "./config.ts";
-import { pushFromEnv } from "./push/push.ts";
+import { pushFromEnv } from "@sky-brain/approvals/push/push";
 import {
   closeDb,
   createPgliteDb,

@@ -15,7 +15,7 @@ import {
   type TestServer,
 } from "../testing/harness.ts";
 import { seedGoal } from "../testing/task-seeds.ts";
-import { createPush, type PushTarget } from "./push.ts";
+import { createPush, type PushTarget } from "@sky-brain/approvals/push/push";
 
 let db: Db;
 let server: TestServer;
