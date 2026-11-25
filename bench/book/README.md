@@ -107,3 +107,23 @@ task lower, and C's model opened the book in only 6% of runs. With one trial per
 one-task gap is noise. By section 10's rule (C must beat B on the held-out tasks), the book does
 not earn its place yet: ship B's descriptions after the measurement window, and keep the chapters
 as their source.
+
+## Complex scenarios: Haiku, Sonnet, Opus (25 Nov 2026)
+
+`--via claude-code --set complex`. 144 runs, about $5.24 in total.
+
+| Model | Trials | A | B | C | Book calls per run (C) |
+| --- | --- | --- | --- | --- | --- |
+| Haiku | 4 | 75% | 71% | 75% | 0.17 |
+| Sonnet | 2 | 100% | 100% | 100% | 0 |
+| Opus | 2 | 100% | 100% | 100% | 0 |
+
+Haiku failed `x-fail-and-replan` in all 12 runs: it never claimed the task, so it could not
+report it failed, and went straight to `add_tasks`. It failed `x-work-session` in 6 of 12: it
+claimed the task, then released it instead of reporting it done, and never saved the note. It
+also failed `x-reverse-decision` once, in C, when the new decision did not cite the old one. No
+arm fixed these, and C's models rarely opened the book.
+
+Reading: these scenarios separate the models, not the arms. A small model skips steps of a
+workflow (claim before report, report instead of release), and neither descriptions nor an
+unopened book change that. Separating the arms would take harder scenarios.

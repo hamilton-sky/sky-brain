@@ -428,6 +428,9 @@ its own, in `bench/book/`, against a test brain:
    On the held-out tasks A 100%, B 100%, C 92%; models opened the book in 6% of C runs. C does not
    beat B, so step 1 ships B (use-when and pitfalls in descriptions) and the `book` tool waits
    ([results](../../bench/book/README.md)).
+   *Complex scenarios, 25 Nov (6 multi-step tasks, 144 runs):* Sonnet and Opus 100% in every arm;
+   Haiku 75% / 71% / 75% (A / B / C), failing the same workflow steps in every arm and opening the
+   book in 0.17 calls per run. Same decision: B ships, the book waits.
 1. **After the window, about 3 to 4 days, kept only if B or C wins:** `defineTool` with the `book`
    block and the test that every tool has a chapter; use-when and pitfalls rendered into each
    tool's description; server instructions (512 characters, built-in text only) and the claude.ai
