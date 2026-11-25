@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-25T22:57:27.925Z",
+  "generatedAt": "2026-11-25T23:08:45.391Z",
   "entries": [
     {
       "fingerprint": "070b8236e1e834612017c559",
@@ -51,13 +51,13 @@
       "file": "apps/server/src/auth/cli-config.ts"
     },
     {
-      "fingerprint": "78448a84609c994f71e11e8b",
+      "fingerprint": "d27c6484c802ceed6a09633e",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-dependency",
       "scope": ".",
       "file": "apps/server/package.json",
-      "line": 39
+      "line": 40
     },
     {
       "fingerprint": "3fe6b43379aa1197c74cdc2d",
@@ -139,33 +139,6 @@
       "scope": ".",
       "file": "apps/server/src/mcp/test/flow.ts",
       "line": 22
-    },
-    {
-      "fingerprint": "62b22594f6fe58d0b5048615",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/devices/device-flow.ts",
-      "line": 30
-    },
-    {
-      "fingerprint": "bb5a760c2fba380295bff000",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/devices/device-flow.ts",
-      "line": 31
-    },
-    {
-      "fingerprint": "468f0cecca42b2358ca45842",
-      "provider": "Knip",
-      "category": "dead-code",
-      "type": "unused-export",
-      "scope": ".",
-      "file": "apps/server/src/devices/device-flow.ts",
-      "line": 40
     },
     {
       "fingerprint": "7bbbabefd071cde32c79942e",
@@ -447,24 +420,6 @@
       "line": 57
     },
     {
-      "fingerprint": "a4cf8f4ca392521e6b78100e",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "tasks/add-tasks.ts",
-      "line": 12
-    },
-    {
-      "fingerprint": "a4cf8f4ca392521e6b78100e",
-      "provider": "jscpd",
-      "category": "duplication",
-      "type": "duplication",
-      "scope": ".",
-      "file": "tasks/add-tasks.ts",
-      "line": 12
-    },
-    {
       "fingerprint": "e4b20b8b9e6dc9928268242b",
       "provider": "jscpd",
       "category": "duplication",
@@ -571,6 +526,24 @@
       "scope": ".",
       "file": "testing/auth-harness.ts",
       "line": 180
+    },
+    {
+      "fingerprint": "a4cf8f4ca392521e6b78100e",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "tasks/add-tasks.ts",
+      "line": 12
+    },
+    {
+      "fingerprint": "a4cf8f4ca392521e6b78100e",
+      "provider": "jscpd",
+      "category": "duplication",
+      "type": "duplication",
+      "scope": ".",
+      "file": "tasks/add-tasks.ts",
+      "line": 12
     },
     {
       "fingerprint": "ec614e42f237dec3630da139",
