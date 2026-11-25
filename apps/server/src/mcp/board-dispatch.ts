@@ -13,9 +13,9 @@ import type { Push } from "../push/push.ts";
 import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { approvalsRouter } from "../approvals/approvals-router.ts";
 import { entriesRouter, memoriesRouter } from "@sky-brain/memory/memory-router";
-import { projectsRouter } from "../projects/projects-router.ts";
-import { goalsRouter } from "../tasks/goals-router.ts";
-import { tasksRouter } from "../tasks/tasks-router.ts";
+import { projectsRouter } from "@sky-brain/board/projects/projects-router";
+import { goalsRouter } from "@sky-brain/board/tasks/goals-router";
+import { tasksRouter } from "@sky-brain/board/tasks/tasks-router";
 
 /** Copies the methods of `obj`'s own class prototype onto `obj` itself. */
 function pinOwnMethods(obj: object): void {

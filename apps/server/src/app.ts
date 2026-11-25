@@ -8,8 +8,8 @@ import type { Auth } from "./auth/auth.ts";
 import { mountAuth } from "./auth/routes.ts";
 import { sessionActorResolver } from "./auth/session-resolver.ts";
 import type { Db } from "@sky-brain/db/client";
-import { deviceFlowRouter } from "./devices/device-flow.ts";
-import { devicesRouter } from "./devices/devices-router.ts";
+import { deviceFlowRouter } from "@sky-brain/board/devices/device-flow";
+import { devicesRouter } from "@sky-brain/board/devices/devices-router";
 import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { requireJsonWrites } from "@sky-brain/kernel/http/json-writes";
@@ -20,12 +20,12 @@ import { approvalsRouter } from "./approvals/approvals-router.ts";
 import { noPush, type Push } from "./push/push.ts";
 import { pushRouter } from "./push/push-router.ts";
 import { meRouter } from "./agents/me-router.ts";
-import { projectsRouter } from "./projects/projects-router.ts";
+import { projectsRouter } from "@sky-brain/board/projects/projects-router";
 import { mintRouter } from "@sky-brain/kernel/run-tokens/mint-router";
 import { runTokenResolver } from "@sky-brain/kernel/run-tokens/resolver";
 import { verbMiddleware } from "@sky-brain/kernel/run-tokens/verbs";
-import { goalsRouter } from "./tasks/goals-router.ts";
-import { tasksRouter } from "./tasks/tasks-router.ts";
+import { goalsRouter } from "@sky-brain/board/tasks/goals-router";
+import { tasksRouter } from "@sky-brain/board/tasks/tasks-router";
 
 export interface AppOptions {
   db: Db;

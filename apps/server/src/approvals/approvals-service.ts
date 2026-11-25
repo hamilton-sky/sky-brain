@@ -25,7 +25,7 @@ import {
 import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { findEntry, setTrustInTx } from "@sky-brain/memory/entries-service";
 import { memberRole } from "@sky-brain/kernel/scope/member-role";
-import { approveGoal, findGoal } from "../tasks/goals-service.ts";
+import { approveGoal, findGoal } from "@sky-brain/board/tasks/goals-service";
 
 export type ApprovalRow = typeof approvalRequests.$inferSelect;
 

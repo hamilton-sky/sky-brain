@@ -17,8 +17,8 @@ import {
   seedTask,
   withToken,
 } from "../testing/task-seeds.ts";
-import { liveTextHash } from "./eligibility.ts";
-import { taskTextHash } from "./task-text.ts";
+import { liveTextHash } from "@sky-brain/board/tasks/eligibility";
+import { taskTextHash } from "@sky-brain/board/tasks/task-text";
 
 const ctx = useRunTokenFixture();
 type W = Awaited<ReturnType<typeof world>>;
