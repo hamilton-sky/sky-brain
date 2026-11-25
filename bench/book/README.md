@@ -60,6 +60,10 @@ instructions arrive the way a real client gets them, in `initialize`. Your own
 `~/.claude/CLAUDE.md`, if you have one, still loads. Token counts are Claude Code's, which
 include its own system prompt.
 
+Six complex scenarios (`tasks-complex.ts`, several tools across layers in order) were written
+after the first run and count as held out. Run them with `--set complex` (`--set all` for every
+task).
+
 Options: `--arms A,B,C`, `--split tune|held|all`, `--tasks id1,id2`, `--concurrency 4`,
 `--label name`, `--base-url` (default `https://api.anthropic.com`). Each trial seeds its own
 PGlite, so a full run takes a while; results go to `results/<label>.json` with every trial's

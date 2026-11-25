@@ -30,6 +30,7 @@ const { values: opt } = parseArgs({
     label: { type: "string" },
     "base-url": { type: "string", default: "https://api.anthropic.com" },
     via: { type: "string", default: "api" },
+    set: { type: "string", default: "core" },
   },
 });
 
@@ -41,6 +42,7 @@ async function fresh() {
 
 const selected = TASKS.filter(
   (t) =>
+    (opt.set === "all" || t.set === opt.set) &&
     (opt.split === "all" || t.split === opt.split) &&
     (!opt.tasks || opt.tasks.split(",").includes(t.id)),
 );
