@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-25T22:42:38.780Z",
+  "generatedAt": "2026-11-25T22:57:27.925Z",
   "entries": [
     {
       "fingerprint": "070b8236e1e834612017c559",
@@ -51,13 +51,13 @@
       "file": "apps/server/src/auth/cli-config.ts"
     },
     {
-      "fingerprint": "f1728d0a27dacf80014e8867",
+      "fingerprint": "78448a84609c994f71e11e8b",
       "provider": "Knip",
       "category": "dead-code",
       "type": "unused-dependency",
       "scope": ".",
       "file": "apps/server/package.json",
-      "line": 38
+      "line": 39
     },
     {
       "fingerprint": "3fe6b43379aa1197c74cdc2d",
