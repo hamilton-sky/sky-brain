@@ -12,7 +12,7 @@ import type { Db } from "../db/client.ts";
 import { pushSubscriptions } from "../db/schema.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
-import { boardWriteLimit, parseRequest } from "../tasks/goals-router.ts";
+import { boardWriteLimit, parseRequest } from "../http/request-checks.ts";
 import type { Push } from "./push.ts";
 
 export interface PushRouterOptions {

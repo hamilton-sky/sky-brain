@@ -2,6 +2,47 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+// Folder order inside apps/server/src (docs/PACKAGES.md): db, then kernel (actor, guards, scope,
+// http, run-tokens), then memory, board (tasks, projects, devices) and approvals (approvals,
+// push). A folder imports only folders before it. Tests may also use the app harness.
+const serverLayers = [
+  ["db"],
+  ["actor", "guards", "scope", "http", "run-tokens"],
+  ["memory"],
+  ["tasks", "projects", "devices"],
+  ["approvals", "push"],
+];
+const serverOnly = [
+  "agents",
+  "auth",
+  "mcp",
+  "testing",
+  "config",
+  "app",
+  "server",
+];
+const layerRules = serverLayers.map((layer, i) => {
+  const later = [...serverLayers.slice(i + 1).flat(), ...serverOnly];
+  return {
+    files: layer.map((dir) => `apps/server/src/${dir}/**/*.ts`),
+    ignores: ["**/*.test.ts", "**/tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: later.flatMap((dir) => [`**/${dir}/*`, `**/${dir}.ts`]),
+              message:
+                "Folder order (docs/PACKAGES.md): import only folders that come earlier.",
+            },
+          ],
+        },
+      ],
+    },
+  };
+});
+
 export default tseslint.config(
   {
     ignores: [
@@ -52,4 +93,5 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-return": "off",
     },
   },
+  ...layerRules,
 );

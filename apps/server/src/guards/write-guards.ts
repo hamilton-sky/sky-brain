@@ -1,7 +1,7 @@
-// The board's one place for secret and quarantine handling (cloud-task-board spec.md Check
-// order steps 10 and 11): goal create (ticket 04), add tasks (05) and report text (07).
-import { detectInjection } from "../guards/quarantine.ts";
-import { scanForSecrets } from "../guards/secrets.ts";
+// One place for secret and quarantine handling on writes (cloud-task-board spec.md Check
+// order steps 10 and 11): goals, tasks, reports, memory entries and comments.
+import { detectInjection } from "./quarantine.ts";
+import { scanForSecrets } from "./secrets.ts";
 import { HttpError } from "../http/http-error.ts";
 
 /** 422 `secret_detected` naming the field and the rule (never the value) when one holds a secret. */

@@ -16,7 +16,7 @@ import { agentsRouter } from "./agents/agents-router.ts";
 import { approvalsRouter } from "./approvals/approvals-router.ts";
 import { noPush, type Push } from "./push/push.ts";
 import { pushRouter } from "./push/push-router.ts";
-import { meRouter } from "./projects/me-router.ts";
+import { meRouter } from "./agents/me-router.ts";
 import { projectsRouter } from "./projects/projects-router.ts";
 import { mintRouter } from "./run-tokens/mint-router.ts";
 import { runTokenResolver } from "./run-tokens/resolver.ts";

@@ -17,7 +17,7 @@ import { buildPacket } from "../memory/packet.ts";
 import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { overlaps } from "./file-overlap.ts";
-import { assertWriter, parseRequest, pathId } from "./goals-router.ts";
+import { assertWriter, parseRequest, pathId } from "../http/request-checks.ts";
 import { dependsOnMany } from "./ready.ts";
 import { writeTaskEvent } from "./task-events.ts";
 import { findTask } from "./tasks-router.ts";

@@ -2,13 +2,11 @@
 // human-only approve, cancel and release. Check order: actor, body and verb (app); humans only
 // (approve, cancel, release); the board-write rate limit (every POST); request shape and size
 // caps; target and membership (404); role (403); state (409); secrets (422); quarantine.
-import type { Role } from "@sky-brain/shared/enums";
 import { IdSchema } from "@sky-brain/shared/scope";
 import { AttachDocumentRequestSchema } from "@sky-brain/shared/goal-docs";
 import {
   GoalCreateRequestSchema,
   GoalsListQuerySchema,
-  tooLargeField,
 } from "@sky-brain/shared/tasks";
 import { and, eq } from "drizzle-orm";
 import express, {
@@ -16,8 +14,6 @@ import express, {
   type RequestHandler,
   type Router,
 } from "express";
-import type { z } from "zod";
-import { actorKey } from "../actor/keys.ts";
 import { actorOf } from "../actor/middleware.ts";
 import { requireHuman } from "../actor/require-human.ts";
 import { runContextOf } from "../actor/run-context.ts";
@@ -25,8 +21,14 @@ import type { Db, DbOrTx } from "../db/client.ts";
 import { features } from "../db/schema.ts";
 import type { RateLimiter } from "../guards/ratelimit.ts";
 import { HttpError } from "../http/http-error.ts";
+import {
+  assertWriter,
+  boardWriteLimit,
+  parseRequest,
+  pathId,
+} from "../http/request-checks.ts";
 import { validate } from "../http/validate.ts";
-import { assertRunScope, effectiveRole } from "../run-tokens/run-scope.ts";
+import { assertRunScope } from "../run-tokens/run-scope.ts";
 import { resolveScope } from "../scope/resolve-scope.ts";
 import { addTasksHandler } from "./add-tasks.ts";
 import { attachDocument, detachDocument, documentsOf } from "./goal-docs.ts";
@@ -42,59 +44,13 @@ import {
   releaseGoal,
 } from "./goals-service.ts";
 import type { GoalRow } from "./wire.ts";
-import { heldBecause, refuseSecrets } from "./write-guards.ts";
+import { heldBecause, refuseSecrets } from "../guards/write-guards.ts";
 
 export interface GoalsRouterOptions {
   db: Db;
   now: () => Date;
   /** The one board-write limiter `createApp` shares between the board's routers. */
   limiter: RateLimiter;
-}
-
-/**
- * Check order step 5 for a board write: one bucket per actor and device (`createApp` makes one
- * limiter for every board write); 429 `rate_limited` with `Retry-After`.
- */
-export function boardWriteLimit(limiter: RateLimiter): RequestHandler {
-  return (req, res, next) => {
-    const device = runContextOf(req)?.deviceId ?? "none";
-    const taken = limiter.take(`${actorKey(actorOf(req))}|device:${device}`);
-    if (!taken.ok) {
-      res.set("Retry-After", String(taken.retryAfterSeconds));
-      throw new HttpError(429, "rate_limited", "Too many writes; wait.");
-    }
-    next();
-  };
-}
-
-/** Check order step 6: an over-cap value is 413 `too_large` with `field`, else 400. */
-export function parseRequest<S extends z.ZodType>(
-  schema: S,
-  value: unknown,
-): z.output<S> {
-  const result = schema.safeParse(value);
-  if (!result.success) {
-    const field = tooLargeField(result.error);
-    if (field !== null) {
-      throw new HttpError(413, "too_large", "A value is over its size cap.", {
-        field,
-      });
-    }
-  }
-  return validate(schema, value);
-}
-
-/** A path `:id` that is not a uuid is 400 `invalid_request`. */
-export function pathId(req: Request): string {
-  return validate(IdSchema, req.params.id);
-}
-
-/** Check order step 8: owners and editors write; a run token's role caps the member's. */
-export function assertWriter(req: Request, memberRole: Role): void {
-  const role = effectiveRole(req, memberRole);
-  if (role !== "owner" && role !== "editor") {
-    throw new HttpError(403, "role_cannot_write", "A viewer cannot write.");
-  }
 }
 
 export function goalsRouter(options: GoalsRouterOptions): Router {

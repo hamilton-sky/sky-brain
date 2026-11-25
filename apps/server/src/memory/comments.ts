@@ -14,7 +14,7 @@ import { writeAudit } from "../db/audit.ts";
 import type { Db, DbOrTx } from "../db/client.ts";
 import { entryComments } from "../db/schema.ts";
 import { HttpError } from "../http/http-error.ts";
-import { refuseSecrets } from "../tasks/write-guards.ts";
+import { refuseSecrets } from "../guards/write-guards.ts";
 import { findEntry, type EntryRow } from "./entries-service.ts";
 
 type Human = Actor & { kind: "human" };
