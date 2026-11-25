@@ -42,6 +42,7 @@ apps/web         React app
 packages/shared  entry types and zod schemas
 packages/db      Drizzle schema, client, migrations (packages/db/drizzle), createTestDb
 packages/kernel  actor, guards (secret scan), scope, http helpers, run tokens
+packages/memory  memories, entries, comments, the context packet, the memory router
 docs/PACKAGES.md planned package split (db, kernel, memory, board, approvals) and border rules
 docs/            plan, roadmap, decisions, tickets
 vercel.json      Vercel project (build, function, rewrites)

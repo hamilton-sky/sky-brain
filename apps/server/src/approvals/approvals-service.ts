@@ -23,7 +23,7 @@ import {
   type PinnedItem,
 } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
-import { findEntry, setTrustInTx } from "../memory/entries-service.ts";
+import { findEntry, setTrustInTx } from "@sky-brain/memory/entries-service";
 import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import { approveGoal, findGoal } from "../tasks/goals-service.ts";
 

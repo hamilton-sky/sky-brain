@@ -116,7 +116,11 @@ Each step is one PR, keeps every test green and changes no behaviour.
    Their tests that boot the app (`actor.test.ts`, `resolve-scope.test.ts`, the run-token route
    tests and their fixture) stay in `apps/server/src/<folder>/`. ESLint now also enforces the
    package order (`packageRules`).
-3. **`packages/memory`**, and its service tests moved to `createTestDb()`.
+3. **`packages/memory`** (done, 25 Nov). `comments`, `entries-service`, `memories`,
+   `memory-router`, `packet` and `wire` moved to `packages/memory/src/`; the server imports
+   `@sky-brain/memory/<file>`. `memories.test.ts` runs in the package against `createTestDb()`
+   (membership filter, About me for the owner only). The older memory tests boot the app or use
+   the run-token fixture, so they stay in `apps/server/src/memory/` for now.
 4. **`packages/board`** (tasks, projects, goal documents, devices).
 5. **`packages/approvals`** (approvals and push).
 

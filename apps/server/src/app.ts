@@ -14,7 +14,7 @@ import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { requireJsonWrites } from "@sky-brain/kernel/http/json-writes";
 import { mountMcp } from "./mcp/route.ts";
-import { entriesRouter, memoriesRouter } from "./memory/memory-router.ts";
+import { entriesRouter, memoriesRouter } from "@sky-brain/memory/memory-router";
 import { agentsRouter } from "./agents/agents-router.ts";
 import { approvalsRouter } from "./approvals/approvals-router.ts";
 import { noPush, type Push } from "./push/push.ts";

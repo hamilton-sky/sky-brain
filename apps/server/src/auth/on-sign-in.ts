@@ -5,7 +5,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "@sky-brain/db/client";
 import { invites, members, user, workspaces } from "@sky-brain/db/schema";
-import { createDefaultMemories } from "../memory/memories.ts";
+import { createDefaultMemories } from "@sky-brain/memory/memories";
 
 export async function onSignIn(
   db: Db,
