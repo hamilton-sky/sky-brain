@@ -150,7 +150,8 @@ body::before {
   color: var(--pf-accent);
 }
 /* The small 3D brain (public brain.js draws it); a canvas, so no outline styles. */
-.pf-brand .brain-mark {
+.pf-brand .brain-mark,
+.brain-open-top .brain-mark {
   width: 46px;
   height: 36px;
   flex: none;

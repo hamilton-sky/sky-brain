@@ -325,6 +325,19 @@ or on the whole text, resolved, reopened or deleted by people with a writer role
 entry). Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
 `GET /entries/:id`), so the model sees them with `get`. PDFs are not stored yet.
 
+The brain view (D40) shows the layers. Clicking the header's star brain (or Brain in the sidebar,
+or the brain in the phone's top bar) opens it over the page: the brain forms, then splits into
+About me in the middle, the Board in front, the Inbox below and the Notebooks behind, each in its
+layer's colour with its name and count. A slow ring marks a part with something waiting for the
+person, and coloured sparks mark agents that wrote there in the last ten minutes. Picking a part
+(click, legend chip, arrow keys, or a swipe) fills a side panel: what the layer is for, how many
+items wait (with Review), the agents that wrote there, a search over that layer, and its newest
+items; an item linked to another layer by an `entry:<id>` ref says so, and hovering it draws an
+arc between the two parts. An item opens its document (`/docs/<id>`) or the Board; "Open" goes to
+the layer's own page, `/brain/about-me`, `/brain/notebooks` or `/brain/inbox`, which lists and
+searches it. The view reads only existing routes (`GET /entries?layer=`, projects and goals,
+approvals) and changes nothing.
+
 ## 9. Auth
 
 Better Auth runs inside the server.

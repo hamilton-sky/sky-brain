@@ -282,3 +282,31 @@ export const pushApi = {
   unsubscribe: (endpoint: string) =>
     request<unknown>("POST", "/api/v1/push/unsubscribe", { endpoint }),
 };
+
+/** An entry as a list or search returns it: no body, with where it lives and what it points to. */
+export interface EntrySummary {
+  id: string;
+  memory_id: string;
+  layer: "core" | "long" | "short";
+  kind: string;
+  trust: EntryTrust;
+  title: string;
+  summary: string;
+  refs: string[];
+  author_kind: "human" | "agent";
+  author: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const entriesApi = {
+  /** A layer's newest entries, or those matching `q` (the server's word search). */
+  list: (layer: EntrySummary["layer"], q?: string, limit = 50) => {
+    const params = new URLSearchParams({ layer, limit: String(limit) });
+    if (q) params.set("q", q);
+    return request<{ entries: EntrySummary[] }>(
+      "GET",
+      `/api/v1/entries?${params.toString()}`,
+    ).then((r) => r.entries);
+  },
+};
