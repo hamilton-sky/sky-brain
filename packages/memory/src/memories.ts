@@ -9,6 +9,7 @@ import { personOf } from "@sky-brain/kernel/actor/keys";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { members, memories } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
+import { memoryRowInHat } from "./hat-reach.ts";
 
 export type MemoryRow = typeof memories.$inferSelect;
 
@@ -79,7 +80,11 @@ export async function listMemories(
     .from(memories)
     .where(inArray(memories.workspaceId, [...roles.keys()]))
     .orderBy(asc(memories.createdAt), asc(memories.layer));
-  return rows.filter((m) => mayReadMemory(m.layer, roles.get(m.workspaceId)!));
+  return rows.filter(
+    (m) =>
+      mayReadMemory(m.layer, roles.get(m.workspaceId)!) &&
+      memoryRowInHat(actor, m),
+  );
 }
 
 /** One memory the caller may read, with their role there; 404 otherwise. */
@@ -99,7 +104,11 @@ export async function findMemory(
       ),
     )
     .where(eq(memories.id, memoryId));
-  if (!row || !mayReadMemory(row.memory.layer, row.role)) {
+  if (
+    !row ||
+    !mayReadMemory(row.memory.layer, row.role) ||
+    !memoryRowInHat(actor, row.memory)
+  ) {
     throw new HttpError(404, "not_found", "No such memory.");
   }
   return row;

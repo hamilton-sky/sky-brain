@@ -1,10 +1,17 @@
 // `/api/v1/agents` (D25 part 1): only a person manages profiles and bindings, each person sees
 // only their own, and an app can be bound only by the person who connected it.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { oauthClient, oauthConsent, user } from "@sky-brain/db/schema";
+import {
+  memories,
+  oauthClient,
+  oauthConsent,
+  user,
+} from "@sky-brain/db/schema";
+import { and, eq } from "drizzle-orm";
 import {
   closeTestDb,
   createTestDb,
+  seedWorkspace,
   startTestServer,
   type Db,
   type TestServer,
@@ -59,6 +66,14 @@ afterAll(async () => {
   if (db) await closeTestDb(db);
 });
 
+/** Every response is the people-only refusal (hard rule 3). */
+function expectHumansOnly(responses: { status: number; body: any }[]) {
+  for (const res of responses) {
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("humans_only");
+  }
+}
+
 describe("agent profiles", () => {
   let po: string;
 
@@ -77,7 +92,7 @@ describe("agent profiles", () => {
       "po",
     ]);
     expect(list.body.apps).toEqual([
-      { client_id: APP, name: "Claude", profile_id: null },
+      { client_id: APP, name: "Claude", profile_id: null, hat_id: null },
     ]);
   });
 
@@ -94,7 +109,7 @@ describe("agent profiles", () => {
 
   it("an agent can neither read, create, bind nor delete profiles", async () => {
     const as = server.as(agent("ann"));
-    for (const res of [
+    expectHumansOnly([
       await as.get("/api/v1/agents"),
       await as.post("/api/v1/agents/profiles", {
         slug: "boss",
@@ -102,10 +117,7 @@ describe("agent profiles", () => {
       }),
       await as.post("/api/v1/agents/bind", { client_id: APP, profile_id: po }),
       await as.delete(`/api/v1/agents/profiles/${po}`),
-    ]) {
-      expect(res.status).toBe(403);
-      expect(res.body.error.code).toBe("humans_only");
-    }
+    ]);
   });
 
   it("another person sees none of them and cannot bind or delete them", async () => {
@@ -156,5 +168,111 @@ describe("agent profiles", () => {
     const list = await server.as(human("ann")).get("/api/v1/agents");
     expect(list.body.profiles).toEqual([]);
     expect(list.body.apps[0].profile_id).toBeNull();
+  });
+});
+
+describe("hats (D44)", () => {
+  let annWs: string;
+  let parent: string;
+  beforeAll(async () => {
+    annWs = (
+      await seedWorkspace(db, {
+        name: "ann",
+        members: [{ userId: "ann", role: "owner" }],
+      })
+    ).id;
+    await seedWorkspace(db, {
+      name: "bob",
+      members: [{ userId: "bob", role: "owner" }],
+    });
+  });
+
+  it("a person makes a hat in their own brain and lists it", async () => {
+    const res = await server.as(human("ann")).post("/api/v1/agents/hats", {
+      slug: "parent",
+      name: "Parent",
+      description: "Home, the kids, school.",
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.hat).toMatchObject({ slug: "parent", name: "Parent" });
+    parent = res.body.hat.id;
+    const list = await server.as(human("ann")).get("/api/v1/agents/hats");
+    expect(list.body.hats.map((h: { slug: string }) => h.slug)).toEqual([
+      "parent",
+    ]);
+    const taken = await server
+      .as(human("ann"))
+      .post("/api/v1/agents/hats", { slug: "parent", name: "Again" });
+    expect(taken.status).toBe(409);
+    const bad = await server
+      .as(human("ann"))
+      .post("/api/v1/agents/hats", { slug: "Not OK", name: "Bad" });
+    expect(bad.status).toBe(400);
+  });
+
+  it("an agent can neither list, make, bind nor delete hats", async () => {
+    const as = server.as(agent("ann"));
+    expectHumansOnly([
+      await as.get("/api/v1/agents/hats"),
+      await as.post("/api/v1/agents/hats", { slug: "boss", name: "Boss" }),
+      await as.post("/api/v1/agents/hats/bind", {
+        client_id: APP,
+        hat_id: parent,
+      }),
+      await as.delete(`/api/v1/agents/hats/${parent}`),
+    ]);
+  });
+
+  it("another person sees none of them and cannot bind or delete them", async () => {
+    const list = await server.as(human("bob")).get("/api/v1/agents/hats");
+    expect(list.body.hats).toEqual([]);
+    const bind = await server
+      .as(human("bob"))
+      .post("/api/v1/agents/hats/bind", {
+        client_id: OTHER_APP,
+        hat_id: parent,
+      });
+    expect(bind.status).toBe(404);
+    const del = await server
+      .as(human("bob"))
+      .delete(`/api/v1/agents/hats/${parent}`);
+    expect(del.status).toBe(404);
+  });
+
+  it("a person binds only an app they connected, and sees it on the app", async () => {
+    const other = await server
+      .as(human("ann"))
+      .post("/api/v1/agents/hats/bind", {
+        client_id: OTHER_APP,
+        hat_id: parent,
+      });
+    expect(other.status).toBe(404);
+    const ok = await server
+      .as(human("ann"))
+      .post("/api/v1/agents/hats/bind", { client_id: APP, hat_id: parent });
+    expect(ok.status).toBe(200);
+    const list = await server.as(human("ann")).get("/api/v1/agents");
+    expect(list.body.apps[0]).toMatchObject({ client_id: APP, hat_id: parent });
+  });
+
+  it("a hat in use by a memory is kept; once free, deleting it unbinds its apps", async () => {
+    const notebook = and(
+      eq(memories.workspaceId, annWs),
+      eq(memories.layer, "long"),
+    );
+    await db.update(memories).set({ hatId: parent }).where(notebook);
+    const busy = await server
+      .as(human("ann"))
+      .delete(`/api/v1/agents/hats/${parent}`);
+    expect(busy.status).toBe(409);
+    expect(busy.body.error.code).toBe("hat_in_use");
+
+    await db.update(memories).set({ hatId: null }).where(notebook);
+    const del = await server
+      .as(human("ann"))
+      .delete(`/api/v1/agents/hats/${parent}`);
+    expect(del.status).toBe(204);
+    const list = await server.as(human("ann")).get("/api/v1/agents");
+    expect(list.body.apps[0].hat_id).toBeNull();
   });
 });

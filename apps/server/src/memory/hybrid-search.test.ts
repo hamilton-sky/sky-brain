@@ -5,7 +5,7 @@
 import type { Actor } from "@sky-brain/shared/actor";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { entryVectors } from "@sky-brain/db/schema";
+import { entryVectors, hats, memories } from "@sky-brain/db/schema";
 import * as harness from "../testing/harness.ts";
 import {
   alice,
@@ -165,5 +165,46 @@ describe("hybrid search", () => {
     );
     expect(JSON.stringify(res.body)).not.toContain("Bob's");
     expect(wsA).toBeTruthy();
+  });
+
+  it("narrows vector hits to the hat the agent wears (D44)", async () => {
+    const [work, home] = await db
+      .insert(hats)
+      .values([
+        { workspaceId: wsA, slug: "work", name: "Work" },
+        { workspaceId: wsA, slug: "home", name: "Home" },
+      ])
+      .returning();
+    const [homeBook] = await db
+      .insert(memories)
+      .values({
+        workspaceId: wsA,
+        layer: "long",
+        name: "Home",
+        hatId: home!.id,
+      })
+      .returning();
+    const res = await server.as(alice).post("/api/v1/entries", {
+      kind: "fact",
+      memory_id: homeBook!.id,
+      title: "Family kitchen recipes live in pgvector",
+      body: "z",
+      summary: "Family kitchen recipes live in pgvector",
+    });
+    expect(res.status).toBe(201);
+    await semantic.settle();
+    const q = encodeURIComponent("cooking SQL store");
+    const wearing = (hat: typeof work): Actor =>
+      ({
+        ...aliceAgent,
+        hat: { id: hat!.id, slug: hat!.slug, name: hat!.name },
+      }) as Actor;
+    const atWork = await server.as(wearing(work)).get(`/api/v1/entries?q=${q}`);
+    expect(titles(atWork)).not.toContain(
+      "Family kitchen recipes live in pgvector",
+    );
+    expect(titles(atWork)).toContain("Recipe site database is Postgres");
+    const atHome = await server.as(wearing(home)).get(`/api/v1/entries?q=${q}`);
+    expect(titles(atHome)).toContain("Family kitchen recipes live in pgvector");
   });
 });

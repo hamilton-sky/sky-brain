@@ -2,6 +2,7 @@
 // token, the session or the dev actor header, never from a request body (CLAUDE.md hard rule 2).
 import { z } from "zod";
 import { AgentSlugSchema } from "./agents.ts";
+import { HatSlugSchema } from "./hats.ts";
 
 export const UserIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 // Room for `mcp/<client host>/<profile slug>` (D25).
@@ -21,9 +22,11 @@ export type AgentProfileRef = z.infer<typeof AgentProfileRefSchema>;
  */
 export const HatRefSchema = z.object({
   id: z.uuid(),
-  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),
+  slug: HatSlugSchema,
   name: z.string().min(1).max(60),
 });
+
+export type HatRef = z.infer<typeof HatRefSchema>;
 
 export const ActorSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("human"), user_id: UserIdSchema }),

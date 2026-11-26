@@ -15,6 +15,7 @@ import {
   type EntryRow,
 } from "./entries-service.ts";
 import { fuseRrf } from "./embed/rrf.ts";
+import { entryInHat } from "./hat-reach.ts";
 import { workspaceRoles } from "./memories.ts";
 
 /** How many entries each list hands to the fusion. */
@@ -64,6 +65,8 @@ function readable(
     query.layer ? eq(entries.layer, query.layer) : undefined,
     query.kind ? eq(entries.kind, query.kind) : undefined,
     trustFilter,
+    // The hat the agent wears narrows what it reads (D44).
+    entryInHat(actor),
   );
 }
 

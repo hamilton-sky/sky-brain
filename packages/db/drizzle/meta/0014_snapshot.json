@@ -1,5 +1,5 @@
 {
-  "id": "2049e75c-606e-4b89-9202-a498cd29c8cf",
+  "id": "4e28b66c-315b-42b2-b85c-1cfbfa6cea27",
   "prevId": "67d69b0a-5d2f-4421-82af-4ff918f32f7a",
   "version": "7",
   "dialect": "postgresql",
@@ -3070,77 +3070,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.entry_vectors": {
-      "name": "entry_vectors",
-      "schema": "",
-      "columns": {
-        "entry_id": {
-          "name": "entry_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "embedding": {
-          "name": "embedding",
-          "type": "halfvec(1024)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "entry_vectors_hnsw_idx": {
-          "name": "entry_vectors_hnsw_idx",
-          "columns": [
-            {
-              "expression": "embedding",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "halfvec_cosine_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "hnsw",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "entry_vectors_entry_id_entries_id_fk": {
-          "name": "entry_vectors_entry_id_entries_id_fk",
-          "tableFrom": "entry_vectors",
-          "tableTo": "entries",
-          "columnsFrom": ["entry_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.entry_versions": {
       "name": "entry_versions",
       "schema": "",
@@ -3488,6 +3417,59 @@
         "core_entry_hats_pk": {
           "name": "core_entry_hats_pk",
           "columns": ["entry_id", "hat_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hat_bindings": {
+      "name": "hat_bindings",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hat_id": {
+          "name": "hat_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hat_bindings_hat_id_hats_id_fk": {
+          "name": "hat_bindings_hat_id_hats_id_fk",
+          "tableFrom": "hat_bindings",
+          "tableTo": "hats",
+          "columnsFrom": ["hat_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "hat_bindings_pk": {
+          "name": "hat_bindings_pk",
+          "columns": ["user_id", "client_id"]
         }
       },
       "uniqueConstraints": {},

@@ -14,6 +14,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { entries, members, memories } from "@sky-brain/db/schema";
 import { memberOfEntryWorkspace, type EntryRow } from "./entries-service.ts";
+import { entryInHat } from "./hat-reach.ts";
 import { searchEntries } from "./search.ts";
 
 const FENCE_OPEN = "<sky-brain-context>";
@@ -94,6 +95,7 @@ async function approved(
         where === "core"
           ? and(eq(memories.layer, "core"), eq(members.role, "owner"))
           : and(eq(entries.topic, "rule"), ne(memories.layer, "core")),
+        entryInHat(actor),
       ),
     )
     .orderBy(desc(entries.seq))
