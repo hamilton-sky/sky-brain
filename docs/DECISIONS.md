@@ -700,7 +700,7 @@ the same in Claude, Codex or any other client.
 **Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
 and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
 
-### D47. The side panel folds to a rail of icons
+### D48. The side panel folds to a rail of icons
 
 **Date:** 2026-11-26. **Decided by:** shammai.
 **Decision:** folding the side panel left an empty strip with no way back: panel-frame-ui's own
