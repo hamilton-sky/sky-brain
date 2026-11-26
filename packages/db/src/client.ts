@@ -33,7 +33,7 @@ function driverOf(db: Db): Driver {
 
 /** PGlite in a folder on disk, or in memory for `memory://` or no folder. */
 export async function createPgliteDb(dataDir?: string): Promise<Db> {
-  // pgvector, as on Nanogres (entry_vectors, D47); 0013 runs CREATE EXTENSION.
+  // pgvector, as on Nanogres (entry_vectors, D47); 0014 runs CREATE EXTENSION.
   const client = await PGlite.create({
     ...(dataDir && dataDir !== "memory://" ? { dataDir } : {}),
     extensions: { vector },
