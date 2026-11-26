@@ -3,7 +3,10 @@
 // (approve, reject); the board-write rate limit; request shape; run tokens refused; target and
 // membership (404); role (403); state (409, 410).
 import type { Actor } from "@sky-brain/shared/actor";
-import { ApprovalCreateRequestSchema } from "@sky-brain/shared/approvals";
+import {
+  ApprovalCreateRequestSchema,
+  ApprovalDecideRequestSchema,
+} from "@sky-brain/shared/approvals";
 import express, { type Request, type Router } from "express";
 import { actorOf } from "@sky-brain/kernel/actor/middleware";
 import { requireHuman } from "@sky-brain/kernel/actor/require-human";
@@ -19,12 +22,12 @@ import {
   pathId,
 } from "@sky-brain/kernel/http/request-checks";
 import {
-  approvalWire,
   createApproval,
-  decideApproval,
   findApproval,
   listPending,
 } from "./approvals-service.ts";
+import { decideApproval } from "./approvals-decide.ts";
+import { approvalWire } from "./approvals-wire.ts";
 
 export interface ApprovalsRouterOptions {
   db: Db;
@@ -110,17 +113,26 @@ export function approvalsRouter({
       .json({ approval: await approvalWire(db, actor, row, now()) });
   });
 
-  /** Approve or reject: people only, owners and editors, in their own session. */
+  /**
+   * Approve or reject: people only, owners and editors, in their own session.
+   * Approve with `{ items: [{ id, action, save_to? }] }` decides item by item.
+   */
   const decision =
     (to: "approved" | "rejected"): express.RequestHandler =>
     async (req, res) => {
       const actor = human(actorOf(req));
+      // Approve may name a decision per item (D39); reject takes no body.
+      const body =
+        to === "approved"
+          ? parseRequest(ApprovalDecideRequestSchema, req.body ?? {})
+          : {};
       const t = now();
       const row = await decideApproval(
         db,
         actor,
         pathId(req),
         to,
+        body,
         (role) => assertWriter(req, role),
         t,
       );

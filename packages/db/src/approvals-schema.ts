@@ -14,6 +14,12 @@ export interface PinnedItem {
   kind: ApprovalItemKind;
   id: string;
   pin: string;
+  /** Entries: the memory the asker suggested keeping it in. */
+  saveTo?: string;
+  /** Set when decided: what the person did with this item. */
+  outcome?: "approved" | "rejected" | "skipped";
+  /** When kept in another memory: the person's new entry there. */
+  savedAs?: string;
 }
 
 export const approvalRequests = pgTable(

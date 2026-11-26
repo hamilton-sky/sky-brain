@@ -239,10 +239,10 @@ tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPRO
 
 | MCP tool | REST | Who |
 |---|---|---|
-| `request_approval` | `POST /api/v1/approvals` (`items`: up to 20 of `{kind: goal or entry, id}`, `reason`) | writers; run tokens refused |
+| `request_approval` | `POST /api/v1/approvals` (`items`: up to 20 of `{kind: goal or entry, id, save_to?}`, `reason`) | writers; run tokens refused |
 | `approval_status` | `GET /api/v1/approvals/:id` | members of that brain |
 | | `GET /api/v1/approvals` | pending requests in the person's brains |
-| | `POST /api/v1/approvals/:id/approve`, `/reject` | people only, owners and editors |
+| | `POST /api/v1/approvals/:id/approve` (optional `items: [{id, action, save_to?}]`, D39), `/reject` | people only, owners and editors |
 
 - Table `approval_requests` (migration 0010): the items with a **pin** each (a goal's status,
   last change and its tasks' last change; an entry's trust and version), status `pending`,
@@ -252,10 +252,15 @@ tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPRO
   goal goes through `approveGoal` and each entry through `setTrustInTx`, so every rule of the
   person's own buttons (quarantine, role, About me owner only) holds. Rejecting applies nothing:
   the items stay drafts and proposals.
+- **Item by item (D39).** Approve may name an action per item: `approve`, `reject` (entry
+  rejected, goal cancelled) or `skip` (left as it was); only decided items are pin-checked. An
+  approved entry with `save_to` another memory is approved and copied there as the person's own
+  entry (ref `entry:<id>`); About me only for the owner. Each item's `outcome` and `saved_as` are
+  kept on the request; it is `approved` if any item was approved, else `rejected`.
 - A request expires after 60 minutes (410 `expired`), is decided once (409 after), and one agent
   may have at most 10 open per person (429 `too_many_open`). Every step writes an audit row.
 - Web: an **Approvals** tab lists what is waiting (refreshed every 20 seconds), and `/a/<id>` shows
-  one request with Approve and Reject. A signed-out visit to `/a/<id>` returns there after
+  one request with a checkbox, a Reject and (entries) a "Save to" memory per item. A signed-out visit to `/a/<id>` returns there after
   sign-in.
 - **Web push alerts (D36).** On the Approvals tab, "Tell me when an agent asks" turns alerts on
   for that browser (permission asked only after the click; on iPhone after Add to Home Screen,

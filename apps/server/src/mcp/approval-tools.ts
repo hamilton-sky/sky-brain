@@ -43,7 +43,16 @@ export function registerApprovalTools(
         "nothing is applied and you must ask again.",
       inputSchema: z.object({
         items: z
-          .array(z.object({ kind: z.enum(APPROVAL_ITEM_KINDS), id: IdSchema }))
+          .array(
+            z.object({
+              kind: z.enum(APPROVAL_ITEM_KINDS),
+              id: IdSchema,
+              save_to: IdSchema.optional().describe(
+                "Entries only: a memory_id (from list_memories) you suggest keeping it in, " +
+                  "such as a Notebook. The person sees it preselected and may pick another.",
+              ),
+            }),
+          )
           .min(1)
           .max(APPROVAL_CAPS.items),
         reason: z
@@ -63,8 +72,10 @@ export function registerApprovalTools(
     {
       title: "Check an approval request",
       description:
-        "Reads an approval request: pending, approved (the items are applied), rejected, " +
-        "expired or superseded (an item changed; ask again).",
+        "Reads an approval request: pending, approved (at least one item applied), rejected, " +
+        "expired or superseded (an item changed; ask again). The person decides item by " +
+        "item: read each item's outcome (approved, rejected or skipped) and saved_as (the " +
+        "copy they kept in another memory).",
       inputSchema: z.object({ id: IdSchema }),
       annotations: READ,
     },
