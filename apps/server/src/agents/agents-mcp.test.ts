@@ -100,7 +100,7 @@ describe("agent profiles over MCP", () => {
   });
 });
 
-describe("hats over MCP (D42)", () => {
+describe("hats over MCP (D44)", () => {
   it("an unbound app has no hat and sees every hat of the brain", async () => {
     const [m] = await db
       .select({ ws: members.workspaceId })

@@ -171,7 +171,7 @@ describe("agent profiles", () => {
   });
 });
 
-describe("hats (D42)", () => {
+describe("hats (D44)", () => {
   let annWs: string;
   let parent: string;
   beforeAll(async () => {

@@ -1,5 +1,5 @@
 // `/api/v1/agents` (D25 part 1): a person lists, creates and deletes their agent profiles and
-// binds each connected app to one; and under `/hats` (D42), the hats of the brain they own and
+// binds each connected app to one; and under `/hats` (D44), the hats of the brain they own and
 // which hat each app works under. People only (hard rule 3): an agent never picks its own role
 // or hat.
 import {

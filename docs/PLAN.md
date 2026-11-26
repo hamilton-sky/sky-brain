@@ -228,7 +228,7 @@ People only, under `/api/v1/agents`: `GET /` (profiles and connected apps), `POS
 it) and `POST /bind` (`client_id`, `profile_id` or null). A person sees and binds only their own
 profiles and only apps they allowed on the consent page.
 
-**Hats (D30, D42, D43).** A person can also name the hats of the brain they own (Parent,
+**Hats (D30, D42, D44).** A person can also name the hats of the brain they own (Parent,
 Engineer...) and bind a connected app to one (`hat_bindings`, keyed like `agent_bindings`). A
 bound app's actor carries that `hat`, the hat is recorded on every entry version it writes
 (`capture_hat_id`), and `whoami` returns `hat` (null when unbound) and `hats`: only the bound
@@ -238,7 +238,7 @@ session, or ask. A hat never grants a right. People only, under `/api/v1/agents/
 belongs to it; its bindings and tags go with it) and `POST /bind` (`client_id`, `hat_id` or null).
 Under a hat (bound, or named per call with the `hat` argument on `search`, `get`,
 `list_memories`, `context` and `capture`), an agent reads only shared memories and the hat's own,
-and only About me entries that are untagged or tagged with that hat (D44). A bound app naming
+and only About me entries that are untagged or tagged with that hat. A bound app naming
 another hat gets 403 `hat_bound`; an unknown hat 404 `no_such_hat`.
 
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
@@ -305,7 +305,7 @@ the same checks. REST routes:
 | Route | Who |
 |---|---|
 | `GET /api/v1/me` | anyone signed in (the web page) |
-| `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
+| `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/projects/:id/rename` | list: members; create and rename: people who are owners or editors (a rename keeps the slug; audited as `project.rename`) |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
 | `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |

@@ -14,7 +14,7 @@ export interface Whoami {
   /** For an agent: its id and the profile its person bound it to (null: the Guest agent). */
   agent?: { agent_id: string; profile: AgentProfileRef | null };
   /**
-   * For an agent (D42): the hat its app is bound to (null: none), and the hats it may wear. Under
+   * For an agent (D44): the hat its app is bound to (null: none), and the hats it may wear. Under
    * a bound hat that is the bound hat only; otherwise every hat of the brains the person owns, so
    * the agent can pick the one that fits the session, or ask.
    */

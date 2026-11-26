@@ -1,4 +1,4 @@
-// Hats on the agents page (D30, D42): the self-aspects of your brain (Parent, Engineer,
+// Hats on the agents page (D30, D44): the self-aspects of your brain (Parent, Engineer,
 // Friend). An agent wears one for a session, or always wears the one its app is bound to; a hat
 // only narrows what the agent sees.
 import { Alert, Button, Card, TextField } from "panel-frame-ui";

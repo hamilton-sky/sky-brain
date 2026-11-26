@@ -57,3 +57,5 @@ never shows you more; leave `hat` out when the person has none or the request sp
 2. `whoami` if you need a `workspace_id` you do not have, or the person's hats; pick the hat
    that fits the request, or ask.
 3. Open the layer chapter that fits the request (`book { id: "inbox" }` to save, `"notebooks"` to look something up, `"board"` to work).
+4. If the request is real work, not a quick answer, put it on the Board: `book { id: "recipes" }`,
+   `track-work`.

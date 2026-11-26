@@ -685,30 +685,36 @@ hat, so nothing changes for anyone.
 **Keeps:** hard rules 2, 3 and 4 (only people write hats; agents only carry the hat their binding
 gives them).
 
-### D43. Hats, step 2: a person binds an app to a hat; an agent picks one per session
+### D43. Every session's real work goes on the Board
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** shammai wants each goal and its tasks, from every project and every app, to live in
+sky-brain, with every agent working through it. The server instructions every MCP client gets on
+connect now say: real work, more than a quick answer, goes on the Board as a goal with tasks,
+claimed and reported, with lessons captured. The book gains `recipe:track-work` (chapter 8, and a
+step in "start a session") with the order: find the project (ask if none fits), reuse a goal that
+covers the work, else propose one with tasks and ask for approval, and keep working meanwhile.
+A line in the person's claude.ai preferences (and `~/.claude/CLAUDE.md` on their computer) tells
+each session to use the sky-brain connector; the server instructions carry the rest, so it works
+the same in Claude, Codex or any other client.
+**Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
+and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
+
+### D44. Hats, steps 2 and 3: bind an app to a hat; reads narrow to the hat the agent wears
 
 **Date:** 2026-11-26. **Decided by:** shammai ("when an agent pulls from the brain, it should act
 as a hat, by its identity, according to the context of the session and the tasks the person asks
-for").
+for", and the board goal "Add hats as lenses").
 **Decision:** a person makes hats on the Agents page and can bind each connected app to one
-(`hat_bindings`, migration 0014). A bound app always works under that hat: the server puts it on
-the actor from the binding, never from the client, and `whoami` lists only that hat. An unbound
-app's `whoami` lists every hat of the person's own brains, so the agent can pick the hat that fits
-the session's context and tasks, or ask the person when it cannot tell. Picking is a lens (D30):
-it can only narrow what the agent sees, so it is safe to leave to the model; the binding is the
-wall. Passing the picked hat on calls, and narrowing reads by it, is the next step.
-**Keeps:** hard rules 2 and 3 (people make and bind hats; agents only read them).
-
-### D44. Hats, step 3: reads narrow to the active hat, and an agent wears one per call
-
-**Date:** 2026-11-26. **Decided by:** shammai (the board goal "Add hats as lenses", and D43).
-**Decision:** under a hat, `search`, `get`, `list_memories` and the context packet return only
-memories that are shared or belong to that hat, and only About me entries with no hat tags or
-tagged with that hat (`memory/hat-reach.ts`, one SQL term in each read). The hat comes from the
-app's binding (the wall) or, for an unbound app, from a `hat` argument the agent passes on
-`search`, `get`, `list_memories`, `context` and `capture` (the lens). The lens is resolved on the
-server against the hats of the person's own brains (unknown: 404 `no_such_hat`); a bound app that
-names another hat gets 403 `hat_bound`. The book's start chapter tells the agent to pick the hat
-that fits the person's request, ask when it cannot tell, and leave it out when there are none.
-People see everything, as before.
-**Keeps:** a hat only narrows (D30); hard rules 2 and 4.
+(`hat_bindings`, migration 0014). A bound app always works under that hat (the wall): the server
+puts it on the actor from the binding, never from the client, and `whoami` lists only that hat.
+An unbound app's `whoami` lists every hat of the person's own brains, so the agent can pick the
+hat that fits the session's context and tasks, or ask the person when it cannot tell, and pass it
+as `hat` on `search`, `get`, `list_memories`, `context` and `capture` (the lens, D30). The lens is
+resolved on the server against the person's own hats (unknown: 404 `no_such_hat`); a bound app
+that names another hat gets 403 `hat_bound`. Under a hat, those reads return only memories that
+are shared or belong to that hat, and only About me entries with no hat tags or tagged with that
+hat (`memory/hat-reach.ts`, one SQL term in each read). The book's start chapter tells the agent
+how to pick. People see everything, as before.
+**Keeps:** a hat only narrows (D30); hard rules 2, 3 and 4 (people make and bind hats; agents
+only read them).

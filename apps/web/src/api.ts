@@ -155,6 +155,12 @@ export const api = {
       workspace_id,
       name,
     }).then((r) => r.project),
+  renameProject: (projectId: string, name: string) =>
+    request<{ project: Project }>(
+      "POST",
+      `/api/v1/projects/${projectId}/rename`,
+      { name },
+    ).then((r) => r.project),
   goals: (projectId: string) =>
     request<{ goals: Goal[]; documents: Record<string, GoalDocument[]> }>(
       "GET",
