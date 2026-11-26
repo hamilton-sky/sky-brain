@@ -234,12 +234,33 @@ export const api = {
     }),
 };
 
-interface ApprovalItem {
+export interface ApprovalItem {
   kind: "goal" | "entry";
   id: string;
   title: string;
   state: string;
   changed: boolean;
+  /** Entries: the memory it is in now. */
+  memory_id: string | null;
+  /** Entries: where the agent suggests keeping it. */
+  save_to: string | null;
+  outcome: "approved" | "rejected" | "skipped" | null;
+  /** When kept in another memory: the new entry there. */
+  saved_as: string | null;
+}
+
+/** A memory an approved entry can be kept in. */
+export interface ApprovalTarget {
+  id: string;
+  name: string;
+  layer: "core" | "long" | "short";
+}
+
+/** The person's choice for one item. */
+export interface ItemDecision {
+  id: string;
+  action: "approve" | "reject" | "skip";
+  save_to?: string;
 }
 
 export interface Approval {
@@ -249,6 +270,7 @@ export interface Approval {
   reason: string;
   requested_by: string;
   items: ApprovalItem[];
+  targets: ApprovalTarget[];
   path: string;
   created_at: string;
   expires_at: string;
@@ -265,10 +287,12 @@ export const approvalsApi = {
     request<{ approval: Approval }>("GET", `/api/v1/approvals/${id}`).then(
       (r) => r.approval,
     ),
-  decide: (id: string, action: "approve" | "reject") =>
+  /** Approve item by item (`items`), or reject the whole request. */
+  decide: (id: string, action: "approve" | "reject", items?: ItemDecision[]) =>
     request<{ approval: Approval }>(
       "POST",
       `/api/v1/approvals/${encodeURIComponent(id)}/${action}`,
+      items ? { items } : undefined,
     ).then((r) => r.approval),
 };
 

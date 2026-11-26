@@ -9,8 +9,10 @@ person's answer. The person answers on sky-brain's own page, signed in, where yo
 ## How to ask
 
 1. Make the thing first: a draft goal (`propose_goal`) or a proposed entry (`capture`).
-2. `request_approval { items: [{ kind: "goal" | "entry", id }], reason }`. Up to 20 items in one
-   request. `reason` is one line: why these should be approved.
+2. `request_approval { items: [{ kind: "goal" | "entry", id, save_to? }], reason }`. Up to 20
+   items in one request. `reason` is one line: why these should be approved. For an entry,
+   `save_to` is a memory_id you suggest keeping it in (a Notebook, or About me for a fact about
+   the person); the person sees it preselected and may pick another.
 3. Show the person the **link** from the reply and ask them to open it. Say what they will see.
 4. When they say they are done, call `approval_status { id }`. Do not poll in a loop.
 
@@ -19,10 +21,14 @@ person's answer. The person answers on sky-brain's own page, signed in, where yo
 | status | Meaning | What you do |
 | --- | --- | --- |
 | `pending` | Not answered yet | Wait for the person; do not ask again |
-| `approved` | The items are applied | Carry on |
-| `rejected` | The person said no | Ask what to change. The items themselves stay as they were |
+| `approved` | At least one item is applied | Read each item's `outcome`; carry on |
+| `rejected` | The person said no to all of it | Ask what to change. Items they did not reject one by one stay as they were |
 | `expired` | 60 minutes passed | Ask again only if it still matters |
 | `superseded` | An item changed after the request was made | Nothing was applied. Ask again |
+
+The person decides **item by item**: each item's `outcome` is `approved`, `rejected` (the entry
+is rejected, the goal cancelled) or `skipped` (left as it was). An entry they kept in another
+memory has `saved_as`: the id of their own copy there, which points back to yours.
 
 Limits: a request expires after 60 minutes, is decided once, and you may have at most 10 open
 requests. Batch items into one request instead of asking one by one.

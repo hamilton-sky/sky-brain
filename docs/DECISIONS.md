@@ -620,6 +620,24 @@ memory-loop window. The bench measures it with arms from the real server (C adds
 tools are read-only, workspace-filtered, and the packet stays fenced). The live server shows
 models nothing new until the PR merges.
 
+### D39. Approve item by item, and keep an entry in the layer the person picks
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** an approval request is no longer all or nothing. On `/a/<id>` each item has a
+checkbox (ticked by default) and its own Reject; `POST /api/v1/approvals/:id/approve` takes
+`{ items: [{ id, action: approve | reject | skip, save_to? }] }`. Skipped items stay as they were;
+a rejected entry becomes `rejected`, a rejected goal is cancelled. An approved entry can be kept in
+another memory (About me, a Notebook, or left in its Inbox): the server approves the Inbox entry and
+captures the person's own copy in the target memory, approved and human-authored, with an
+`entry:<id>` ref back to the original. Entries never move (0008), so a copy is the only honest way
+to change layer. The agent may suggest `save_to` when it asks; the person sees it preselected. Each
+item's `outcome` and `saved_as` are stored in the request's `items` and shown to the agent. The
+request is `approved` when at least one item was approved, else `rejected`. No body still means
+approve all (with the suggested memories), and `/reject` still applies nothing.
+**Keeps:** hard rule 3 (only the person decides; only the owner, in person, writes About me, so an
+editor cannot keep something there) and the pin rule (every item the person decides is checked
+against what they were shown; skipped items are not).
+
 ### D40. A brain view that splits the star brain into its layers
 
 **Date:** 2026-11-26. **Decided by:** shammai.
