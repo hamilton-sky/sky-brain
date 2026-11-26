@@ -46,3 +46,5 @@ sees who wrote what.
 1. `book` (you are here) for the contents and your role.
 2. `whoami` only if you need a `workspace_id` you do not have.
 3. Open the layer chapter that fits the request (`book { id: "inbox" }` to save, `"notebooks"` to look something up, `"board"` to work).
+4. If the request is real work, not a quick answer, put it on the Board: `book { id: "recipes" }`,
+   `track-work`.

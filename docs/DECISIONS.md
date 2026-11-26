@@ -684,3 +684,18 @@ Consolidator's suggestions (the goal's next tasks). Until the binding exists no 
 hat, so nothing changes for anyone.
 **Keeps:** hard rules 2, 3 and 4 (only people write hats; agents only carry the hat their binding
 gives them).
+
+### D43. Every session's real work goes on the Board
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** shammai wants each goal and its tasks, from every project and every app, to live in
+sky-brain, with every agent working through it. The server instructions every MCP client gets on
+connect now say: real work, more than a quick answer, goes on the Board as a goal with tasks,
+claimed and reported, with lessons captured. The book gains `recipe:track-work` (chapter 8, and a
+step in "start a session") with the order: find the project (ask if none fits), reuse a goal that
+covers the work, else propose one with tasks and ask for approval, and keep working meanwhile.
+A line in the person's claude.ai preferences (and `~/.claude/CLAUDE.md` on their computer) tells
+each session to use the sky-brain connector; the server instructions carry the rest, so it works
+the same in Claude, Codex or any other client.
+**Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
+and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).

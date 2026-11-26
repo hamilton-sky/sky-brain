@@ -49,3 +49,4 @@ how to use it, and its APIs.
 - `recipe:next-task`: do the next ready task, from claim to report
 - `recipe:save-decision`: keep a decision the person just made
 - `recipe:session-start`: start a session in this brain
+- `recipe:track-work`: put the work of this session on the Board
