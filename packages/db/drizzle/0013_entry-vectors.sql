@@ -1,5 +1,5 @@
 -- pgvector is already on in Nanogres (0.8.1, enabled by its owner on 15 Nov); IF NOT EXISTS makes
--- this a no-op there and turns it on in PGlite (D44).
+-- this a no-op there and turns it on in PGlite (D47).
 CREATE EXTENSION IF NOT EXISTS vector;
 --> statement-breakpoint
 CREATE TABLE "entry_vectors" (

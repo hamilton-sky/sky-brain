@@ -1,4 +1,4 @@
-// Embedders for the benchmark's vector and hybrid modes (D44).
+// Embedders for the benchmark's vector and hybrid modes (D47).
 //
 //   --embed voyage | openai   the server's own HTTP embedder (EMBEDDINGS_API_KEY, as on Vercel)
 //   --embed local             an ONNX model on this machine through transformers.js, for runs

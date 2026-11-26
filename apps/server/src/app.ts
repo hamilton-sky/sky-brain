@@ -55,7 +55,7 @@ export interface AppOptions {
   auth?: { instance: Auth; publicUrl: string };
   /** Web push for approval requests (`pushFromEnv`). Default: off. */
   push?: Push;
-  /** Hybrid search (D44): the embedder (`embedderFromEnv`) and the after-response runner. Default: words only. */
+  /** Hybrid search (D47): the embedder (`embedderFromEnv`) and the after-response runner. Default: words only. */
   semantic?: Semantic;
 }
 

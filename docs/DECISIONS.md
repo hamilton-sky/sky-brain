@@ -683,7 +683,7 @@ the same in Claude, Codex or any other client.
 **Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
 and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
 
-### D44. Hybrid search: one vector per entry, 1024 dimensions, fused with words by RRF
+### D47. Hybrid search: one vector per entry, 1024 dimensions, fused with words by RRF
 
 **Date:** 2026-11-26. **Decided by:** shammai asked for it ("the summary and vector with RRF");
 the model and dimensions are proposed here and stand unless he changes them.

@@ -1,4 +1,4 @@
-// RRF and the HTTP embedder (D44), without a database or a network.
+// RRF and the HTTP embedder (D47), without a database or a network.
 import { describe, expect, it } from "vitest";
 import { EMBEDDING_DIMS } from "@sky-brain/shared/memory";
 import { embedderFromEnv, httpEmbedder } from "./embedder.ts";

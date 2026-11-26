@@ -1,4 +1,4 @@
-// How the routes use the embedder (D44): a query's vector is asked for inline, with a timeout,
+// How the routes use the embedder (D47): a query's vector is asked for inline, with a timeout,
 // and a failure falls back to words alone; entry vectors are made after the answer is sent
 // (Vercel's waitUntil, or a plain promise in Node), so a slow or down provider never fails a
 // write or a search.

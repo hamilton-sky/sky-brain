@@ -204,7 +204,7 @@ export interface TestServerOptions {
   webDist?: string;
   /** Web push for approval requests. Default: off. */
   push?: Push;
-  /** Hybrid search's embedder and background runner (D44). Default: words only. */
+  /** Hybrid search's embedder and background runner (D47). Default: words only. */
   semantic?: Semantic;
 }
 

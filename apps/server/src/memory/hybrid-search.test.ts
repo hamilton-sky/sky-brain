@@ -1,4 +1,4 @@
-// Hybrid search (D44, BUILD-PLAN step 4): the server embeds each entry's title, summary and
+// Hybrid search (D47, BUILD-PLAN step 4): the server embeds each entry's title, summary and
 // questions after the write, and `search` and `context` fuse word hits with vector hits (RRF).
 // Vector hits pass the same read rules as words: another brain, About me of someone else,
 // quarantined and rejected entries never come back. A provider outage falls back to words.

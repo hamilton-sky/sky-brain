@@ -45,7 +45,7 @@ their words with the answer, so `and` finds nothing for half of them. The misses
 newest design (memory layers, vectors, sharing), where the 23 Nov review reports repeat the same
 words as the schema and crowd it out.
 
-## Hybrid search (step 4, D44): 26 Nov 2026
+## Hybrid search (step 4, D47): 26 Nov 2026
 
 `node bench/run.mjs --embed local` (or `--embed voyage` with `EMBEDDINGS_API_KEY`) adds two
 modes: `vector`, the nearest sections by cosine distance, and `hybrid`, RRF (k = 60) over `or`

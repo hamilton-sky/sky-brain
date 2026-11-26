@@ -1,4 +1,4 @@
-// A stand-in embedding model for tests (D44): each group of words is one meaning, so "Postgres"
+// A stand-in embedding model for tests (D47): each group of words is one meaning, so "Postgres"
 // and "SQL store" land close while sharing no word. Deterministic and offline.
 import { EMBEDDING_DIMS } from "@sky-brain/shared/memory";
 import type { Embedder } from "@sky-brain/memory/embed/embedder";

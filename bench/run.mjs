@@ -7,7 +7,7 @@
 //   node bench/run.mjs                 print the table, write bench/results/<label>.json
 //   node bench/run.mjs --label foo     name the results file
 //   node bench/run.mjs --show q07      print the top 5 sections for one question
-//   node bench/run.mjs --embed local   add the vector and hybrid modes (step 4, D44; embed.mjs)
+//   node bench/run.mjs --embed local   add the vector and hybrid modes (step 4, D47; embed.mjs)
 //
 // Without --embed no model is called. Later steps report against these numbers (step 0).
 import {

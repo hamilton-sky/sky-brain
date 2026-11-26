@@ -1,4 +1,4 @@
-// Making and refreshing entry vectors (D44). The vector is of what the writer said the entry is
+// Making and refreshing entry vectors (D47). The vector is of what the writer said the entry is
 // about: its title, summary and questions, never the raw body (BUILD-PLAN step 4). A vector is
 // stale when the entry has a newer version or the server's model changed; stale and missing
 // vectors are made in small batches after writes and searches, never inside a request's answer.

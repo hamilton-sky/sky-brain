@@ -1,4 +1,4 @@
-// The server's embedding model (D44): the one model sky-brain calls itself (BUILD-PLAN step 4).
+// The server's embedding model (D47): the one model sky-brain calls itself (BUILD-PLAN step 4).
 // It turns an entry's title, summary and questions, or a search query, into EMBEDDING_DIMS
 // numbers. Off when no key is set: search then runs on words alone, as before.
 import { EMBEDDING_DIMS } from "@sky-brain/shared/memory";

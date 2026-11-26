@@ -180,7 +180,7 @@ export const entryVersions = pgTable(
 );
 
 /**
- * One vector per entry (D44, BUILD-PLAN step 4): the embedding of its title, summary and
+ * One vector per entry (D47, BUILD-PLAN step 4): the embedding of its title, summary and
  * questions, made by the server's embedding model, the one model call sky-brain makes. Its own
  * table, so storing a vector is not a change of the entry (no new `seq`, no `updated_at`).
  * `version` is the entry version it was made from; an older one is stale and is made again.

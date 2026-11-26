@@ -69,7 +69,7 @@ Live at https://sky-brain.vercel.app, on Vercel with Postgres on Nanogres (D16).
 | Agents: identity per agent (D26): you name roles (Product owner, Doer, Reviewer…) on the Agents tab and bind each connected app to one; everything it writes is signed `mcp/<app>/<role>` | ✅ Built and live |
 | Approval through the connected model, step 1 (D31): `request_approval` and `approval_status` MCP tools, a link to `/a/<id>`, an Approvals tab | ✅ Built and live (PR #32). Web push alerts (D36) built; email next |
 | Agents: permissions, skills and board triggers per agent | ⬜ Proposed in [docs/vision/AGENTS.md](docs/vision/AGENTS.md) (D25, open) |
-| Hybrid search, step 4 (D44): one vector per entry from its title, summary and questions, fused with word search by RRF in `search`, `context` and `claim_task` | 🟡 Built; on once `EMBEDDINGS_API_KEY` is set on Vercel. Bench: Recall@5 0.62 to 0.74 with a stand-in model |
+| Hybrid search, step 4 (D47): one vector per entry from its title, summary and questions, fused with word search by RRF in `search`, `context` and `claim_task` | 🟡 Built; on once `EMBEDDINGS_API_KEY` is set on Vercel. Bench: Recall@5 0.62 to 0.74 with a stand-in model |
 | Pathly client | ⬜ Not started (lives in pathly-adapters) |
 | Benchmark (step 0): 50 questions and a keyword-search baseline in [bench/](bench/README.md) | ✅ Baseline set: Recall@5 0.66, MRR 0.50 |
 

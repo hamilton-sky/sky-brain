@@ -1,4 +1,4 @@
-// Search over the entries the caller may read (BUILD-PLAN step 1 words, step 4 hybrid, D44).
+// Search over the entries the caller may read (BUILD-PLAN step 1 words, step 4 hybrid, D47).
 // Words: any word of the query may match (the benchmark's `or` mode), ranked by `ts_rank_cd`
 // over title, summary and body. With a query vector, the nearest entry vectors (title, summary,
 // questions) are fetched too, and the two lists are fused with RRF. Agents see only proposed and

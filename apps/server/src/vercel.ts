@@ -29,6 +29,6 @@ export default createApp({
   devActorHeader: false,
   auth: authFromConfig(config, db),
   push: pushFromEnv(process.env),
-  // Entry vectors are made after the response, while the function stays alive (D44).
+  // Entry vectors are made after the response, while the function stays alive (D47).
   semantic: { embedder: embedderFromEnv(process.env), background: waitUntil },
 });

@@ -142,7 +142,7 @@ export function taskQuery(task: { title: string; body: string }): string {
 /**
  * The packet for any question (`context { q }`, BOOK.md 13): About me, the rules in force and
  * the entries from every other layer that match `q`: by its words, and by meaning too when the
- * route passes the query's vector (hybrid search, D44).
+ * route passes the query's vector (hybrid search, D47).
  */
 export async function packetFor(
   db: DbOrTx,

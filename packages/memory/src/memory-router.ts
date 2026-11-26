@@ -59,7 +59,7 @@ export interface MemoryRouterOptions {
   db: Db;
   now: () => Date;
   limiter: RateLimiter;
-  /** The embedder and the after-response runner (D44); without them search is words only. */
+  /** The embedder and the after-response runner (D47); without them search is words only. */
   semantic?: Semantic;
 }
 

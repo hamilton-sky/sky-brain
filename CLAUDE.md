@@ -92,7 +92,7 @@ Environment:
   approval alerts (D36); push is off unless all three are set. Make the pair with
   `npx web-push generate-vapid-keys`. Never write the private key into the repo, a test or a log.
 - `EMBEDDINGS_API_KEY`, `EMBEDDINGS_PROVIDER` (`voyage`, the default, or `openai`), and optional
-  `EMBEDDINGS_MODEL` and `EMBEDDINGS_URL` (an OpenAI-compatible gateway): hybrid search (D44).
+  `EMBEDDINGS_MODEL` and `EMBEDDINGS_URL` (an OpenAI-compatible gateway): hybrid search (D47).
   Without a key search is words only. Never write the key into the repo, a test or a log.
 - `PERMINISTER_BASE_URL`, `PERMINISTER_APP_CLIENT_ID`, `PERMINISTER_APP_CLIENT_SECRET`: the
   Perminister app client, under the names Perminister hands out; required in production. The

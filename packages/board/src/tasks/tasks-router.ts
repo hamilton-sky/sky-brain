@@ -35,7 +35,7 @@ export interface TasksRouterOptions {
   now: () => Date;
   /** The one board-write limiter `createApp` shares between the board's routers. */
   limiter: RateLimiter;
-  /** The embedder for the claim's context packet (hybrid search, D44). */
+  /** The embedder for the claim's context packet (hybrid search, D47). */
   semantic?: Semantic;
 }
 
