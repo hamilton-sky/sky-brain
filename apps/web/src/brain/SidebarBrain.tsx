@@ -92,13 +92,21 @@ export function BrandBanner(props: {
     );
   }
   return (
-    <span className="pf-brand brand-live">
+    // A click between the banner and its arrow stops here too, so the library's brand button
+    // never folds the panel away (SidebarRail.tsx does that, keeping the icons).
+    <span
+      className="pf-brand brand-live"
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+    >
       <span
         role="button"
         tabIndex={0}
         className="brand-open"
-        title="Open your brain"
         aria-label="Open your brain"
+        data-tip="Open your brain"
         {...act(props.onBrain)}
       >
         <BrainMark />
@@ -136,7 +144,8 @@ export function LayerLinks(props: { current: Part | null }) {
           key={p}
           type="button"
           className={`pf-sidebar-link nav-layer part-${p}`}
-          title={PART_NAMES[p]}
+          data-tip={PART_NAMES[p]}
+          aria-label={PART_NAMES[p]}
           aria-current={props.current === p ? "page" : undefined}
           onClick={() =>
             navigate(

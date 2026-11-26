@@ -745,3 +745,14 @@ through the caller's own routes (hard rule 4); run and device tokens cannot reac
 document renderer reads markdown tables and list items that wrap onto an indented line.
 **Keeps:** one source for the text (`docs/vision/book/`, generated into `book-chapters.ts`). Number
 note: D42 and D44 are hats (PRs #49, #51), D45 is agents' everyday actions (PR #53).
+
+### D48. The side panel folds to a rail of icons
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** folding the side panel left an empty strip with no way back: panel-frame-ui's own
+collapse hides every page, and a click in the gap of the brand banner still reached its toggle. Now
+a button at the left of the top bar folds the panel to a rail and opens it again. The rail keeps
+the star brain (opens the brain view), the layers' coloured dots and the page icons, each with
+its name in a tooltip on hover or keyboard focus. The choice is remembered per browser. The
+library's collapse is no longer reachable. Phones keep the drawer.
+**Keeps:** D41 (the brand banner and the layers under it).

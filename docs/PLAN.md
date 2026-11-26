@@ -368,6 +368,11 @@ Inbox, Board, each in its colour, the current one marked; open by default, remem
 browser, D41), so each layer is one click away. The view reads only existing routes (`GET /entries?layer=`, projects and goals,
 approvals) and changes nothing.
 
+On wide screens a button at the left of the top bar folds the side panel to a rail of icons
+(the brain, the layers' coloured dots, the pages) and opens it again; each icon shows its name on
+hover or focus, and the choice is remembered per browser (D48). Phones keep the menu button and
+drawer.
+
 ## 9. Auth
 
 Better Auth runs inside the server.
