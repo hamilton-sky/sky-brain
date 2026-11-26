@@ -684,3 +684,17 @@ Consolidator's suggestions (the goal's next tasks). Until the binding exists no 
 hat, so nothing changes for anyone.
 **Keeps:** hard rules 2, 3 and 4 (only people write hats; agents only carry the hat their binding
 gives them).
+
+### D43. Hats, step 2: a person binds an app to a hat; an agent picks one per session
+
+**Date:** 2026-11-26. **Decided by:** shammai ("when an agent pulls from the brain, it should act
+as a hat, by its identity, according to the context of the session and the tasks the person asks
+for").
+**Decision:** a person makes hats on the Agents page and can bind each connected app to one
+(`hat_bindings`, migration 0014). A bound app always works under that hat: the server puts it on
+the actor from the binding, never from the client, and `whoami` lists only that hat. An unbound
+app's `whoami` lists every hat of the person's own brains, so the agent can pick the hat that fits
+the session's context and tasks, or ask the person when it cannot tell. Picking is a lens (D30):
+it can only narrow what the agent sees, so it is safe to leave to the model; the binding is the
+wall. Passing the picked hat on calls, and narrowing reads by it, is the next step.
+**Keeps:** hard rules 2 and 3 (people make and bind hats; agents only read them).

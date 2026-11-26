@@ -12,6 +12,7 @@ import type { DbOrTx } from "@sky-brain/db/client";
 import {
   agentBindings,
   agentProfiles,
+  hatBindings,
   oauthClient,
   oauthConsent,
 } from "@sky-brain/db/schema";
@@ -84,6 +85,7 @@ export async function listConnectedApps(
       clientId: oauthConsent.clientId,
       name: oauthClient.name,
       profileId: agentBindings.profileId,
+      hatId: hatBindings.hatId,
     })
     .from(oauthConsent)
     .innerJoin(oauthClient, eq(oauthClient.clientId, oauthConsent.clientId))
@@ -94,13 +96,37 @@ export async function listConnectedApps(
         eq(agentBindings.clientId, oauthConsent.clientId),
       ),
     )
+    .leftJoin(
+      hatBindings,
+      and(
+        eq(hatBindings.userId, person),
+        eq(hatBindings.clientId, oauthConsent.clientId),
+      ),
+    )
     .where(eq(oauthConsent.userId, person))
     .orderBy(asc(oauthConsent.clientId));
   return rows.map((r) => ({
     client_id: r.clientId,
     name: r.name,
     profile_id: r.profileId,
+    hat_id: r.hatId,
   }));
+}
+
+/** Whether the person allowed this app on the consent page: only then may they bind it. */
+export async function hasConsented(
+  db: DbOrTx,
+  person: string,
+  clientId: string,
+): Promise<boolean> {
+  const [consent] = await db
+    .select({ id: oauthConsent.id })
+    .from(oauthConsent)
+    .where(
+      and(eq(oauthConsent.userId, person), eq(oauthConsent.clientId, clientId)),
+    )
+    .limit(1);
+  return consent !== undefined;
 }
 
 export type BindResult = "bound" | "unbound" | "no_app" | "no_profile";
@@ -115,14 +141,7 @@ export async function bindApp(
   clientId: string,
   profileId: string | null,
 ): Promise<BindResult> {
-  const [consent] = await db
-    .select({ id: oauthConsent.id })
-    .from(oauthConsent)
-    .where(
-      and(eq(oauthConsent.userId, person), eq(oauthConsent.clientId, clientId)),
-    )
-    .limit(1);
-  if (!consent) return "no_app";
+  if (!(await hasConsented(db, person, clientId))) return "no_app";
   if (profileId === null) {
     await db
       .delete(agentBindings)

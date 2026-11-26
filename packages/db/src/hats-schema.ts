@@ -65,3 +65,24 @@ export const coreEntryHats = pgTable(
     index("core_entry_hats_hat_idx").on(t.hatId),
   ],
 );
+
+/**
+ * Which hat a connected app always works under (D42), set by the person on the Agents page. One
+ * per (person, app), next to the role binding in agent_bindings. The hat must be in a brain the
+ * person owns; the service checks that. Deleting the hat unbinds the app.
+ */
+export const hatBindings = pgTable(
+  "hat_bindings",
+  {
+    userId: text("user_id").notNull(),
+    /** The OAuth client id (`azp` of the access token). */
+    clientId: text("client_id").notNull(),
+    hatId: uuid("hat_id")
+      .notNull()
+      .references(() => hats.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ name: "hat_bindings_pk", columns: [t.userId, t.clientId] }),
+  ],
+);

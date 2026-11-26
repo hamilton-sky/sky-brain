@@ -2,7 +2,7 @@
 // server, shows in whoami, and is the author of what the agent writes. Unbound, it is the Guest.
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { entries } from "@sky-brain/db/schema";
+import { entries, entryVersions, members } from "@sky-brain/db/schema";
 import {
   startAuthTestServer,
   type AuthTestServer,
@@ -16,6 +16,7 @@ import {
   mcpPost,
   signInAndGetToken,
 } from "../mcp/test/flow.ts";
+import { bindHat, createHat } from "./hats.ts";
 import { bindApp, createProfile } from "./profiles.ts";
 
 let db: Db;
@@ -83,5 +84,50 @@ describe("agent profiles over MCP", () => {
     expect(await bindApp(db, sub, CLAUDE_AI_CLIENT, null)).toBe("unbound");
     const me = await callWhoami(server, token);
     expect(me.agent?.profile).toBeNull();
+  });
+});
+
+describe("hats over MCP (D42)", () => {
+  it("an unbound app has no hat and sees every hat of the brain", async () => {
+    const [m] = await db
+      .select({ ws: members.workspaceId })
+      .from(members)
+      .where(eq(members.userId, sub));
+    const work = await createHat(db, m!.ws, {
+      slug: "work",
+      name: "Work",
+      description: "The job.",
+    });
+    await createHat(db, m!.ws, { slug: "home", name: "Home", description: "" });
+    const me = await callWhoami(server, token);
+    expect(me.hat).toBeNull();
+    expect(me.hats?.map((h) => h.slug)).toEqual(["work", "home"]);
+
+    expect(await bindHat(db, sub, m!.ws, CLAUDE_AI_CLIENT, work!.id)).toBe(
+      "bound",
+    );
+  });
+
+  it("a bound app works under its hat: whoami shows only it, and writes record it", async () => {
+    const me = await callWhoami(server, token);
+    expect(me.hat).toMatchObject({ slug: "work", name: "Work" });
+    expect(me.hats?.map((h) => h.slug)).toEqual(["work"]);
+
+    const res = await mcpPost(server, token, "tools/call", {
+      name: "capture",
+      arguments: {
+        kind: "fact",
+        title: "Written at work",
+        body: "Under the Work hat.",
+        summary: "A note written under the Work hat.",
+      },
+    });
+    expect(res.status).toBe(200);
+    const [row] = await db
+      .select({ hat: entryVersions.captureHatId })
+      .from(entryVersions)
+      .innerJoin(entries, eq(entries.id, entryVersions.entryId))
+      .where(eq(entries.title, "Written at work"));
+    expect(row!.hat).toBe(me.hat!.id);
   });
 });
