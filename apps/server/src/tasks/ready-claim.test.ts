@@ -2,7 +2,7 @@
 // expiry with the fencing number, and who an event names (bars 1, 2, 6, 7; ticket 06).
 import { and, asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { auditLog, taskEvents, tasks } from "@sky-brain/db/schema";
+import { auditLog, goals, taskEvents, tasks } from "@sky-brain/db/schema";
 import {
   device,
   expectError,
@@ -127,6 +127,11 @@ describe("ready and claim", () => {
     const w = await world(ctx.db);
     const g1 = await goal(w);
     const g2 = await goal(w);
+    // Two goals seeded back to back can share a created_at; make g1 clearly older.
+    await ctx.db
+      .update(goals)
+      .set({ createdAt: new Date(Date.now() - 60_000) })
+      .where(eq(goals.id, g1.id));
     const ids: string[] = [];
     for (const g of [g1, g2]) {
       for (let i = 0; i < 2; i += 1) {

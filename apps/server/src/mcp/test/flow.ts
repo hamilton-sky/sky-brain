@@ -288,6 +288,25 @@ export async function toolNames(server: AuthTestServer, token: string) {
   ).tools.map((t) => t.name);
 }
 
+/** Signs each name in through the claude.ai flow; returns their access tokens by name. */
+export async function tokensFor(
+  server: AuthTestServer,
+  names: string[],
+): Promise<Record<string, string>> {
+  const tokens: Record<string, string> = {};
+  for (const name of names) {
+    const { accessToken } = await signInAndGetToken(server, {
+      account: {
+        subjectId: `subject-${name}`,
+        email: `${name}@example.test`,
+        firstName: name,
+      },
+    });
+    tokens[name] = accessToken;
+  }
+  return tokens;
+}
+
 /** `tools/call` as `token`: isError, and the result text parsed as JSON (or the raw text). */
 export async function callTool(
   server: AuthTestServer,

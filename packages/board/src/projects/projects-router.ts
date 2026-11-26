@@ -1,6 +1,7 @@
-// `/api/v1/projects`: list the projects of the caller's workspaces, and (people only) create
-// or rename one. A rename keeps the slug, which links and devices may use. Check order: actor (app); humans only (create); the board-write rate limit; request
-// shape; workspace membership (404); role (403); a taken slug (409).
+// `/api/v1/projects`: list the projects of the caller's workspaces, and create or rename one.
+// People and their agents may (D45); a rename keeps the slug, which links and devices may use.
+// Check order: actor (app); the board-write rate limit; request shape; workspace membership
+// (404); role (403); a taken slug (409).
 import {
   ProjectCreateRequestSchema,
   ProjectRenameRequestSchema,
@@ -12,7 +13,6 @@ import { and, asc, eq } from "drizzle-orm";
 import express, { type Router } from "express";
 import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { actorOf } from "@sky-brain/kernel/actor/middleware";
-import { requireHuman } from "@sky-brain/kernel/actor/require-human";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { members, projects } from "@sky-brain/db/schema";
@@ -75,51 +75,45 @@ export function projectsRouter(options: {
       .json({ projects: await listProjects(db, person, query.workspace_id) });
   });
 
-  router.post(
-    "/",
-    requireHuman,
-    boardWriteLimit(options.limiter),
-    async (req, res) => {
-      const body = validate(ProjectCreateRequestSchema, req.body);
-      const actor = actorOf(req);
-      const scope = await resolveScope(db, actor, {
-        workspace_id: body.workspace_id,
-      });
-      if (scope.role !== "owner" && scope.role !== "editor") {
-        throw new HttpError(403, "role_cannot_write", "A viewer cannot write.");
+  router.post("/", boardWriteLimit(options.limiter), async (req, res) => {
+    const body = validate(ProjectCreateRequestSchema, req.body);
+    const actor = actorOf(req);
+    const scope = await resolveScope(db, actor, {
+      workspace_id: body.workspace_id,
+    });
+    if (scope.role !== "owner" && scope.role !== "editor") {
+      throw new HttpError(403, "role_cannot_write", "A viewer cannot write.");
+    }
+    const slug = body.slug ?? slugify(body.name);
+    const row = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(projects)
+        .values({ workspaceId: scope.workspaceId, slug, name: body.name })
+        .onConflictDoNothing()
+        .returning();
+      if (!created) {
+        throw new HttpError(
+          409,
+          "slug_taken",
+          "A project with that slug already exists in this workspace.",
+          { field: "slug" },
+        );
       }
-      const slug = body.slug ?? slugify(body.name);
-      const row = await db.transaction(async (tx) => {
-        const [created] = await tx
-          .insert(projects)
-          .values({ workspaceId: scope.workspaceId, slug, name: body.name })
-          .onConflictDoNothing()
-          .returning();
-        if (!created) {
-          throw new HttpError(
-            409,
-            "slug_taken",
-            "A project with that slug already exists in this workspace.",
-            { field: "slug" },
-          );
-        }
-        const who = auditActor(actor);
-        await writeAudit(tx, {
-          workspaceId: scope.workspaceId,
-          actor: who.actor,
-          action: "project.create",
-          targetId: created.id,
-          details: { ...who.details },
-        });
-        return created;
+      const who = auditActor(actor);
+      await writeAudit(tx, {
+        workspaceId: scope.workspaceId,
+        actor: who.actor,
+        action: "project.create",
+        targetId: created.id,
+        details: { ...who.details },
       });
-      res.status(201).json({ project: toWireProject(row) });
-    },
-  );
+      return created;
+    });
+    res.status(201).json({ project: toWireProject(row) });
+  });
 
   router.post(
     "/:id/rename",
-    requireHuman,
     boardWriteLimit(options.limiter),
     async (req, res) => {
       const id = IdSchema.safeParse(req.params.id);
