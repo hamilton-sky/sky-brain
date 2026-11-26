@@ -699,3 +699,14 @@ each session to use the sky-brain connector; the server instructions carry the r
 the same in Claude, Codex or any other client.
 **Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
 and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
+
+### D47. The side panel folds to a rail of icons
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** folding the side panel left an empty strip with no way back: panel-frame-ui's own
+collapse hides every page, and a click in the gap of the brand banner still reached its toggle. Now
+a button at the left of the top bar folds the panel to a rail and opens it again. The rail keeps
+the star brain (opens the brain view), the layers' coloured dots and the page icons, each with
+its name in a tooltip on hover or keyboard focus. The choice is remembered per browser. The
+library's collapse is no longer reachable. Phones keep the drawer.
+**Keeps:** D41 (the brand banner and the layers under it).

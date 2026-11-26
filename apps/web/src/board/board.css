@@ -7,6 +7,11 @@
   max-width: none;
 }
 
+/* The New goal form opens above the columns: leave room so it does not touch the cards. */
+.board > .form {
+  margin-bottom: 20px;
+}
+
 /* Layout: the board or the digest */
 .layout {
   display: grid;

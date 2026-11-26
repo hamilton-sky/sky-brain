@@ -11,6 +11,8 @@ import {
   LayerLinks,
   useLayersOpen,
 } from "./brain/SidebarBrain.tsx";
+import { RailTips, RailToggle, useRail } from "./SidebarRail.tsx";
+import "./rail.css";
 
 export type Page = "board" | "approvals" | "agents";
 
@@ -70,6 +72,7 @@ export function AppShell(props: {
   children: ReactNode;
 }) {
   const [layersOpen, toggleLayers] = useLayersOpen();
+  const [rail, toggleRail] = useRail();
   const brain = Boolean(props.me && props.onBrain);
   // With the layer list open, the Board is listed there, as the brain's working layer.
   const pages =
@@ -100,7 +103,8 @@ export function AppShell(props: {
                 key={p.id}
                 type="button"
                 className="pf-sidebar-link"
-                title={p.label}
+                data-tip={p.label}
+                aria-label={p.label}
                 aria-current={
                   props.page === p.id && !props.layer ? "page" : undefined
                 }
@@ -115,6 +119,8 @@ export function AppShell(props: {
       }
       toolbar={
         <>
+          {props.me && <RailToggle rail={rail} onToggle={toggleRail} />}
+          {props.me && <RailTips rail={rail} />}
           {props.me && props.onBrain && (
             <button
               type="button"
