@@ -7,8 +7,8 @@ import {
   entries,
   entryVersions,
   memories,
-} from "../../packages/db/src/schema.ts";
-import { createRateLimiter } from "../../packages/kernel/src/guards/ratelimit.ts";
+} from "@sky-brain/db/schema";
+import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { boardDispatcher } from "../../apps/server/src/mcp/board-dispatch.ts";
 import {
   createTestDb,
