@@ -35,6 +35,7 @@ interface BrainCanvas extends HTMLCanvasElement {
 
 const PART_KEY = "sky-brain.brain-part";
 const SPLIT_AFTER_MS = 900;
+const REFRESH_MS = 20_000;
 
 function rememberedPart(): Part | null {
   try {
@@ -132,8 +133,20 @@ export function BrainView({ onClose }: { onClose: () => void }) {
     };
   }, [pick]);
 
+  // Read again every 20 seconds, so agents that start or stop working show up while it is open.
   useEffect(() => {
-    loadBrain().then(setData, (e: Error) => setError(e.message));
+    let live = true;
+    const read = () =>
+      loadBrain().then(
+        (d) => live && (setData(d), setError(null)),
+        (e: Error) => live && setError(e.message),
+      );
+    void read();
+    const t = setInterval(() => void read(), REFRESH_MS);
+    return () => {
+      live = false;
+      clearInterval(t);
+    };
   }, []);
 
   useEffect(() => {
@@ -276,7 +289,7 @@ export function BrainView({ onClose }: { onClose: () => void }) {
             go(
               it.kind === "entry"
                 ? { page: "doc", entryId: it.id }
-                : { page: "board" },
+                : { page: "board", goal: it.id },
             )
           }
           onOpen={(p) =>

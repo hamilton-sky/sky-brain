@@ -122,6 +122,7 @@ function Root() {
       }
       onPage={(p) => navigate({ page: p })}
       onBrain={() => setBrainOpen(true)}
+      layer={route.page === "layer" ? route.layer : undefined}
     >
       {brainOpen && signedIn && (
         <BrainView onClose={() => setBrainOpen(false)} />
@@ -167,7 +168,10 @@ function Root() {
             title="Board"
             description="What your agents propose waits here. Only you approve. Review today's list, or see every goal."
           />
-          <Projects me={me} />
+          <Projects
+            me={me}
+            goal={route.page === "board" ? route.goal : undefined}
+          />
         </>
       ) : (
         <>
@@ -182,7 +186,8 @@ function Root() {
   );
 }
 
-function Projects({ me }: { me: Me }) {
+/** The board; `goal` (from /goals/<id>) picks that goal's project and opens the goal. */
+function Projects({ me, goal }: { me: Me; goal?: string }) {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [selected, setSelected] = useState<string | null>(remembered());
   const [adding, setAdding] = useState(false);
@@ -192,6 +197,17 @@ function Projects({ me }: { me: Me }) {
     api.projects().then(setProjects, (e: Error) => setError(e.message));
   }, []);
   useEffect(load, [load]);
+  useEffect(() => {
+    if (!goal) return;
+    let live = true;
+    api.goal(goal).then(
+      (r) => live && setSelected(r.goal.project_id),
+      () => undefined, // Gone or not yours: the board opens as usual.
+    );
+    return () => {
+      live = false;
+    };
+  }, [goal]);
 
   if (projects === null) {
     return error ? (
@@ -239,7 +255,7 @@ function Projects({ me }: { me: Me }) {
       )}
       {error && <Alert tone="error">{error}</Alert>}
       {current ? (
-        <Board key={current.id} project={current} />
+        <Board key={current.id} project={current} openGoal={goal} />
       ) : (
         !adding && (
           <EmptyState

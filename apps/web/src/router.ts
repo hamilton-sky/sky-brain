@@ -1,11 +1,11 @@
-// The app's few addresses: `/` (the board), `/approvals`, `/a/<request id>` (an approval link an
+// The app's few addresses: `/` (the board), `/goals/<goal id>` (the board with that goal open), `/approvals`, `/a/<request id>` (an approval link an
 // agent hands the person), `/agents`, `/docs/<entry id>` (a document's own page), and
 // `/brain/<layer>` (one layer of the brain: about-me, notebooks or inbox). The server and Vercel answer every other path with index.html, so a link or a reload
 // lands back here.
 import { useEffect, useState } from "react";
 
 export type Route =
-  | { page: "board" }
+  | { page: "board"; goal?: string }
   | { page: "approvals" }
   | { page: "agents" }
   | { page: "approval"; id: string }
@@ -30,6 +30,8 @@ export function parseRoute(path: string): Route {
     (l) => LAYER_SLUGS[l] === layer,
   );
   if (found) return { page: "layer", layer: found };
+  const goal = /^\/goals\/([^/]+)\/?$/.exec(path)?.[1];
+  if (goal && UUID.test(goal)) return { page: "board", goal };
   const m = /^\/(docs|a)\/([^/]+)\/?$/.exec(path);
   if (m && UUID.test(m[2]!)) {
     return m[1] === "a"
@@ -48,7 +50,7 @@ export function routePath(route: Route): string {
     case "layer":
       return `/brain/${LAYER_SLUGS[route.layer]}`;
     case "board":
-      return "/";
+      return route.goal ? `/goals/${route.goal}` : "/";
     default:
       return `/${route.page}`;
   }
