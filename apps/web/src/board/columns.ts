@@ -6,8 +6,8 @@ export type Column = "needs" | "run" | "wait" | "done";
 
 export const COLUMNS: { id: Column; label: string }[] = [
   { id: "needs", label: "Needs you" },
-  { id: "run", label: "Running" },
   { id: "wait", label: "Waiting to start" },
+  { id: "run", label: "Running" },
   { id: "done", label: "Done" },
 ];
 
