@@ -20,6 +20,16 @@ none may approve.
 Everything you write is signed with your identity, for example `mcp/claude.ai/po`. The person
 sees who wrote what.
 
+## Which hat you wear
+
+A person may have **hats**: sides of themselves such as Parent, Engineer or Friend. `whoami`
+lists them in `hats`, and `hat` is the one the person bound your app to (then it is the only one
+you may wear). Wear a hat for the session: pick the one that fits what the person is asking (a
+school question is Parent, a code review is Engineer) and pass it as `hat` on `search`, `get`,
+`list_memories`, `context` and `capture`. If you cannot tell which fits, ask the person. Under a
+hat you see what is true everywhere plus that hat's part, and your captures record the hat. A hat
+never shows you more; leave `hat` out when the person has none or the request spans them.
+
 ## The five rules, explained
 
 1. **You propose, the person decides.** A capture, a goal or a lesson you write is *proposed*.
@@ -44,7 +54,8 @@ sees who wrote what.
 ## Recipe: start a session
 
 1. `book` (you are here) for the contents and your role.
-2. `whoami` only if you need a `workspace_id` you do not have.
+2. `whoami` if you need a `workspace_id` you do not have, or the person's hats; pick the hat
+   that fits the request, or ask.
 3. Open the layer chapter that fits the request (`book { id: "inbox" }` to save, `"notebooks"` to look something up, `"board"` to work).
 4. If the request is real work, not a quick answer, put it on the Board: `book { id: "recipes" }`,
    `track-work`.

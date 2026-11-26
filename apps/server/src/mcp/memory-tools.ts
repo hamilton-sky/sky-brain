@@ -12,10 +12,10 @@ import {
 } from "@sky-brain/shared/memory";
 import { IdSchema } from "@sky-brain/shared/scope";
 import { z } from "zod";
-import type { BoardCall } from "./board-dispatch.ts";
+import { hatArg, type CallFor } from "./hat-lens.ts";
 import { READ, toToolResult, WRITE } from "./board-tools.ts";
 
-export function registerMemoryTools(server: McpServer, call: BoardCall): void {
+export function registerMemoryTools(server: McpServer, callFor: CallFor): void {
   server.registerTool(
     "capture",
     {
@@ -52,10 +52,12 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
         source: z.enum(["web", "import"]).optional(),
         memory_id: IdSchema.optional(),
         workspace_id: IdSchema.optional(),
+        hat: hatArg,
       }),
       annotations: WRITE,
     },
-    async (args) => toToolResult(await call("POST", "/entries", args)),
+    async ({ hat, ...args }) =>
+      toToolResult(await (await callFor(hat))("POST", "/entries", args)),
   );
 
   server.registerTool(
@@ -85,14 +87,16 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
           ),
         workspace_id: IdSchema.optional(),
         limit: z.int().min(1).max(SEARCH_LIMIT_MAX).optional(),
+        hat: hatArg,
       }),
       annotations: READ,
     },
-    async (args) => {
+    async ({ hat, ...args }) => {
       const params = new URLSearchParams();
       for (const [key, value] of Object.entries(args)) {
         if (value !== undefined) params.set(key, String(value));
       }
+      const call = await callFor(hat);
       return toToolResult(await call("GET", `/entries?${params.toString()}`));
     },
   );
@@ -105,11 +109,11 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
         "Returns one entry with its full body, its version history (nothing is edited in " +
         "place, so older versions show what was believed before) and the person's comments " +
         "on it (`quote` is the passage a comment is on; resolved ones are settled).",
-      inputSchema: z.object({ entry_id: IdSchema }),
+      inputSchema: z.object({ entry_id: IdSchema, hat: hatArg }),
       annotations: READ,
     },
-    async ({ entry_id }) =>
-      toToolResult(await call("GET", `/entries/${entry_id}`)),
+    async ({ entry_id, hat }) =>
+      toToolResult(await (await callFor(hat))("GET", `/entries/${entry_id}`)),
   );
 
   server.registerTool(
@@ -119,12 +123,17 @@ export function registerMemoryTools(server: McpServer, call: BoardCall): void {
       description:
         "Lists the person's memories: About me (core), Notebooks (long), Inboxes (short) and " +
         "Boards (working), with their ids.",
-      inputSchema: z.object({ workspace_id: IdSchema.optional() }),
+      inputSchema: z.object({
+        workspace_id: IdSchema.optional(),
+        hat: hatArg,
+      }),
       annotations: READ,
     },
-    async ({ workspace_id }) =>
+    async ({ workspace_id, hat }) =>
       toToolResult(
-        await call(
+        await (
+          await callFor(hat)
+        )(
           "GET",
           `/memories${workspace_id ? `?workspace_id=${workspace_id}` : ""}`,
         ),
