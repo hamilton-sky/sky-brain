@@ -292,7 +292,7 @@ the same checks. REST routes:
 | Route | Who |
 |---|---|
 | `GET /api/v1/me` | anyone signed in (the web page) |
-| `GET /api/v1/projects`, `POST /api/v1/projects` | list: members; create: people who are owners or editors |
+| `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/projects/:id/rename` | list: members; create and rename: people who are owners or editors (a rename keeps the slug; audited as `project.rename`) |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
 | `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |

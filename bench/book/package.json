@@ -10,6 +10,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "1.14.0",
     "@modelcontextprotocol/server": "2.4.0",
+    "@sky-brain/db": "workspace:*",
+    "@sky-brain/kernel": "workspace:*",
     "@sky-brain/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
     "tsx": "4.23.15"
