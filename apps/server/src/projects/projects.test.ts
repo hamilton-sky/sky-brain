@@ -104,12 +104,27 @@ describe("projects", () => {
     expect(res.body.error.code).toBe("slug_taken");
   });
 
-  it("an agent cannot create a project", async () => {
+  it("an agent creates a project for its person (D45), audited as the agent", async () => {
     const res = await server
       .as(agent("ann"))
       .post("/api/v1/projects", { workspace_id: wsA, name: "Agent's" });
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("humans_only");
+    expect(res.status).toBe(201);
+    const audit = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.targetId, res.body.project.id));
+    expect(audit.map((a) => a.actor)).toEqual(["agent:mcp/claude.ai"]);
+  });
+
+  it("an agent cannot create a project where its person is a viewer, or in another workspace", async () => {
+    const viewer = await server
+      .as(agent("vic"))
+      .post("/api/v1/projects", { workspace_id: wsA, name: "Viewer's" });
+    expect(viewer.status).toBe(403);
+    const other = await server
+      .as(agent("ann"))
+      .post("/api/v1/projects", { workspace_id: wsB, name: "Intruder" });
+    expect(other.status).toBe(404);
   });
 
   it("a viewer cannot create a project", async () => {
@@ -159,15 +174,17 @@ describe("renaming a project", () => {
     expect(audit.map((a) => a.action)).toEqual(["project.rename"]);
   });
 
-  it("an agent cannot rename a project", async () => {
+  it("an agent renames a project for its person (D45); not for a viewer or another workspace", async () => {
     const p = await seedProject(db, {
       workspaceId: wsA,
       slug: "agent-try",
       name: "Keep",
     });
     const res = await rename(agent("ann"), p.id, "Agent's");
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("humans_only");
+    expect(res.status).toBe(200);
+    expect(res.body.project.name).toBe("Agent's");
+    expect((await rename(agent("vic"), p.id, "Viewer's")).status).toBe(403);
+    expect((await rename(agent("ann"), projectB, "Intruder")).status).toBe(404);
   });
 
   it("a viewer cannot rename, an empty name is refused, and nothing changes", async () => {

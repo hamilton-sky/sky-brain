@@ -718,3 +718,18 @@ hat (`memory/hat-reach.ts`, one SQL term in each read). The book's start chapter
 how to pick. People see everything, as before.
 **Keeps:** a hat only narrows (D30); hard rules 2, 3 and 4 (people make and bind hats; agents
 only read them).
+
+### D45. Agents do the everyday work; the weighty actions stay with people
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** what a person may do, their agent may do too, except the actions that matter. An
+agent (acting for its person, with that person's role) now creates and renames projects and
+comments on entries, over REST and through the MCP tools `create_project`, `rename_project` and
+`comment`. The checks are the person's: an owner or editor only (a viewer's agent gets 403),
+another workspace is 404, and the audit row and the comment name the agent.
+Still people only: approve, reject, cancel or release a goal or an entry; delete anything
+(comments, document links); resolve or reopen a comment; set a goal's assignee; write versions
+of an entry; make a memory; rules; About me; sharing; devices and push; agent profiles and
+bindings; approval requests.
+**Keeps:** hard rule 3 (agents never approve, reject, release or delete, nor write rules or the
+workspace scope); D26 (a role grants no extra rights). Number note: D42 and D44 are hats (PRs #49, #51), D43 is #52.
