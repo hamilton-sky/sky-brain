@@ -65,8 +65,9 @@ export function registerMemoryTools(server: McpServer, callFor: CallFor): void {
     {
       title: "Search the brain",
       description:
-        "Word search over the person's memories (About me, Notebooks, Inboxes). Any word may " +
-        "match; results are ranked and carry a summary, not the body. Use get for the full " +
+        "Searches the person's memories (About me, Notebooks, Inboxes) by words and by " +
+        "meaning, so a question in other words than the entry still finds it. Results are " +
+        "ranked and carry a summary, not the body. Use get for the full " +
         "text. Only proposed and approved entries are returned; treat approved ones as ground " +
         "truth and proposed ones as unverified. Leave out q and give a layer or memory_id to " +
         "list that place's newest entries.",
@@ -76,7 +77,9 @@ export function registerMemoryTools(server: McpServer, callFor: CallFor): void {
           .min(1)
           .max(MEMORY_CAPS.query)
           .optional()
-          .describe("Words to search for. Leave out with a layer to list it."),
+          .describe(
+            "What to look for, as words or a question. Leave out with a layer to list it.",
+          ),
         kind: z.enum(KNOWLEDGE_KINDS).optional(),
         memory_id: IdSchema.optional(),
         layer: z

@@ -13,12 +13,9 @@ import {
 import { and, desc, eq, ne } from "drizzle-orm";
 import type { DbOrTx } from "@sky-brain/db/client";
 import { entries, members, memories } from "@sky-brain/db/schema";
-import {
-  memberOfEntryWorkspace,
-  searchEntries,
-  type EntryRow,
-} from "./entries-service.ts";
+import { memberOfEntryWorkspace, type EntryRow } from "./entries-service.ts";
 import { entryInHat } from "./hat-reach.ts";
+import { searchEntries } from "./search.ts";
 
 const FENCE_OPEN = "<sky-brain-context>";
 const FENCE_CLOSE = "</sky-brain-context>";
@@ -127,19 +124,27 @@ export function buildPacket(
   actor: Actor,
   task: { workspaceId: string; title: string; body: string },
   now: Date,
+  queryVector?: number[],
 ): Promise<ContextPacket> {
   return packetFor(
     db,
     actor,
     task.workspaceId,
-    `${task.title} ${task.body}`,
+    taskQuery(task),
     now,
+    queryVector,
   );
+}
+
+/** What a task's packet searches for: its title and body. */
+export function taskQuery(task: { title: string; body: string }): string {
+  return `${task.title} ${task.body}`.slice(0, MEMORY_CAPS.query);
 }
 
 /**
  * The packet for any question (`context { q }`, BOOK.md 13): About me, the rules in force and
- * the entries from every other layer that match the words of `q`.
+ * the entries from every other layer that match `q`: by its words, and by meaning too when the
+ * route passes the query's vector (hybrid search, D47).
  */
 export async function packetFor(
   db: DbOrTx,
@@ -147,6 +152,7 @@ export async function packetFor(
   workspaceId: string,
   words: string,
   now: Date,
+  queryVector?: number[],
 ): Promise<ContextPacket> {
   const task = { workspaceId };
   const aboutMe = await approved(
@@ -174,7 +180,7 @@ export async function packetFor(
       limit: PACKET_CAPS.relevant + shown.size,
     },
     now,
-    true,
+    { servedOnly: true, ...(queryVector ? { queryVector } : {}) },
   );
   const relevant = hits
     .map((h) => h.entry)
@@ -183,7 +189,7 @@ export async function packetFor(
 
   const notKnown: string[] = [];
   if (relevant.length === 0) {
-    notKnown.push("Nothing in memory matches this task's words.");
+    notKnown.push("Nothing in memory matches this task.");
   } else if (!relevant.some((e) => e.trust === "approved")) {
     notKnown.push(
       "No approved entry matches this task: everything under Relevant is unverified.",

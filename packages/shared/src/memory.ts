@@ -126,6 +126,13 @@ export const ReviseRequestSchema = z.strictObject({
 });
 export type ReviseRequest = z.infer<typeof ReviseRequestSchema>;
 
+/**
+ * Length of an entry's vector (D47): 1024, stored as `halfvec` (2 KB a row). Voyage's and
+ * OpenAI's current embedding models and bge-m3 all give 1024, so the provider can change
+ * without a migration; only a change of model needs the vectors made again.
+ */
+export const EMBEDDING_DIMS = 1024;
+
 /** The layers that hold entries; the Board (working) is read with the board tools. */
 export const ENTRY_LAYERS = ["core", "long", "short"] as const;
 

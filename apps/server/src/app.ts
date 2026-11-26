@@ -17,6 +17,7 @@ import { mountMcp } from "./mcp/route.ts";
 import { boardDispatcher } from "./mcp/board-dispatch.ts";
 import { bookRouter } from "./book/book-router.ts";
 import { entriesRouter, memoriesRouter } from "@sky-brain/memory/memory-router";
+import type { Semantic } from "@sky-brain/memory/embed/semantic";
 import { agentsRouter } from "./agents/agents-router.ts";
 import { approvalsRouter } from "@sky-brain/approvals/approvals/approvals-router";
 import { noPush, type Push } from "@sky-brain/approvals/push/push";
@@ -56,6 +57,8 @@ export interface AppOptions {
   auth?: { instance: Auth; publicUrl: string };
   /** Web push for approval requests (`pushFromEnv`). Default: off. */
   push?: Push;
+  /** Hybrid search (D47): the embedder (`embedderFromEnv`) and the after-response runner. Default: words only. */
+  semantic?: Semantic;
 }
 
 const defaultWebDist = fileURLToPath(
@@ -174,12 +177,24 @@ export function createApp(options: AppOptions): express.Express {
   app.use("/api/v1/agents", agentsRouter({ db }));
   app.use("/api/v1/projects", projectsRouter({ db, limiter: boardLimiter }));
   app.use("/api/v1/goals", goalsRouter({ db, now, limiter: boardLimiter }));
-  app.use("/api/v1/tasks", tasksRouter({ db, now, limiter: boardLimiter }));
+  const semantic = options.semantic ? { semantic: options.semantic } : {};
+  app.use(
+    "/api/v1/tasks",
+    tasksRouter({ db, now, limiter: boardLimiter, ...semantic }),
+  );
   app.use(
     "/api/v1/memories",
     memoriesRouter({ db, now, limiter: boardLimiter }),
   );
-  app.use("/api/v1/entries", entriesRouter({ db, now, limiter: boardLimiter }));
+  app.use(
+    "/api/v1/entries",
+    entriesRouter({
+      db,
+      now,
+      limiter: boardLimiter,
+      ...semantic,
+    }),
+  );
   app.use(
     "/api/v1/approvals",
     approvalsRouter({ db, now, limiter: boardLimiter, push }),

@@ -106,6 +106,13 @@
       "when": 1795705884944,
       "tag": "0014_hat-bindings",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795709753462,
+      "tag": "0015_entry-vectors",
+      "breakpoints": true
     }
   ]
 }

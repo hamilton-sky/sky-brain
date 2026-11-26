@@ -5,7 +5,11 @@
   "ignore": ["apps/web/public/sw.js"],
   "workspaces": {
     "apps/server": {
-      "ignoreDependencies": ["web-push"]
+      "ignoreDependencies": [
+        "web-push",
+        "@electric-sql/pglite-pgvector",
+        "auth"
+      ]
     }
   }
 }

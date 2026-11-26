@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.14",
+    "@electric-sql/pglite-pgvector": "0.0.15",
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
     "eslint": "10.14.0",

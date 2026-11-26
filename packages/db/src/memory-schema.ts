@@ -6,6 +6,7 @@
 // is used only inside callbacks, and `author_kind` is text with a check.
 import type { AuthorKind } from "@sky-brain/shared/enums";
 import {
+  EMBEDDING_DIMS,
   ENTRY_SOURCES,
   ENTRY_TOPICS,
   KNOWLEDGE_KINDS,
@@ -20,6 +21,7 @@ import {
   check,
   customType,
   foreignKey,
+  halfvec,
   index,
   integer,
   pgEnum,
@@ -195,6 +197,31 @@ export const entryVersions = pgTable(
     check(
       "entry_versions_author_kind",
       sql`${t.authorKind} in ('human', 'agent')`,
+    ),
+  ],
+);
+
+/**
+ * One vector per entry (D47, BUILD-PLAN step 4): the embedding of its title, summary and
+ * questions, made by the server's embedding model, the one model call sky-brain makes. Its own
+ * table, so storing a vector is not a change of the entry (no new `seq`, no `updated_at`).
+ * `version` is the entry version it was made from; an older one is stale and is made again.
+ */
+export const entryVectors = pgTable(
+  "entry_vectors",
+  {
+    entryId: uuid("entry_id")
+      .primaryKey()
+      .references(() => entries.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    model: text("model").notNull(),
+    embedding: halfvec("embedding", { dimensions: EMBEDDING_DIMS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("entry_vectors_hnsw_idx").using(
+      "hnsw",
+      t.embedding.op("halfvec_cosine_ops"),
     ),
   ],
 );

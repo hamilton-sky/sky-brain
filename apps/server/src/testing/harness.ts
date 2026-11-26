@@ -1,5 +1,6 @@
 // Test harness (spec.md Interfaces -> How a test reaches the server). Seeds insert rows
 // directly, bypassing the trust rules and guards: tests only.
+import type { Semantic } from "@sky-brain/memory/embed/semantic";
 import type { Push } from "@sky-brain/approvals/push/push";
 import type { AuthorKind, Role } from "@sky-brain/shared/enums";
 import type {
@@ -203,6 +204,8 @@ export interface TestServerOptions {
   webDist?: string;
   /** Web push for approval requests. Default: off. */
   push?: Push;
+  /** Hybrid search's embedder and background runner (D47). Default: words only. */
+  semantic?: Semantic;
 }
 
 async function toTestResponse(res: Response): Promise<TestResponse> {
@@ -261,6 +264,7 @@ export async function startTestServer(
     ...(opts.now ? { now: opts.now } : {}),
     ...(opts.webDist ? { webDist: opts.webDist } : {}),
     ...(opts.push ? { push: opts.push } : {}),
+    ...(opts.semantic ? { semantic: opts.semantic } : {}),
   });
   const server = await new Promise<Server>((resolve, reject) => {
     const s = app.listen(0, "127.0.0.1", (err?: Error) =>

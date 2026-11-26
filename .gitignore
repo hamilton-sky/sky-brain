@@ -6,3 +6,4 @@ dist/
 .env.*
 coverage/
 .vercel/
+bench/.cache/

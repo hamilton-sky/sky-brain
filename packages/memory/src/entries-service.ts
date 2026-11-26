@@ -10,30 +10,13 @@ import {
   INBOX_TTL_DAYS,
   type CaptureRequest,
   type ReviseRequest,
-  type SearchQuery,
   type TrustLevel,
 } from "@sky-brain/shared/memory";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
-import {
-  entries,
-  entryVersions,
-  members,
-  memories,
-} from "@sky-brain/db/schema";
+import { entries, entryVersions, members } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
 import {
   heldBecause,
@@ -47,13 +30,13 @@ import {
   workspaceRoles,
   type MemoryRow,
 } from "./memories.ts";
-import { coreEntryInHat, entryInHat } from "./hat-reach.ts";
+import { coreEntryInHat } from "./hat-reach.ts";
 
 export type EntryRow = typeof entries.$inferSelect;
 export type VersionRow = typeof entryVersions.$inferSelect;
 
 /** Trust levels an agent may ever read. */
-const AGENT_READABLE: TrustLevel[] = ["proposed", "approved"];
+export const AGENT_READABLE: TrustLevel[] = ["proposed", "approved"];
 
 function isWriter(role: Role): boolean {
   return role === "owner" || role === "editor";
@@ -463,61 +446,4 @@ export async function setTrustInTx(
     details: { from: entry.trust, to },
   });
   return row;
-}
-
-/**
- * Word search over the entries the caller may read: any word of the query may match (the
- * benchmark's `or` mode), ranked by `ts_rank_cd` over title, summary and body. Agents see only
- * proposed and approved entries that have not faded; people see everything but rejected unless
- * they ask for a trust level.
- */
-export async function searchEntries(
-  db: DbOrTx,
-  actor: Actor,
-  query: SearchQuery,
-  now: Date,
-  /** What agents may read, whoever asks: the context packet uses it. */
-  servedOnly = false,
-): Promise<{ entry: EntryRow; rank: number }[]> {
-  if (query.workspace_id) await workspaceRoles(db, actor, query.workspace_id);
-  // No q: list the layer's or memory's newest entries (rank 0, newest first).
-  const tsquery =
-    query.q === undefined
-      ? undefined
-      : sql`to_tsquery('simple', replace(plainto_tsquery('simple', sb_norm(${query.q}))::text, '&', '|'))`;
-  const rank = tsquery
-    ? sql<number>`ts_rank_cd(${entries.search}, ${tsquery})`
-    : sql<number>`0::real`;
-  const trustFilter =
-    actor.kind === "agent" || servedOnly
-      ? and(
-          inArray(entries.trust, AGENT_READABLE),
-          query.trust ? eq(entries.trust, query.trust) : undefined,
-          or(isNull(entries.expiresAt), gt(entries.expiresAt, now)),
-        )
-      : query.trust
-        ? eq(entries.trust, query.trust)
-        : ne(entries.trust, "rejected");
-  const rows = await db
-    .select({ entry: entries, rank })
-    .from(entries)
-    .innerJoin(memories, eq(memories.id, entries.memoryId))
-    .innerJoin(members, memberOfEntryWorkspace(actor))
-    .where(
-      and(
-        tsquery ? sql`${entries.search} @@ ${tsquery}` : undefined,
-        or(ne(memories.layer, "core"), eq(members.role, "owner")),
-        query.workspace_id
-          ? eq(entries.workspaceId, query.workspace_id)
-          : undefined,
-        query.memory_id ? eq(entries.memoryId, query.memory_id) : undefined,
-        query.layer ? eq(entries.layer, query.layer) : undefined,
-        query.kind ? eq(entries.kind, query.kind) : undefined,
-        trustFilter,
-        entryInHat(actor),
-      ),
-    )
-    .orderBy(...(tsquery ? [desc(rank)] : []), desc(entries.seq))
-    .limit(query.limit);
-  return rows;
 }

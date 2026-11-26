@@ -1,21 +1,18 @@
 // Cross-layer reads (BOOK.md 11 step 1): search narrowed to one layer, and the context packet
 // for a free question, `GET /entries/context?q=`. Allowed for the brain's owner and their agent;
 // another person's brain answers 404.
-import type { Actor } from "@sky-brain/shared/actor";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as harness from "../testing/harness.ts";
+import {
+  alice,
+  aliceAgent,
+  bob,
+  seedTwoBrains,
+} from "../testing/two-brains.ts";
 
 let db: harness.Db;
 let server: harness.TestServer;
 let wsA: string;
-
-const alice: Actor = { kind: "human", user_id: "alice" };
-const aliceAgent: Actor = {
-  kind: "agent",
-  agent_id: "mcp/claude.ai",
-  on_behalf_of: "alice",
-};
-const bob: Actor = { kind: "human", user_id: "bob" };
 
 async function memoryId(layer: string) {
   const res = await server.as(alice).get("/api/v1/memories");
@@ -26,16 +23,7 @@ async function memoryId(layer: string) {
 
 beforeAll(async () => {
   db = await harness.createTestDb();
-  wsA = (
-    await harness.seedWorkspace(db, {
-      name: "a",
-      members: [{ userId: "alice", role: "owner" }],
-    })
-  ).id;
-  await harness.seedWorkspace(db, {
-    name: "b",
-    members: [{ userId: "bob", role: "owner" }],
-  });
+  wsA = await seedTwoBrains(db);
   server = await harness.startTestServer({
     db,
     now: () => new Date("2026-11-25T12:00:00Z"),
