@@ -1,5 +1,6 @@
 // The app's few addresses: `/` (the board), `/approvals`, `/a/<request id>` (an approval link an
-// agent hands the person), `/agents`, and `/docs/<entry id>` (a document's own page). The server and Vercel answer every other path with index.html, so a link or a reload
+// agent hands the person), `/agents`, `/docs/<entry id>` (a document's own page), and
+// `/brain/<layer>` (one layer of the brain: about-me, notebooks or inbox). The server and Vercel answer every other path with index.html, so a link or a reload
 // lands back here.
 import { useEffect, useState } from "react";
 
@@ -8,13 +9,27 @@ export type Route =
   | { page: "approvals" }
   | { page: "agents" }
   | { page: "approval"; id: string }
-  | { page: "doc"; entryId: string };
+  | { page: "doc"; entryId: string }
+  | { page: "layer"; layer: EntryLayer };
+
+/** The layers that hold entries, as the brain view and the layer pages name them. */
+export type EntryLayer = "core" | "long" | "short";
+const LAYER_SLUGS: Record<EntryLayer, string> = {
+  core: "about-me",
+  long: "notebooks",
+  short: "inbox",
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseRoute(path: string): Route {
   if (path === "/agents") return { page: "agents" };
   if (path === "/approvals") return { page: "approvals" };
+  const layer = /^\/brain\/([a-z-]+)\/?$/.exec(path)?.[1];
+  const found = (Object.keys(LAYER_SLUGS) as EntryLayer[]).find(
+    (l) => LAYER_SLUGS[l] === layer,
+  );
+  if (found) return { page: "layer", layer: found };
   const m = /^\/(docs|a)\/([^/]+)\/?$/.exec(path);
   if (m && UUID.test(m[2]!)) {
     return m[1] === "a"
@@ -30,6 +45,8 @@ export function routePath(route: Route): string {
       return `/docs/${route.entryId}`;
     case "approval":
       return `/a/${route.id}`;
+    case "layer":
+      return `/brain/${LAYER_SLUGS[route.layer]}`;
     case "board":
       return "/";
     default:

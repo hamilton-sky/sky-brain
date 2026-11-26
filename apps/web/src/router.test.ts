@@ -14,6 +14,21 @@ describe("routes", () => {
     expect(routePath({ page: "agents" })).toBe("/agents");
     expect(routePath({ page: "board" })).toBe("/");
   });
+  it("reads a layer page of the brain", () => {
+    expect(parseRoute("/brain/inbox")).toEqual({
+      page: "layer",
+      layer: "short",
+    });
+    expect(parseRoute("/brain/about-me/")).toEqual({
+      page: "layer",
+      layer: "core",
+    });
+    expect(routePath({ page: "layer", layer: "long" })).toBe(
+      "/brain/notebooks",
+    );
+    expect(parseRoute("/brain/board")).toEqual({ page: "board" });
+    expect(parseRoute("/brain/")).toEqual({ page: "board" });
+  });
   it("sends anything else to the board", () => {
     expect(parseRoute("/docs/not-an-id")).toEqual({ page: "board" });
     expect(parseRoute("/docs/../../api")).toEqual({ page: "board" });

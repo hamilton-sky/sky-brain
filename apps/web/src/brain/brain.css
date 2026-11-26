@@ -1,0 +1,376 @@
+/* The brain view (D40) and the layer pages. Colours come from theme.css: the layer colours
+   (--l-core, --l-work, --l-short, --l-long) and the panel tokens. */
+.part-core {
+  --part: var(--l-core);
+}
+.part-work {
+  --part: var(--l-work);
+}
+.part-short {
+  --part: var(--l-short);
+}
+.part-long {
+  --part: var(--l-long);
+}
+
+.bv {
+  position: fixed;
+  inset: 0;
+  /* Above panel-frame-ui's tooltips (1200), so the brand's "Collapse sidebar" tip stays under. */
+  z-index: 1300;
+  display: flex;
+  background: color-mix(in srgb, var(--sky-mid) 94%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.bv-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.bv-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bv-stage canvas:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+  outline-offset: -4px;
+}
+.bv-title {
+  position: absolute;
+  left: 24px;
+  top: 20px;
+  right: 120px;
+  pointer-events: none;
+}
+.bv-title h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.bv-title p {
+  margin: 4px 0 0;
+  color: var(--pf-muted);
+  font-size: 14px;
+}
+.bv-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.bv-legend {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pf-border);
+  background: var(--glass);
+  color: var(--pf-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bv-chip i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--part);
+}
+.bv-chip[aria-pressed="true"] {
+  border-color: var(--part);
+  box-shadow: 0 0 0 1px var(--part);
+}
+.bv-chip em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--part);
+  color: var(--pf-accent-contrast);
+}
+.bv-tip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--pf-border);
+  background: var(--glass-strong);
+  box-shadow: var(--pf-shadow);
+  font-size: 13px;
+}
+.bv-tip strong {
+  color: var(--part);
+}
+.bv-tip span {
+  color: var(--pf-muted);
+}
+
+.bv-panel {
+  width: 380px;
+  flex: none;
+  overflow: auto;
+  border-left: 1px solid var(--pf-border);
+  background: var(--glass-strong);
+  padding: 22px;
+}
+.bv-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bv-panel h3 {
+  margin: 0;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bv-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--part);
+  box-shadow: 0 0 12px var(--part);
+}
+.bv-about,
+.bv-note {
+  margin: 0;
+  color: var(--pf-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.bv-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pf-muted);
+}
+.bv-needs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--l-short);
+  background: color-mix(in srgb, var(--l-short) 14%, transparent);
+}
+.bv-needs span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+.bv-needs small {
+  color: var(--pf-muted);
+  font-size: 12px;
+}
+.bv-agents,
+.bv-items,
+.layer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bv-agents li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bv-agents li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 14px;
+  min-width: 0;
+}
+.bv-agents small {
+  color: var(--pf-muted);
+  font-size: 12px;
+}
+.bv-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--pf-accent) 16%, transparent);
+  color: var(--pf-accent);
+}
+.bv-agents li.live .bv-avatar {
+  box-shadow: 0 0 0 2px var(--pf-warning);
+}
+.bv-live {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--pf-warning);
+}
+.bv-search input,
+.bv-item {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--pf-border);
+  background: var(--glass);
+  color: var(--pf-text);
+  font: inherit;
+}
+.bv-search input {
+  font-size: 14px;
+}
+.bv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.bv-item {
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bv-item:hover {
+  border-color: color-mix(in srgb, var(--pf-accent) 50%, var(--pf-border));
+}
+.bv-item > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.bv-item > .pf-badge {
+  flex: none;
+  width: auto;
+}
+.bv-item small {
+  color: var(--pf-muted);
+  font-size: 12px;
+}
+.bv-item small.bv-link {
+  color: var(--part);
+}
+.bv-chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.layer-search {
+  display: block;
+  max-width: 520px;
+  margin-bottom: 1rem;
+}
+.layer-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The header's brain is the way in. Its brand button takes no pointer on wide screens
+   (styles.css), so the brain takes it back. */
+.brain-open {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Phones hide the sidebar's brand in a drawer, so the top bar carries the brain there. */
+.brain-open-top {
+  display: none;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+@media (max-width: 780px) {
+  .brain-open-top {
+    display: grid;
+  }
+}
+.brain-open-top:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+  border-radius: 10px;
+}
+
+@media (max-width: 760px) {
+  .bv {
+    flex-direction: column;
+  }
+  .bv-stage {
+    flex: none;
+    height: 58%;
+  }
+  .bv-panel {
+    width: auto;
+    flex: 1;
+    border-left: none;
+    border-top: 1px solid var(--pf-border);
+    padding: 16px;
+  }
+  .bv-title p {
+    display: none;
+  }
+  .bv-stage canvas {
+    top: 44px;
+    height: calc(100% - 94px);
+  }
+  .bv-legend {
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  .bv-chip {
+    min-height: 34px;
+    padding: 5px 9px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .bv-title {
+    left: 16px;
+    top: 12px;
+  }
+}

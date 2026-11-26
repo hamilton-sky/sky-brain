@@ -638,3 +638,17 @@ approve all (with the suggested memories), and `/reject` still applies nothing.
 editor cannot keep something there) and the pin rule (every item the person decides is checked
 against what they were shown; skipped items are not).
 
+### D40. A brain view that splits the star brain into its layers
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** people could not see their brain's layers. The header's star brain is now the way
+in: clicking it opens the same star brain big in the middle of the screen, where it splits into
+its parts (About me in the middle, the Board in front, the Inbox below, the Notebooks behind and
+to the left). Picking a part shows, in a right panel, the agents that work in it and what it
+holds; clicking an item goes to it, and each entry layer gets its own page under `/brain/`. Also
+in: names and counts on the parts, a ring where something waits for the person with a Review
+button, agent-coloured sparks for agents writing now, a search per part, arcs for items linked
+across layers, and keyboard, swipe and remembered-part support. Prototype:
+https://claude.ai/artifact/QdWXBDHE9rh9Ry7U91QiTC.
+**Keeps:** the brain view is read-only and uses existing, workspace-filtered routes (hard rule 4);
+brain.js stays the one star brain for the sign-in page, the header and this view.

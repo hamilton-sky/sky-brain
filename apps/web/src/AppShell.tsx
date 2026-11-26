@@ -14,8 +14,12 @@ declare global {
   }
 }
 
-/** The sign-in page's 3D constellation brain, small, as the logo beside the name. */
-function BrainMark() {
+/**
+ * The sign-in page's 3D constellation brain, small, as the logo beside the name. Once signed in,
+ * clicking it opens the brain view (D40). The brand around it is the library's sidebar toggle,
+ * so the click stops there; the sidebar's Brain link is the keyboard way in.
+ */
+function BrainMark({ onOpen }: { onOpen?: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (ref.current) window.skyBrainInit?.(ref.current);
@@ -24,8 +28,16 @@ function BrainMark() {
     <canvas
       ref={ref}
       data-brain="mini"
-      className="brain-mark"
+      className={onOpen ? "brain-mark brain-open" : "brain-mark"}
       aria-hidden="true"
+      title={onOpen ? "Open your brain" : undefined}
+      onClick={
+        onOpen &&
+        ((e) => {
+          e.stopPropagation();
+          onOpen();
+        })
+      }
     />
   );
 }
@@ -46,6 +58,15 @@ const APPROVALS_ICON = (
   <svg viewBox="0 0 20 20" aria-hidden="true" data-icon>
     <circle cx="10" cy="10" r="7" />
     <path d="M6.8 10.2 9 12.4l4.2-4.6" />
+  </svg>
+);
+const BRAIN_ICON = (
+  <svg viewBox="0 0 20 20" aria-hidden="true" data-icon>
+    <circle cx="10" cy="10" r="2.2" />
+    <circle cx="4.5" cy="6" r="1.4" />
+    <circle cx="15.5" cy="6.5" r="1.4" />
+    <circle cx="10" cy="16" r="1.4" />
+    <path d="M5.7 6.8 8.2 9M14.3 7.3 11.8 9M10 12.2v2.4" />
   </svg>
 );
 const SIGN_OUT_ICON = (
@@ -71,6 +92,8 @@ export function AppShell(props: {
   /** The top bar's name when it is not the page's (a document under Board). */
   title?: string;
   onPage: (page: Page) => void;
+  /** Opens the brain view (D40); the header's brain is the way in once signed in. */
+  onBrain?: () => void;
   children: ReactNode;
 }) {
   const title =
@@ -79,7 +102,7 @@ export function AppShell(props: {
     <DashboardShell
       brand={
         <span className="pf-brand">
-          <BrainMark />
+          <BrainMark onOpen={props.me ? props.onBrain : undefined} />
           <span className="wordmark">
             <span className="wm-sky">sky</span>
             <span className="wm-brain">brain</span>
@@ -87,23 +110,47 @@ export function AppShell(props: {
         </span>
       }
       navigation={
-        props.me &&
-        PAGES.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className="pf-sidebar-link"
-            title={p.label}
-            aria-current={props.page === p.id ? "page" : undefined}
-            onClick={() => props.onPage(p.id)}
-          >
-            {p.icon}
-            <span className="nav-label">{p.label}</span>
-          </button>
-        ))
+        props.me && (
+          <>
+            {props.onBrain && (
+              <button
+                type="button"
+                className="pf-sidebar-link"
+                title="Open your brain"
+                onClick={props.onBrain}
+              >
+                {BRAIN_ICON}
+                <span className="nav-label">Brain</span>
+              </button>
+            )}
+            {PAGES.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="pf-sidebar-link"
+                title={p.label}
+                aria-current={props.page === p.id ? "page" : undefined}
+                onClick={() => props.onPage(p.id)}
+              >
+                {p.icon}
+                <span className="nav-label">{p.label}</span>
+              </button>
+            ))}
+          </>
+        )
       }
       toolbar={
         <>
+          {props.me && props.onBrain && (
+            <button
+              type="button"
+              className="brain-open-top"
+              aria-label="Open your brain"
+              onClick={props.onBrain}
+            >
+              <BrainMark />
+            </button>
+          )}
           <span className="pf-toolbar-title">{props.me ? title : ""}</span>
           <ThemeControl className="theme-picker" />
           {props.me && (

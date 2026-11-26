@@ -21,6 +21,9 @@ import { Notify } from "./Notify.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./board/Board.tsx";
 import { DocPage } from "./docs/DocPage.tsx";
+import { BrainView } from "./brain/BrainView.tsx";
+import { LayerPage } from "./brain/LayerPage.tsx";
+import { PART_NAMES } from "./brain/brainData.ts";
 import { navigate, parseRoute, useRoute } from "./router.ts";
 
 const PROJECT_KEY = "sky-brain.project";
@@ -78,11 +81,12 @@ export function App() {
 function Root() {
   const [me, setMe] = useState<Me | null | "signed-out">(null);
   const [error, setError] = useState<string | null>(null);
+  const [brainOpen, setBrainOpen] = useState(false);
   const route = useRoute();
   const page: Page =
     route.page === "approval"
       ? "approvals"
-      : route.page === "doc"
+      : route.page === "doc" || route.page === "layer"
         ? "board"
         : route.page;
 
@@ -109,9 +113,19 @@ function Root() {
     <AppShell
       me={signedIn}
       page={page}
-      title={route.page === "doc" ? "Document" : undefined}
+      title={
+        route.page === "doc"
+          ? "Document"
+          : route.page === "layer"
+            ? PART_NAMES[route.layer]
+            : undefined
+      }
       onPage={(p) => navigate({ page: p })}
+      onBrain={() => setBrainOpen(true)}
     >
+      {brainOpen && signedIn && (
+        <BrainView onClose={() => setBrainOpen(false)} />
+      )}
       {error ? (
         <Alert tone="error">{error}</Alert>
       ) : me === null ? (
@@ -126,6 +140,8 @@ function Root() {
             </a>
           }
         />
+      ) : route.page === "layer" ? (
+        <LayerPage key={route.layer} layer={route.layer} />
       ) : route.page === "doc" ? (
         <DocPage key={route.entryId} entryId={route.entryId} me={me} />
       ) : route.page === "approval" ? (

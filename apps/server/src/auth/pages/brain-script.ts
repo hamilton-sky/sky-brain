@@ -86,6 +86,14 @@ export const brainScript = `"use strict";
     else pp.reg = "long";
   }
 
+  // Split view (the web app's brain view): each layer moves out from About me, in the middle.
+  for (i = 0; i < pts.length; i++) {
+    var q0 = pts[i], back = q0.kind === 1 || q0.kind === 2;
+    q0.ox = q0.reg === "work" ? q0.x * 0.2 : q0.reg === "short" ? (q0.x > 0 ? 0.12 : -0.12) : q0.reg === "long" && !back ? q0.x * 0.3 : 0;
+    q0.oy = q0.reg === "work" ? 0.08 : q0.reg === "short" ? -0.78 : q0.reg === "long" ? (back ? -0.25 : 0.2 + q0.y * 0.12) : 0.02;
+    q0.oz = q0.reg === "work" ? 0.42 : q0.reg === "short" ? 0.05 : q0.reg === "long" ? (back ? -0.8 : -0.75) : 0;
+  }
+  var ex = 0, exAim = 0, yawCur = -0.9, lastNow = 0, agentCol = {};
   var N = pts.length;
   // ---- links: surface stars to their 2 nearest, inner stars to their 3 nearest --------
   var edges = [], adj = [];
@@ -148,7 +156,7 @@ export const brainScript = `"use strict";
     col.line = cs.getPropertyValue("--line").trim() || "rgba(170,188,255,.28)";
     col.signal = cs.getPropertyValue("--signal").trim() || "#eef2ff";
     col.halo = cs.getPropertyValue("--node-halo").trim() || "rgba(150,175,255,.22)";
-    col.text = cs.getPropertyValue("--text").trim() || "#eef1ff";
+    col.text = cs.getPropertyValue("--text").trim() || cs.getPropertyValue("--pf-muted").trim() || "#eef1ff";
     col.reg = {
       core: cs.getPropertyValue("--l-core").trim() || col.node,
       work: cs.getPropertyValue("--l-work").trim() || col.node,
@@ -187,15 +195,19 @@ export const brainScript = `"use strict";
   function draw(now) {
     var still = reduce.matches;
     var el = still ? 99999 : now - t0;
-    var yaw = still ? -0.9 : -0.9 + el * 0.00016;
+    var dt = lastNow ? Math.min(64, now - lastNow) : 16; lastNow = now;
+    ex = Math.abs(exAim - ex) < 0.001 ? exAim : ex + (exAim - ex) * (still ? 1 : Math.min(1, dt * 0.004));
+    if (!still) yawCur += dt * 0.00016 * (1 - ex);
+    if (ex > 0) { var dyw = Math.atan2(Math.sin(1.15 - yawCur), Math.cos(1.15 - yawCur)); yawCur += dyw * (still ? 1 : Math.min(1, dt * 0.004)) * ex; }
+    var yaw = still && !ex ? -0.9 : yawCur + (still ? 0 : Math.sin(el * 0.0004) * 0.12 * ex);
     tiltX += (aimX - tiltX) * 0.04; tiltY += (aimY - tiltY) * 0.04;
     var pitch = 0.22 + (still ? 0 : tiltX), ya = yaw + (still ? 0 : tiltY);
     var cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pitch), sp = Math.sin(pitch);
-    var R = MINI ? Math.min(W * 0.44, H * 0.6) : Math.min(W * 0.36, H * 0.5), cx0 = W / 2, cy0 = H * 0.5, f = 3.4;
+    var R = (MINI ? Math.min(W * 0.44, H * 0.6) : Math.min(W * 0.36, H * 0.5)) * (1 - 0.3 * ex), cx0 = W / 2, cy0 = H * (0.5 - 0.02 * ex), f = 3.4;
 
     for (var i = 0; i < N; i++) {
       var p = pts[i], a = ease(Math.max(0, (el / 1800) - p.d));
-      var x = p.sx + (p.x - p.sx) * a, y = p.sy + (p.y - p.sy) * a, z = p.sz + (p.z - p.sz) * a;
+      var x = p.sx + (p.x + p.ox * ex - p.sx) * a, y = p.sy + (p.y + p.oy * ex - p.sy) * a, z = p.sz + (p.z + p.oz * ex - p.sz) * a;
       var x1 = x * cy + z * sy, z1 = -x * sy + z * cy;            // yaw
       var y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;           // pitch
       var sc = f / Math.max(1.2, f - z2);
@@ -219,8 +231,9 @@ export const brainScript = `"use strict";
       if (MINI && (fl || i % 3)) continue;
       var depth = cl(((A.z + B.z) / 2 + 1.1) / 2.2);                  // 0 back .. 1 front
       var vis = Math.min(A.a, B.a);
-      var em = 1;
-      if (REG && hl) em = (pts[e[0]].reg === hl && pts[e[1]].reg === hl) ? 1.8 : 0.35;
+      var em = ex > 0 && pts[e[0]].reg !== pts[e[1]].reg ? 1 - ex : 1;
+      if (em <= 0.02) continue;
+      if (REG && hl) em *= (pts[e[0]].reg === hl && pts[e[1]].reg === hl) ? 1.8 : 0.35;
       if (REG && pts[e[0]].reg === pts[e[1]].reg && pts[e[0]].reg !== "long") {
         ctx.strokeStyle = col.reg[pts[e[0]].reg];
         ctx.globalAlpha = Math.min(1, (0.25 + 0.4 * depth) * vis * em);
@@ -269,6 +282,19 @@ export const brainScript = `"use strict";
       ctx.beginPath(); ctx.arc(kq.x, kq.y, (1.4 + 0.8 * kd) * kq.s * km, 0, 6.2832); ctx.fill();
     }
 
+    // The page draws names, rings and links over the parts (the web app's brain view).
+    if (REG && canvas.skyBrainOverlay && ex > 0) {
+      var centers = {};
+      for (i = 0; i < N; i++) {
+        var cr = pts[i].reg, cq = proj[i], cc = centers[cr] || (centers[cr] = { x: 0, y: 0, n: 0, top: 1e9, bottom: -1e9 });
+        cc.x += cq.x; cc.y += cq.y; cc.n++; cc.top = Math.min(cc.top, cq.y); cc.bottom = Math.max(cc.bottom, cq.y);
+      }
+      for (var ck in centers) { centers[ck].x /= centers[ck].n; centers[ck].y /= centers[ck].n; }
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+      canvas.skyBrainOverlay(ctx, { centers: centers, split: ex, time: el, colors: col.reg, text: col.text, signal: col.signal, highlight: hl });
+      ctx.globalCompositeOperation = col.dark ? "lighter" : "source-over";
+    }
+
     // signals
     if (!still && el > 1800) {
       for (i = 0; i < signals.length; i++) {
@@ -284,12 +310,13 @@ export const brainScript = `"use strict";
         var px = P.x + (Q.x - P.x) * sgn.t, py = P.y + (Q.y - P.y) * sgn.t;
         var sd = cl(((P.z + Q.z) / 2 + 1.1) / 2.2);
         ctx.globalAlpha = 0.35 + 0.65 * sd;
-        var sr = MINI ? 2 : 5;
+        // An agent working in a part right now colours the signals there.
+        var scol = (!MINI && agentCol[pts[sgn.from].reg]) || col.signal, sr = MINI ? 2 : scol === col.signal ? 5 : 7;
         var sgGrad = ctx.createRadialGradient(px, py, 0, px, py, sr);
-        sgGrad.addColorStop(0, col.signal); sgGrad.addColorStop(1, "rgba(0,0,0,0)");
+        sgGrad.addColorStop(0, scol); sgGrad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = sgGrad;
         ctx.beginPath(); ctx.arc(px, py, sr, 0, 6.2832); ctx.fill();
-        ctx.fillStyle = col.signal;
+        ctx.fillStyle = scol;
         ctx.beginPath(); ctx.arc(px, py, MINI ? 0.6 : 1.3, 0, 6.2832); ctx.fill();
       }
     }
@@ -320,7 +347,13 @@ export const brainScript = `"use strict";
       var r = pickAt(e);
       if (r) canvas.dispatchEvent(new CustomEvent("brain:pick", { detail: r }));
     });
-    canvas.skyBrain = { highlight: function (r) { hl = r || null; if (!running) draw(performance.now()); } };
+    canvas.skyBrain = {
+      highlight: function (r) { hl = r || null; if (!running) draw(performance.now()); },
+      /** Splits the brain into its layers (true) or puts it back together. */
+      split: function (on) { exAim = on ? 1 : 0; if (!running) draw(performance.now()); },
+      /** Colours for the parts an agent is working in now: { short: "#ff9f6b" }. */
+      agents: function (m) { agentCol = m || {}; }
+    };
   }
 
   // A canvas React removed stops drawing, so a remounted header does not leave a loop behind.
