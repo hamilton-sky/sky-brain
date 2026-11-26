@@ -36,6 +36,8 @@ export const NODE_H = 52;
 const GAP_MAIN = 56; // between layers (or snake rows)
 const GAP_CROSS = 24; // between tasks inside a layer
 const PAD = 24;
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 2.5;
 
 export function graphLayout(
   tasks: Task[],
@@ -179,7 +181,5 @@ export function fitView(
   };
 }
 
-export const MIN_SCALE = 0.3;
-export const MAX_SCALE = 2.5;
 export const clampScale = (v: number) =>
   Math.min(MAX_SCALE, Math.max(MIN_SCALE, v));
