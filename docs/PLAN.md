@@ -279,6 +279,7 @@ tool argument is never an approval (hard rule 3). Design: [vision/HATS-AND-APPRO
 | MCP tool | Does |
 |---|---|
 | `list_projects` | the projects of the person's workspaces |
+| `create_project` / `rename_project` | a new project, or a new name for one (D45; the slug stays) |
 | `list_goals` / `get_goal` | a project's goals with task counts; one goal with its tasks |
 | `propose_goal` | a draft goal (only a person approves it) |
 | `add_tasks` | tasks with `depends_on` and `files`; a task added to an approved goal waits for approval |
@@ -292,7 +293,7 @@ the same checks. REST routes:
 | Route | Who |
 |---|---|
 | `GET /api/v1/me` | anyone signed in (the web page) |
-| `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/projects/:id/rename` | list: members; create and rename: people who are owners or editors (a rename keeps the slug; audited as `project.rename`) |
+| `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/projects/:id/rename` | list: members; create and rename: owners and editors, and their agents (D45; a rename keeps the slug; audited as `project.create` / `project.rename` with the actor) |
 | `POST /api/v1/goals`, `GET /api/v1/goals?project_id=`, `GET /api/v1/goals/:id` | writers create drafts; members read |
 | `POST /api/v1/goals/:id/tasks` | writers |
 | `POST /api/v1/goals/:id/documents` | writers (people and agents); the entry must be one the caller may read, in the goal's workspace |
@@ -324,10 +325,11 @@ the markdown with a small renderer that never inserts HTML, and edits it in four
 Sections, Source, Split) with a formatting bar, section moves, splits and merges, and undo; Save
 writes a new version through `POST /entries/:id/versions`. A held document is shown as plain
 text. People comment on a document (`entry_comments`): a note in a color on a selected passage
-or on the whole text, resolved, reopened or deleted by people with a writer role
-(`POST /entries/:id/comments`, `POST /entries/:id/comments/:commentId/resolve`,
-`DELETE /entries/:id/comments/:commentId`, people only; secret-scanned, 2,000 characters, 200 per
-entry). Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
+or on the whole text (`POST /entries/:id/comments`, writers; an agent comments too, marked as the
+agent's, through the MCP `comment` tool, D45). Only people with a writer role resolve, reopen or
+delete a comment (`POST /entries/:id/comments/:commentId/resolve`,
+`DELETE /entries/:id/comments/:commentId`, people only). Secret-scanned, 2,000 characters, 200 per
+entry. Whoever may read the entry reads its comments (`GET /entries/:id/comments`, and in
 `GET /entries/:id`), so the model sees them with `get`. PDFs are not stored yet.
 
 The brain view (D40) shows the layers. Clicking the sidebar's brand banner (the star brain and

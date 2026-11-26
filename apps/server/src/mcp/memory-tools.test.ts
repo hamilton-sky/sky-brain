@@ -8,12 +8,7 @@ import {
   type AuthTestServer,
 } from "../testing/auth-harness.ts";
 import { closeTestDb, createTestDb, type Db } from "../testing/harness.ts";
-import {
-  callTool,
-  CIMD_DOCUMENTS,
-  signInAndGetToken,
-  toolNames,
-} from "./test/flow.ts";
+import { callTool, CIMD_DOCUMENTS, tokensFor, toolNames } from "./test/flow.ts";
 
 let db: Db;
 let server: AuthTestServer;
@@ -22,16 +17,7 @@ const tokens: Record<string, string> = {};
 beforeAll(async () => {
   db = await createTestDb();
   server = await startAuthTestServer({ db, cimdDocuments: CIMD_DOCUMENTS });
-  for (const name of ["ann", "bob"]) {
-    const { accessToken } = await signInAndGetToken(server, {
-      account: {
-        subjectId: `subject-${name}`,
-        email: `${name}@example.test`,
-        firstName: name,
-      },
-    });
-    tokens[name] = accessToken;
-  }
+  Object.assign(tokens, await tokensFor(server, ["ann", "bob"]));
 }, 60_000);
 
 afterAll(async () => {
