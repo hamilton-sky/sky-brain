@@ -653,7 +653,22 @@ https://claude.ai/artifact/QdWXBDHE9rh9Ry7U91QiTC.
 **Keeps:** the brain view is read-only and uses existing, workspace-filtered routes (hard rule 4);
 brain.js stays the one star brain for the sign-in page, the header and this view.
 
-### D41. Hats, step 1: the tables (D30)
+### D41. The sidebar's brand banner leads into the brain and its layers
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** the layers had no direct way in: only the brain view's icon and its panel. Now the
+sidebar's brand banner (the star brain and "skybrain") opens the brain view when clicked, and an
+arrow beside it drops the layers down under it as links: About me, Notebooks, Inbox and Board, each
+with its layer's colour, the page shown now marked. The list is open by default and its state is
+remembered per browser; closed, the Board goes back to the plain page list. The separate "Brain"
+sidebar link is gone, since the banner does its job (it is keyboard-reachable too).
+Also: a goal clicked in the brain view opens that goal on the Board (`/goals/<id>` picks its
+project and opens its dialog), not just the Board page. An agent working a Board task (holding
+its lease) shows as working now in the brain view, which reads again every 20 seconds; before,
+only saved entries counted, so agents claiming tasks never showed.
+**Keeps:** D40 (the brain view and the layer pages); nothing new on the server.
+
+### D42. Hats, step 1: the tables (D30)
 
 **Date:** 2026-11-26. **Decided by:** shammai (approved the board goal "Add hats as lenses").
 **Decision:** migration 0013 adds `hats` (per brain, slug and name, the person's description and

@@ -38,7 +38,14 @@ function rememberedView(): View {
 
 const openDoc = (entryId: string) => navigate({ page: "doc", entryId });
 
-export function Board({ project }: { project: Project }) {
+export function Board({
+  project,
+  openGoal,
+}: {
+  project: Project;
+  /** A goal to open on arrival (/goals/<id>, from the brain view). */
+  openGoal?: string;
+}) {
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [docs, setDocs] = useState<Record<string, GoalDocument[]>>({});
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +55,7 @@ export function Board({ project }: { project: Project }) {
   const [adding, setAdding] = useState(false);
   const [view, setView] = useState<View>(rememberedView);
   const [tab, setTab] = useState<Column>("needs");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(openGoal ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [rejecting, setRejecting] = useState<Goal[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,6 +78,15 @@ export function Board({ project }: { project: Project }) {
     const timer = setInterval(load, REFRESH_MS);
     return () => clearInterval(timer);
   }, [load]);
+
+  // Arriving again from the brain view while this board is up opens the new goal too.
+  useEffect(() => {
+    if (openGoal) setOpenId(openGoal);
+  }, [openGoal]);
+  const closeGoal = () => {
+    setOpenId(null);
+    if (openGoal) navigate({ page: "board" }, true);
+  };
 
   const pickView = (v: View) => {
     setView(v);
@@ -235,7 +251,7 @@ export function Board({ project }: { project: Project }) {
             <GoalPanel
               goal={open}
               now={now}
-              onClose={() => setOpenId(null)}
+              onClose={closeGoal}
               onChanged={load}
               onReject={setRejecting}
               onOpenDoc={openDoc}
