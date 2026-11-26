@@ -17,7 +17,8 @@ export type Block =
   | { t: "ul" | "ol"; items: Inline[][] }
   | { t: "quote"; c: Inline[] }
   | { t: "code"; lang: string; v: string }
-  | { t: "hr" };
+  | { t: "hr" }
+  | { t: "table"; head: Inline[][]; rows: Inline[][][] };
 
 const SAFE_LINK = /^(https?:\/\/|mailto:)/i;
 
@@ -70,6 +71,17 @@ export function parseInline(text: string): Inline[] {
 }
 
 const LIST = /^\s*([-*+]|\d+[.)])\s+(.*)$/;
+const ROW = /^\s*\|.*\|\s*$/;
+const RULE = /^\s*\|(\s*:?-+:?\s*\|)+\s*$/;
+
+/** A table row's cells: the text between the outer pipes, split on the inner ones. */
+function cells(line: string): Inline[][] {
+  return line
+    .trim()
+    .slice(1, -1)
+    .split("|")
+    .map((c) => parseInline(c.trim()));
+}
 
 export function parseMarkdown(src: string): Block[] {
   const lines = src.replace(/\r\n?/g, "\n").split("\n");
@@ -104,20 +116,33 @@ export function parseMarkdown(src: string): Block[] {
         i += 1;
       }
       blocks.push({ t: "quote", c: parseInline(quote.join(" ")) });
-    } else if ((m = LIST.exec(line))) {
-      const ordered = /\d/.test(m[1]!);
-      const items: Inline[][] = [];
-      while (i < lines.length && (m = LIST.exec(lines[i]!))) {
-        items.push(parseInline(m[2]!));
+    } else if (ROW.test(line) && RULE.test(lines[i + 1] ?? "")) {
+      const head = cells(line);
+      const rows: Inline[][][] = [];
+      i += 2;
+      while (i < lines.length && ROW.test(lines[i]!)) {
+        rows.push(cells(lines[i]!));
         i += 1;
       }
-      blocks.push({ t: ordered ? "ol" : "ul", items });
+      blocks.push({ t: "table", head, rows });
+    } else if ((m = LIST.exec(line))) {
+      const ordered = /\d/.test(m[1]!);
+      const items: string[] = [];
+      while (i < lines.length) {
+        const next = lines[i]!;
+        if ((m = LIST.exec(next))) items.push(m[2]!);
+        else if (/^\s{2,}\S/.test(next)) items[items.length - 1] += ` ${next.trim()}`;
+        else break;
+        i += 1;
+      }
+      blocks.push({ t: ordered ? "ol" : "ul", items: items.map(parseInline) });
     } else {
       const para: string[] = [];
       while (
         i < lines.length &&
         lines[i]!.trim() &&
         !/^(#{1,6}\s|\s*```|\s*~~~|\s*>)/.test(lines[i]!) &&
+        !(ROW.test(lines[i]!) && RULE.test(lines[i + 1] ?? "")) &&
         !LIST.test(lines[i]!)
       ) {
         para.push(lines[i]!.trim());

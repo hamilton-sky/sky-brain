@@ -47,6 +47,29 @@ export function Markdown({ source }: { source: string }) {
             );
           case "hr":
             return <hr key={i} />;
+          case "table":
+            return (
+              <div key={i} className="md-table">
+                <table>
+                  <thead>
+                    <tr>
+                      {b.head.map((c, j) => (
+                        <th key={j}>{inline(c)}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {b.rows.map((r, j) => (
+                      <tr key={j}>
+                        {r.map((c, k) => (
+                          <td key={k}>{inline(c)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
           case "ul":
           case "ol": {
             const L = b.t;

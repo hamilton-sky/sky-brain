@@ -14,6 +14,8 @@ import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { errorHandler } from "@sky-brain/kernel/http/error-handler";
 import { requireJsonWrites } from "@sky-brain/kernel/http/json-writes";
 import { mountMcp } from "./mcp/route.ts";
+import { boardDispatcher } from "./mcp/board-dispatch.ts";
+import { bookRouter } from "./book/book-router.ts";
 import { entriesRouter, memoriesRouter } from "@sky-brain/memory/memory-router";
 import type { Semantic } from "@sky-brain/memory/embed/semantic";
 import { agentsRouter } from "./agents/agents-router.ts";
@@ -198,6 +200,10 @@ export function createApp(options: AppOptions): express.Express {
     approvalsRouter({ db, now, limiter: boardLimiter, push }),
   );
   app.use("/api/v1/push", pushRouter({ db, push, limiter: boardLimiter }));
+  app.use(
+    "/api/v1/book",
+    bookRouter(boardDispatcher({ db, now, limiter: boardLimiter, push })),
+  );
 
   app.use("/api", (_req, res) => {
     res

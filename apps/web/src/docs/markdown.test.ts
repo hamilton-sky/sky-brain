@@ -26,6 +26,30 @@ describe("parseMarkdown", () => {
     expect(blocks[5]).toEqual({ t: "code", lang: "ts", v: "const a = 1;" });
   });
 
+  it("reads a table, and a list item that wraps onto an indented line", () => {
+    const blocks = parseMarkdown(
+      "| id | Read it when |\n| --- | --- |\n| `board` | You plan **work** |\n\n- one\n  more\n- two",
+    );
+    expect(blocks[0]).toEqual({
+      t: "table",
+      head: [[{ t: "text", v: "id" }], [{ t: "text", v: "Read it when" }]],
+      rows: [
+        [
+          [{ t: "code", v: "board" }],
+          [
+            { t: "text", v: "You plan " },
+            { t: "strong", c: [{ t: "text", v: "work" }] },
+          ],
+        ],
+      ],
+    });
+    expect(blocks[1]).toEqual({
+      t: "ul",
+      items: [[{ t: "text", v: "one more" }], [{ t: "text", v: "two" }]],
+    });
+    expect(parseMarkdown("a | b |")[0]!.t).toBe("p");
+  });
+
   it("keeps raw HTML as text and drops unsafe link targets", () => {
     expect(parseInline("<img src=x onerror=alert(1)>")).toEqual([
       { t: "text", v: "<img src=x onerror=alert(1)>" },

@@ -80,9 +80,11 @@ async function brainNow(call: BoardCall): Promise<string> {
 function fill(text: string, actor: Actor): string {
   const app = actor.kind === "agent" ? actor.agent_id : "the web app";
   const role =
-    actor.kind === "agent" && actor.profile
-      ? actor.profile.display_name
-      : "Guest";
+    actor.kind === "human"
+      ? "yourself"
+      : actor.profile
+        ? actor.profile.display_name
+        : "Guest";
   return text
     .replace("{, under the hat {hat}}", "")
     .replaceAll("{person}", "the person")
@@ -91,7 +93,8 @@ function fill(text: string, actor: Actor): string {
     .replaceAll("`{version}`", "`1`");
 }
 
-async function readBook(
+/** The contents (no id, with "Your brain now" filled in), a chapter, or a tool's chapter. */
+export async function readBook(
   call: BoardCall,
   actor: Actor,
   id?: string,

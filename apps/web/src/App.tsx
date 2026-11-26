@@ -24,6 +24,7 @@ import { Board } from "./board/Board.tsx";
 import { DocPage } from "./docs/DocPage.tsx";
 import { BrainView } from "./brain/BrainView.tsx";
 import { LayerPage } from "./brain/LayerPage.tsx";
+import { BookPage } from "./book/BookPage.tsx";
 import { PART_NAMES } from "./brain/brainData.ts";
 import { navigate, parseRoute, useRoute } from "./router.ts";
 
@@ -144,6 +145,8 @@ function Root() {
         />
       ) : route.page === "layer" ? (
         <LayerPage key={route.layer} layer={route.layer} />
+      ) : route.page === "book" ? (
+        <BookPage chapter={route.chapter} />
       ) : route.page === "doc" ? (
         <DocPage key={route.entryId} entryId={route.entryId} me={me} />
       ) : route.page === "approval" ? (

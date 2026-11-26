@@ -144,6 +144,12 @@ async function request<T>(
   return parsed as T;
 }
 
+export interface BookPage {
+  id: string;
+  markdown: string;
+  chapters: { id: string; title: string }[];
+}
+
 export const api = {
   me: () => request<Me>("GET", "/api/v1/me"),
   projects: () =>
@@ -155,6 +161,9 @@ export const api = {
       workspace_id,
       name,
     }).then((r) => r.project),
+  /** The brain book (D46): the contents (no id) or one chapter, as markdown. */
+  book: (id?: string) =>
+    request<BookPage>("GET", id ? `/api/v1/book/${id}` : "/api/v1/book"),
   renameProject: (projectId: string, name: string) =>
     request<{ project: Project }>(
       "POST",
