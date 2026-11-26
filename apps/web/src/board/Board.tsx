@@ -1,5 +1,5 @@
 // One project's board, built for fast review: "Today" is a digest of up to ten goals waiting
-// for you, and "All goals" is the card board (Needs you, Running, Waiting to start, Done).
+// for you, and "All goals" is the card board (Needs you, Waiting to start, Running, Done).
 // Opening a goal shows it as a dialog over the board; its documents open on their own page
 // (/docs/<id>) to read, edit and comment on.
 // Approve and reject work on one goal or many; only a person can do either, so they live here.
