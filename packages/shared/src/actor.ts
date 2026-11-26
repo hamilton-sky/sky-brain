@@ -15,6 +15,16 @@ export const AgentProfileRefSchema = z.object({
 });
 export type AgentProfileRef = z.infer<typeof AgentProfileRefSchema>;
 
+/**
+ * The hat the calling app runs under (D30). It only narrows what the agent sees and is recorded
+ * on what it writes (capture_hat); it never grants a right. Absent means no hat.
+ */
+export const HatRefSchema = z.object({
+  id: z.uuid(),
+  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),
+  name: z.string().min(1).max(60),
+});
+
 export const ActorSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("human"), user_id: UserIdSchema }),
   z.object({
@@ -22,6 +32,7 @@ export const ActorSchema = z.discriminatedUnion("kind", [
     agent_id: AgentIdSchema,
     on_behalf_of: UserIdSchema,
     profile: AgentProfileRefSchema.optional(),
+    hat: HatRefSchema.optional(),
   }),
 ]);
 export type Actor = z.infer<typeof ActorSchema>;

@@ -124,6 +124,8 @@ export * from "./device-schema.ts";
 export * from "./tasks-schema.ts";
 // The memory core: memories, entries and their versions (step 1).
 export * from "./memory-schema.ts";
+// Hats: self-aspects that narrow what an agent sees (D30).
+export * from "./hats-schema.ts";
 // Agent profiles and which app acts as which (D25).
 export * from "./agents-schema.ts";
 // Approval requests: an agent asks, a person decides on the web (D31).

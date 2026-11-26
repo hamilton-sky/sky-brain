@@ -157,6 +157,12 @@ importers:
       '@modelcontextprotocol/server':
         specifier: 2.4.0
         version: 2.4.0
+      '@sky-brain/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@sky-brain/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
       '@sky-brain/shared':
         specifier: workspace:*
         version: link:../../packages/shared

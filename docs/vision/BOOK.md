@@ -447,6 +447,10 @@ its own, in `bench/book/`, against a test brain:
    from 50% (A, B) to 75% with `context` (C, D); Haiku stays at 88 to 100% in every arm, and D cuts
    its extra calls from about 11 to 7 per task. Board workflow mistakes do not change in any arm
    ([results](../../bench/book/README.md)).
+   *Shipped 26 Nov 2026 (PR #39):* shammai chose not to wait for the end of the two-week memory
+   measurement window, on the four-arm result above (`context` lifts Sonnet's cross-layer score
+   from 50% to 75%, and D trims Haiku's extra calls). Arm D is what runs live: use-when and
+   pitfalls on every tool, `context`, the `layer` filter on `search`, and `book`.
 2. **Deferred, each with its trigger:**
 
 | Piece | Build it when |
