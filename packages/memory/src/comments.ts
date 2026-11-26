@@ -1,7 +1,7 @@
 // Comments on an entry: anyone who may read the entry reads its comments (an agent only on the
-// proposed and approved entries it may read); a person with a writer role adds, resolves,
-// reopens and deletes them. Agents never write here (CLAUDE.md hard rule 3 covers resolve and
-// delete; adding is people only so a comment is always the person's own words).
+// proposed and approved entries it may read). A writer adds them, person or agent (D45: an
+// agent's comment is marked as the agent's, never the person's words); only a person resolves,
+// reopens or deletes one (CLAUDE.md hard rule 3).
 import type { Actor } from "@sky-brain/shared/actor";
 import {
   COMMENTS_PER_ENTRY_MAX,
@@ -9,7 +9,7 @@ import {
   type EntryComment,
 } from "@sky-brain/shared/comments";
 import { and, asc, count, eq } from "drizzle-orm";
-import { personOf } from "@sky-brain/kernel/actor/keys";
+import { auditActor, personOf } from "@sky-brain/kernel/actor/keys";
 import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { entryComments } from "@sky-brain/db/schema";
@@ -57,7 +57,7 @@ export async function commentsOf(
 /** The entry, when the person may read it (404) and write in its workspace (403). */
 async function writableEntry(
   db: DbOrTx,
-  actor: Human,
+  actor: Actor,
   entryId: string,
 ): Promise<EntryRow> {
   const { entry, role } = await findEntry(db, actor, entryId);
@@ -69,22 +69,28 @@ async function writableEntry(
 
 const audit = (
   tx: DbOrTx,
-  actor: Human,
+  actor: Actor,
   entry: EntryRow,
   action: string,
   commentId: string,
-) =>
-  writeAudit(tx, {
+) => {
+  const who = auditActor(actor);
+  return writeAudit(tx, {
     workspaceId: entry.workspaceId,
-    actor: `human:${actor.user_id}`,
+    actor: who.actor,
     action,
     targetId: entry.id,
-    details: { comment_id: commentId },
+    details: { ...who.details, comment_id: commentId },
   });
+};
+
+/** Who wrote or resolved a comment: the person's id, or the agent's (D45). */
+const actorId = (actor: Actor) =>
+  actor.kind === "human" ? actor.user_id : actor.agent_id;
 
 export async function addComment(
   db: Db,
-  actor: Human,
+  actor: Actor,
   entryId: string,
   body: CommentCreateRequest,
   now: Date,
@@ -114,8 +120,8 @@ export async function addComment(
         quote: body.quote ?? null,
         body: body.body,
         color: body.color,
-        authorKind: "human",
-        author: actor.user_id,
+        authorKind: actor.kind,
+        author: actorId(actor),
         onBehalfOf: personOf(actor),
         createdAt: now,
       })
@@ -141,7 +147,7 @@ export async function setResolved(
       .update(entryComments)
       .set(
         resolved
-          ? { resolved, resolvedBy: actor.user_id, resolvedAt: now }
+          ? { resolved, resolvedBy: actorId(actor), resolvedAt: now }
           : { resolved, resolvedBy: null, resolvedAt: null },
       )
       .where(

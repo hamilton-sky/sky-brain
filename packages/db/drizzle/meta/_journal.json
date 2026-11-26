@@ -99,6 +99,13 @@
       "when": 1795700105925,
       "tag": "0013_hats",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795705884944,
+      "tag": "0014_hat-bindings",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 // Comments on a document (an entry): a person marks a passage and writes a note, the way
-// Pathly's editor does (`/api/v1/entries/:id/comments`). People write, resolve and delete them;
-// an agent reads them with the entry (MCP `get`) so the model it serves sees the person's notes.
+// Pathly's editor does (`/api/v1/entries/:id/comments`). People and their agents write them (an
+// agent through MCP `comment`, D45); only people resolve and delete them. An agent reads them with
+// the entry (MCP `get`) so the model it serves sees the person's notes.
 import { z } from "zod";
 
 export const COMMENT_COLORS = [

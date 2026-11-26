@@ -75,18 +75,38 @@ describe("entry comments", () => {
     expect(audits).toHaveLength(2);
   });
 
-  it("resolve, reopen and delete; an agent reads the comments but cannot write them", async () => {
+  it("an agent comments as itself (D45); the agent of a viewer cannot", async () => {
+    const { w, entryId, base } = await setup();
+    const res = await agent(w.owner).post(base, { body: "Nightly is cheap." });
+    expect(res.status).toBe(201);
+    expect(res.body.comment).toMatchObject({ author_kind: "agent" });
+    expect(res.body.comment.author).not.toBe(w.owner);
+    const audits = await ctx.db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.targetId, entryId),
+          eq(auditLog.action, "entry.comment.add"),
+        ),
+      );
+    expect(audits.map((a) => a.actor)).toEqual([
+      expect.stringMatching(/^agent:/),
+    ]);
+    expectError(
+      await agent(w.viewer).post(base, { body: "Me too" }),
+      403,
+      "role_cannot_write",
+    );
+  });
+
+  it("resolve, reopen and delete; an agent reads the comments but cannot resolve or delete them", async () => {
     const { w, entryId, base } = await setup();
     const id = (await person(w.owner).post(base, { body: "Why nightly?" })).body
       .comment.id as string;
 
     const read = await agent(w.owner).get(`/api/v1/entries/${entryId}`);
     expect(read.body.comments.map((c: { id: string }) => c.id)).toEqual([id]);
-    expectError(
-      await agent(w.owner).post(base, { body: "Done" }),
-      403,
-      "humans_only",
-    );
     expectError(
       await agent(w.owner).post(`${base}/${id}/resolve`, { resolved: true }),
       403,

@@ -2,24 +2,26 @@
 // and the person-only actions: approve, release a held text, reject (cancel).
 import { Alert, Badge, Button, Dialog } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
-import {
-  api,
-  type Goal,
-  type GoalDocument,
-  type Task,
-  type TaskStatus,
-} from "../api.ts";
+import { api, type Goal, type GoalDocument, type Task } from "../api.ts";
+import { ViewSwitch } from "../ViewSwitch.tsx";
 import { canReject, isHeld } from "./columns.ts";
 import { DocList } from "./DocList.tsx";
 import { ago, proposer, stateBadge } from "./GoalTile.tsx";
+import { Step } from "./Step.tsx";
+import { TaskGraph } from "./TaskGraph.tsx";
 
-const STEP_LABEL: Record<TaskStatus, string> = {
-  pending: "waiting",
-  in_progress: "running",
-  done: "done",
-  failed: "failed",
-  blocked: "blocked",
-};
+const TASKS_VIEW_KEY = "sky-brain.tasks-view";
+type TasksView = "list" | "diagram";
+
+function rememberedTasksView(): TasksView {
+  try {
+    return localStorage.getItem(TASKS_VIEW_KEY) === "diagram"
+      ? "diagram"
+      : "list";
+  } catch {
+    return "list";
+  }
+}
 
 export function GoalPanel(props: {
   goal: Goal;
@@ -34,6 +36,15 @@ export function GoalPanel(props: {
   const [docs, setDocs] = useState<GoalDocument[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tasksView, setTasksView] = useState<TasksView>(rememberedTasksView);
+  const pickTasksView = (v: TasksView) => {
+    setTasksView(v);
+    try {
+      localStorage.setItem(TASKS_VIEW_KEY, v);
+    } catch {
+      // Private windows may refuse storage; the view still switches.
+    }
+  };
 
   const loadTasks = useCallback(() => {
     api.goal(goal.id).then(
@@ -75,7 +86,7 @@ export function GoalPanel(props: {
       open
       onOpenChange={(open) => !open && props.onClose()}
       title={goal.title}
-      className="goal-dialog"
+      className={`goal-dialog${tasksView === "diagram" ? " wide" : ""}`}
       showCloseButton
       closeButtonLabel="Close"
     >
@@ -104,18 +115,40 @@ export function GoalPanel(props: {
       ) : tasks.length === 0 ? (
         <p className="muted small">No tasks yet.</p>
       ) : (
-        <ol className="steps">
-          {tasks.map((t, i) => (
-            <Step
-              key={t.id}
-              task={t}
-              index={i}
-              all={tasks}
-              busy={busy}
-              act={act}
+        <>
+          <ViewSwitch
+            label="Tasks"
+            value={tasksView}
+            onChange={pickTasksView}
+            views={[
+              ["list", `Tasks (${tasks.length})`],
+              ["diagram", "Diagram"],
+            ]}
+          />
+          {tasksView === "diagram" ? (
+            <TaskGraph
+              tasks={tasks}
+              renderTask={(t, i) => (
+                <ol className="steps">
+                  <Step task={t} index={i} all={tasks} busy={busy} act={act} />
+                </ol>
+              )}
             />
-          ))}
-        </ol>
+          ) : (
+            <ol className="steps">
+              {tasks.map((t, i) => (
+                <Step
+                  key={t.id}
+                  task={t}
+                  index={i}
+                  all={tasks}
+                  busy={busy}
+                  act={act}
+                />
+              ))}
+            </ol>
+          )}
+        </>
       )}
       {goal.status === "approved" && unpinned && (
         <Alert tone="warning">
@@ -159,63 +192,5 @@ export function GoalPanel(props: {
         </p>
       )}
     </Dialog>
-  );
-}
-
-function Step(props: {
-  task: Task;
-  index: number;
-  all: Task[];
-  busy: boolean;
-  act: (run: () => Promise<unknown>) => void;
-}) {
-  const { task } = props;
-  const deps = task.depends_on
-    .map((id) => props.all.findIndex((t) => t.id === id))
-    .filter((i) => i >= 0)
-    .map((i) => `#${i + 1}`);
-  const where =
-    task.files === null
-      ? "any file"
-      : task.files.length > 0
-        ? task.files.join(", ")
-        : "no files";
-  const detail = [
-    deps.length > 0 ? `after ${deps.join(", ")}` : null,
-    where,
-    task.attempts > 0
-      ? `attempt ${task.attempts} of ${task.max_attempts}`
-      : null,
-    task.holder ? `held by ${task.holder.actor}` : null,
-  ].filter(Boolean);
-  return (
-    <li className={`step ${task.status}`}>
-      <span className="num">
-        {task.status === "done" ? "✓" : String(props.index + 1)}
-      </span>
-      <div>
-        <div className="st">
-          {task.title}
-          {task.status !== "done" && <Badge>{STEP_LABEL[task.status]}</Badge>}
-          {!task.pinned && <Badge tone="warning">not approved</Badge>}
-        </div>
-        {task.body && <p className="body small">{task.body}</p>}
-        <div className="sm">{detail.join(" · ")}</div>
-        {task.fail_reason && <Alert tone="error">{task.fail_reason}</Alert>}
-        {task.quarantined_because && (
-          <Alert tone="warning" className="row">
-            <span>Held: {task.quarantined_because}.</span>
-            <Button
-              variant="secondary"
-              className="small-button"
-              disabled={props.busy}
-              onClick={() => props.act(() => api.releaseTaskText(task.id))}
-            >
-              Release
-            </Button>
-          </Alert>
-        )}
-      </div>
-    </li>
   );
 }

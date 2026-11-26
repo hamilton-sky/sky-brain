@@ -11,6 +11,7 @@ import type { Db } from "@sky-brain/db/client";
 import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import type { Push } from "@sky-brain/approvals/push/push";
 import { personOf } from "@sky-brain/kernel/actor/keys";
+import { boundHat, withHat } from "../agents/hats.ts";
 import { boundProfile, withProfile } from "../agents/profiles.ts";
 import { actorFromMcpClaims } from "./actor.ts";
 import { mcpServerFactory } from "./server.ts";
@@ -57,10 +58,13 @@ export function mountMcp(app: express.Express, o: McpRouteOptions): void {
     async (request, claims) => {
       const client = actorFromMcpClaims(claims);
       if (!client) return unauthorized();
-      // The role comes from the person's own binding on the server, never from the client.
-      const actor = withProfile(
-        client,
-        await boundProfile(o.db, personOf(client), claims.azp as string),
+      // The role and the hat come from the person's own bindings on the server, never from
+      // the client (hard rule 2).
+      const person = personOf(client);
+      const azp = claims.azp as string;
+      const actor = withHat(
+        withProfile(client, await boundProfile(o.db, person, azp)),
+        await boundHat(o.db, person, azp),
       );
       const scope = typeof claims.scope === "string" ? claims.scope : "";
       // Never the raw token: tools get the actor, the client and the scopes only.
