@@ -7,8 +7,9 @@
 //   node bench/run.mjs                 print the table, write bench/results/<label>.json
 //   node bench/run.mjs --label foo     name the results file
 //   node bench/run.mjs --show q07      print the top 5 sections for one question
+//   node bench/run.mjs --embed local   add the vector and hybrid modes (step 4, D44; embed.mjs)
 //
-// No model is called. Later steps report against these numbers (BUILD-PLAN step 0).
+// Without --embed no model is called. Later steps report against these numbers (step 0).
 import {
   readFileSync,
   readdirSync,
@@ -18,6 +19,8 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
+import { vector } from "@electric-sql/pglite-pgvector";
+import { benchEmbedder } from "./embed.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const K = [1, 3, 5, 10];
@@ -88,8 +91,9 @@ function isGold(chunk, gold) {
 }
 
 async function openDb() {
-  const db = new PGlite();
+  const db = await PGlite.create({ extensions: { vector } });
   await db.exec(`
+    create extension vector;
     create table chunks (
       id serial primary key, file text, heading text, text text,
       tsv tsvector generated always as (
@@ -103,13 +107,52 @@ async function openDb() {
 
 // Two plain modes. "and": every question word must match (Postgres websearch semantics).
 // "or": any word may match, ranked by ts_rank_cd. Neither uses synonyms, vectors or links.
-const MODES = {
-  and: `select file, heading, ts_rank_cd(tsv, q) r from chunks, websearch_to_tsquery('english', $1) q
-        where tsv @@ q order by r desc, id limit 10`,
-  or: `select file, heading, ts_rank_cd(tsv, q) r from chunks,
+const WORDS = {
+  and: `select id, file, heading, ts_rank_cd(tsv, q) r from chunks, websearch_to_tsquery('english', $1) q
+        where tsv @@ q order by r desc, id limit $2`,
+  or: `select id, file, heading, ts_rank_cd(tsv, q) r from chunks,
         to_tsquery('simple', replace(plainto_tsquery('english', $1)::text, '&', '|')) q
-        where tsv @@ q order by r desc, id limit 10`,
+        where tsv @@ q order by r desc, id limit $2`,
 };
+const wordMode =
+  (sql) =>
+  async (q, n = 10) =>
+    (await db.query(sql, [q, n])).rows;
+
+// With --embed: nearest sections by cosine distance, and RRF (k = 60) over "or" and vectors,
+// 50 candidates from each, as the server does (packages/memory/src/search.ts).
+const RRF_K = 60;
+const CANDIDATES = 50;
+let embedder;
+const vectorMode = async (q, n = 10) => {
+  const [v] = await embedder.embed([q], "query");
+  return (
+    await db.query(
+      `select id, file, heading, emb <=> $1::halfvec d from chunks order by d limit $2`,
+      [`[${v.join(",")}]`, n],
+    )
+  ).rows;
+};
+const hybridMode = async (q, n = 10) => {
+  const lists = [
+    await MODES.or(q, CANDIDATES),
+    await vectorMode(q, CANDIDATES),
+  ];
+  const fused = new Map();
+  for (const list of lists) {
+    list.forEach((row, i) => {
+      const f = fused.get(row.id) ?? { row, score: 0 };
+      f.score += 1 / (RRF_K + i + 1);
+      fused.set(row.id, f);
+    });
+  }
+  return [...fused.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map((f) => f.row);
+};
+
+const MODES = { and: wordMode(WORDS.and), or: wordMode(WORDS.or) };
 
 const questions = readFileSync(
   join(import.meta.dirname, "questions.jsonl"),
@@ -121,22 +164,39 @@ const questions = readFileSync(
 
 const db = await openDb();
 const files = corpusFiles();
-let total = 0;
-for (const f of files) {
-  for (const c of chunks(f)) {
-    await db.query(
-      "insert into chunks (file, heading, text) values ($1, $2, $3)",
-      [c.file, c.heading, c.text],
-    );
-    total++;
+const all = files.flatMap(chunks);
+for (const c of all) {
+  await db.query(
+    "insert into chunks (file, heading, text) values ($1, $2, $3)",
+    [c.file, c.heading, c.text],
+  );
+}
+const total = all.length;
+
+const embedName = flag("--embed");
+if (embedName) {
+  embedder = await benchEmbedder(embedName);
+  // A section's heading path and text stand in for an entry's title and summary.
+  const vecs = await embedder.embed(
+    all.map((c) => `${c.heading}\n${c.text}`),
+    "document",
+  );
+  await db.exec(`alter table chunks add column emb halfvec(${vecs[0].length})`);
+  for (let i = 0; i < all.length; i++) {
+    await db.query("update chunks set emb = $1::halfvec where id = $2", [
+      `[${vecs[i].join(",")}]`,
+      i + 1,
+    ]);
   }
+  MODES.vector = vectorMode;
+  MODES.hybrid = hybridMode;
 }
 
 const show = flag("--show");
 if (show) {
   const q = questions.find((x) => x.id === show);
-  for (const [mode, sql] of Object.entries(MODES)) {
-    const { rows } = await db.query(sql, [q.question]);
+  for (const [mode, search] of Object.entries(MODES)) {
+    const rows = await search(q.question);
     console.log(`\n${mode}: ${q.question}`);
     for (const r of rows.slice(0, 5))
       console.log(
@@ -147,11 +207,11 @@ if (show) {
 }
 
 const results = {};
-for (const [mode, sql] of Object.entries(MODES)) {
+for (const [mode, search] of Object.entries(MODES)) {
   const per = [];
   for (const q of questions) {
     const t0 = performance.now();
-    const { rows } = await db.query(sql, [q.question]);
+    const rows = await search(q.question);
     const ms = performance.now() - t0;
     const rank = rows.findIndex((r) => isGold(r, q.gold)) + 1; // 0 = not in top 10
     per.push({
@@ -189,6 +249,7 @@ const label =
 const out = {
   label,
   run_at: new Date().toISOString(),
+  ...(embedder ? { embedding_model: embedder.model } : {}),
   corpus: { files: files.length, chunks: total },
   questions: questions.length,
   modes: results,

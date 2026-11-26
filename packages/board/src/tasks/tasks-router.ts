@@ -18,6 +18,7 @@ import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { memberRole } from "@sky-brain/kernel/scope/member-role";
 import { claimHandler } from "./claim.ts";
+import type { Semantic } from "@sky-brain/memory/embed/semantic";
 import { liveTextHash } from "./eligibility.ts";
 import {
   assertWriter,
@@ -34,6 +35,8 @@ export interface TasksRouterOptions {
   now: () => Date;
   /** The one board-write limiter `createApp` shares between the board's routers. */
   limiter: RateLimiter;
+  /** The embedder for the claim's context packet (hybrid search, D44). */
+  semantic?: Semantic;
 }
 
 /**
@@ -95,7 +98,11 @@ export function tasksRouter(options: TasksRouterOptions): Router {
       .json({ task: toWireTask(task, await dependsOn(db, task.id), now()) });
   });
 
-  router.post("/:id/claim", limit, claimHandler({ db, now }));
+  router.post(
+    "/:id/claim",
+    limit,
+    claimHandler({ db, now, semantic: options.semantic }),
+  );
   const report = reportHandlers({ db, now });
   router.post("/:id/renew", limit, report.renew);
   router.post("/:id/release", limit, report.release);

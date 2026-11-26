@@ -36,9 +36,10 @@ import {
   entryVersionsOf,
   findEntry,
   reviseEntry,
-  searchEntries,
   setTrust,
 } from "./entries-service.ts";
+import { searchEntries } from "./search.ts";
+import { queryVector, refreshLater, type Semantic } from "./embed/semantic.ts";
 import {
   addComment,
   commentsOf,
@@ -58,6 +59,8 @@ export interface MemoryRouterOptions {
   db: Db;
   now: () => Date;
   limiter: RateLimiter;
+  /** The embedder and the after-response runner (D44); without them search is words only. */
+  semantic?: Semantic;
 }
 
 function human(actor: Actor): Actor & { kind: "human" } {
@@ -121,6 +124,7 @@ export function entriesRouter({
   db,
   now,
   limiter,
+  semantic = {},
 }: MemoryRouterOptions): Router {
   const limit = boardWriteLimit(limiter);
   const router = express.Router();
@@ -129,17 +133,28 @@ export function entriesRouter({
     const body = parseRequest(CaptureRequestSchema, req.body);
     const row = await captureEntry(db, actorOf(req), body, now());
     res.status(201).json({ entry: entryWire(row, true) });
+    refreshLater(semantic, db, row.workspaceId);
   });
 
   router.get("/", async (req, res) => {
     const query = validate(SearchQuerySchema, req.query);
-    const hits = await searchEntries(db, actorOf(req), query, now());
+    const actor = actorOf(req);
+    const vector = await queryVector(semantic, query.q);
+    const hits = await searchEntries(db, actor, query, now(), {
+      ...(vector ? { queryVector: vector } : {}),
+    });
+    // Entries written elsewhere (board reports, approvals) get their vectors here.
+    const refreshIn =
+      semantic.embedder && query.q !== undefined
+        ? (query.workspace_id ?? (await ownWorkspace(db, actor)))
+        : undefined;
     res.status(200).json({
       entries: hits.map((h) => ({
         ...entryWire(h.entry, false),
         rank: h.rank,
       })),
     });
+    if (refreshIn) refreshLater(semantic, db, refreshIn);
   });
 
   // The context packet for any question (BOOK.md 13), in the caller's own brain by default.
@@ -149,8 +164,16 @@ export function entriesRouter({
     const actor = actorOf(req);
     const workspaceId = query.workspace_id ?? (await ownWorkspace(db, actor));
     res.status(200).json({
-      context: await packetFor(db, actor, workspaceId, query.q, now()),
+      context: await packetFor(
+        db,
+        actor,
+        workspaceId,
+        query.q,
+        now(),
+        await queryVector(semantic, query.q),
+      ),
     });
+    refreshLater(semantic, db, workspaceId);
   });
 
   router.get("/:id", async (req, res) => {
@@ -213,6 +236,7 @@ export function entriesRouter({
     const body = parseRequest(ReviseRequestSchema, req.body);
     const row = await reviseEntry(db, human(actorOf(req)), id, body, now());
     res.status(201).json({ entry: entryWire(row, true) });
+    refreshLater(semantic, db, row.workspaceId);
   });
 
   for (const [path, to] of [

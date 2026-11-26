@@ -3,6 +3,7 @@ import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { devActorHeaderEnabled, type Config } from "./config.ts";
 import { pushFromEnv } from "@sky-brain/approvals/push/push";
+import { embedderFromEnv } from "@sky-brain/memory/embed/embedder";
 import {
   closeDb,
   createPgliteDb,
@@ -41,6 +42,7 @@ export async function start(config: Config): Promise<Server> {
       devActorHeader,
       auth: authFromConfig(config, db),
       push: pushFromEnv(process.env),
+      semantic: { embedder: embedderFromEnv(process.env) },
     });
   } catch (err) {
     await closeOnce();

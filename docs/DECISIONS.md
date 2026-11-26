@@ -682,3 +682,40 @@ each session to use the sky-brain connector; the server instructions carry the r
 the same in Claude, Codex or any other client.
 **Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
 and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
+
+### D44. Hybrid search: one vector per entry, 1024 dimensions, fused with words by RRF
+
+**Date:** 2026-11-26. **Decided by:** shammai asked for it ("the summary and vector with RRF");
+the model and dimensions are proposed here and stand unless he changes them.
+**Decision:** build plan step 4, without the link hops. After every write the server embeds the
+entry's title, summary and questions (never the raw body) and keeps one vector per entry in a
+new table, `entry_vectors` (migration 0013, `halfvec(1024)`, HNSW with cosine distance). `search`,
+`context` and the packet `claim_task` returns fetch the 50 best word hits and the 50 nearest
+vectors under the same read filter and fuse them with Reciprocal Rank Fusion (k = 60).
+- **Model:** Voyage `voyage-4-lite` by default (multilingual, Hebrew and English; 1024 is its
+  native size), or any OpenAI-compatible endpoint (`text-embedding-3-small` asked for 1024, or a
+  gateway). Set with `EMBEDDINGS_PROVIDER`, `EMBEDDINGS_API_KEY`, `EMBEDDINGS_MODEL`,
+  `EMBEDDINGS_URL`. No key: search stays words only, exactly as before.
+- **1024, not 768:** the plan left this to step 4. 1024 is what every candidate (Voyage 4,
+  OpenAI 3 with `dimensions`, bge-m3) gives natively, so switching provider needs no migration,
+  only new vectors; 768 would rule out Voyage's and bge-m3's native size. At `halfvec` a vector is
+  2 KB, so 100,000 entries are about 200 MB, well inside Nanogres.
+- **A table of its own:** the `entries_guard` trigger gives every update of an entry a new `seq`
+  and `updated_at`, so a vector stored on the entry would look like a change of it. Each vector
+  records the entry version and model it was made from; an older one is stale and made again.
+- **Never in the way:** query vectors are asked inline with a 4-second timeout and a failure falls
+  back to words; entry vectors are made after the response (Vercel's `waitUntil`), 32 at a time,
+  after captures, new versions, searches and context reads, which also picks up entries written
+  by board reports and approvals.
+- **One HNSW index** over all entries, not Notebooks only as the plan suggested: the read filter
+  spans layers, and a partial index would not serve it. Revisit when a brain passes ~100,000.
+- **A distance floor:** vectors further than 0.75 (cosine) are no match, so `not_known` can
+  still say nothing matched.
+**Measured** (bench/README.md): with a small local stand-in model (multilingual-e5-small, 384
+dimensions, as no provider key was available to the build), hybrid lifts Recall@5 from 0.62 to
+0.74, Recall@10 from 0.78 to 0.86 and MRR from 0.47 to 0.53 over word search on the same corpus.
+**Keeps:** sky-brain calls no LLM; embeddings are its one model call (PLAN.md). Entry text is
+sent to the embedding provider, About me included; with no key nothing leaves. Vector hits pass the
+same filter as words: workspace membership (hard rule 4), About me for owners only, and agents see
+only proposed and approved entries that have not faded. Hats (D42) add their filter there.
+**Not yet:** chunk vectors for long bodies, link hops, a measurement with the production model.

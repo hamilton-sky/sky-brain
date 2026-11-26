@@ -1,7 +1,8 @@
 // The Vercel function: the whole Express app (API, MCP, auth, web fallback) on Postgres (D16).
 // Bundled by `pnpm --filter @sky-brain/server build:vercel` into dist/vercel.mjs, which
 // api/index.mjs at the repo root re-exports. One pool per function instance.
-import { attachDatabasePool } from "@vercel/functions";
+import { attachDatabasePool, waitUntil } from "@vercel/functions";
+import { embedderFromEnv } from "@sky-brain/memory/embed/embedder";
 import { createApp } from "./app.ts";
 import { authFromConfig } from "./auth/from-config.ts";
 import { readConfig } from "./config.ts";
@@ -28,4 +29,6 @@ export default createApp({
   devActorHeader: false,
   auth: authFromConfig(config, db),
   push: pushFromEnv(process.env),
+  // Entry vectors are made after the response, while the function stays alive (D44).
+  semantic: { embedder: embedderFromEnv(process.env), background: waitUntil },
 });

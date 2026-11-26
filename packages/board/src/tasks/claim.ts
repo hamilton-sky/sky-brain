@@ -13,7 +13,8 @@ import { writeAudit } from "@sky-brain/db/audit";
 import type { Db, DbOrTx } from "@sky-brain/db/client";
 import { tasks } from "@sky-brain/db/schema";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
-import { buildPacket } from "@sky-brain/memory/packet";
+import { buildPacket, taskQuery } from "@sky-brain/memory/packet";
+import { queryVector, type Semantic } from "@sky-brain/memory/embed/semantic";
 import { assertRunScope } from "@sky-brain/kernel/run-tokens/run-scope";
 import { eligibleTask, runScopeOf } from "./eligibility.ts";
 import { overlaps } from "./file-overlap.ts";
@@ -135,6 +136,7 @@ async function claimTask(tx: DbOrTx, req: Request, id: string, t: Date) {
 export function claimHandler(options: {
   db: Db;
   now: () => Date;
+  semantic?: Semantic | undefined;
 }): RequestHandler {
   const { db, now } = options;
   return async (req, res) => {
@@ -149,6 +151,7 @@ export function claimHandler(options: {
       actorOf(req),
       { workspaceId: row.workspaceId, title: row.title, body: row.body },
       t,
+      await queryVector(options.semantic ?? {}, taskQuery(row)),
     );
     res.status(200).json({
       task: toWireTask(row, deps.get(row.id)!, t),

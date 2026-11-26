@@ -9,7 +9,7 @@
     "test:pg": "vitest run --config vitest.pg.config.ts",
     "dev": "tsx watch src/dev.ts",
     "start": "tsx src/main.ts",
-    "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:light-my-request --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@vercel/functions --external:web-push --outfile=dist/vercel.mjs",
+    "build:vercel": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:light-my-request --external:pg --external:drizzle-orm --external:@electric-sql/pglite --external:@electric-sql/pglite-pgvector --external:@vercel/functions --external:web-push --outfile=dist/vercel.mjs",
     "migrate": "tsx src/db/migrate-cli.ts"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "@better-auth/mcp": "1.7.15",
     "@better-auth/oauth-provider": "1.7.15",
     "@electric-sql/pglite": "0.5.14",
+    "@electric-sql/pglite-pgvector": "0.0.15",
     "@modelcontextprotocol/server": "2.4.0",
     "@sky-brain/approvals": "workspace:*",
     "@sky-brain/board": "workspace:*",

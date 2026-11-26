@@ -45,6 +45,33 @@ their words with the answer, so `and` finds nothing for half of them. The misses
 newest design (memory layers, vectors, sharing), where the 23 Nov review reports repeat the same
 words as the schema and crowd it out.
 
+## Hybrid search (step 4, D44): 26 Nov 2026
+
+`node bench/run.mjs --embed local` (or `--embed voyage` with `EMBEDDINGS_API_KEY`) adds two
+modes: `vector`, the nearest sections by cosine distance, and `hybrid`, RRF (k = 60) over `or`
+and `vector` with 50 candidates each, as the server does. A section's heading path and text stand
+in for an entry's title and summary. Vectors are cached in `bench/.cache`.
+
+No provider key was available to the build, so this run used a small local stand-in:
+multilingual-e5-small (384 dimensions, quantized ONNX), a weaker model than the production
+default (Voyage `voyage-4-lite`, 1024). The corpus has grown since the baseline (93 files,
+1,455 sections), so `or` is lower than on 23 Nov; all four rows are the same corpus.
+
+| Mode | Recall@1 | Recall@3 | Recall@5 | Recall@10 | MRR | No result |
+|---|---|---|---|---|---|---|
+| and | 0.22 | 0.30 | 0.34 | 0.38 | 0.268 | 24 of 50 |
+| or | 0.34 | 0.52 | 0.62 | 0.78 | 0.466 | 0 of 50 |
+| vector | 0.32 | 0.48 | 0.60 | 0.72 | 0.432 | 0 of 50 |
+| **hybrid** | **0.34** | **0.66** | **0.74** | **0.86** | **0.527** | 0 of 50 |
+
+Hybrid beats words alone at every cut-off past the first: six more questions in the top 5,
+four more in the top 10. Neither list alone does: vectors and words miss different questions.
+Recall@1 does not move, which is the next thing to work on (step 5's signals, or a reranker).
+Latency: the database part of a hybrid query is about 20 ms here (p50 over 50 questions); the
+query's embedding adds one provider call, about 100 to 300 ms over the network.
+
+To do: run it again with the production model once the key is set, and grow the questions.
+
 ## Limits, on purpose
 
 - **Retrieval only.** This measures whether the right section is found, not whether an agent

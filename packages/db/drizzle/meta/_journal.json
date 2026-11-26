@@ -92,6 +92,13 @@
       "when": 1795548840168,
       "tag": "0012_push-subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795706070196,
+      "tag": "0013_entry-vectors",
+      "breakpoints": true
     }
   ]
 }

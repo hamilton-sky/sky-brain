@@ -162,7 +162,8 @@ On top of the table:
 
 1. About me: approved entries of the person's About me (only the workspace owner gets them).
 2. Rules in force: approved entries with topic `rule`, outside About me.
-3. Relevant to this task: up to 4 entries found by word search on the task text, approved or
+3. Relevant to this task: up to 4 entries found by hybrid search on the task text (words and,
+   when embeddings are on, meaning, fused by RRF; D44), approved or
    proposed (labelled "proposed, unverified"); never quarantined, rejected or faded ones.
 4. Not known: what the brain could not find, for example that nothing matched, or that a
    decision shown is only proposed.
@@ -191,7 +192,7 @@ The memory tools are built (step 1). The `context` packet on `claim_task` and le
 | MCP tool | REST | Does |
 |---|---|---|
 | `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
-| `search` | `GET /api/v1/entries?q=&layer=` | word search, any word may match, ranked; returns summaries, not bodies; `layer` (core, long, short) narrows it to one layer |
+| `search` | `GET /api/v1/entries?q=&layer=` | hybrid search (D44): words (any may match) and, when embeddings are on, the entry vectors nearest to `q`, fused by RRF; returns summaries, not bodies; `layer` (core, long, short) narrows it to one layer |
 | `context` | `GET /api/v1/entries/context?q=` | the fenced context packet for a free question, across every layer: About me, approved rules, relevant entries, what is not known |
 | `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
 | `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |

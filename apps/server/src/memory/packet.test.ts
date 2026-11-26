@@ -167,7 +167,7 @@ describe("context packet on claim", () => {
     const { body } = await claim(w, w.owner);
     expect(body.context.relevant).toEqual([]);
     expect(body.context.not_known).toEqual([
-      "Nothing in memory matches this task's words.",
+      "Nothing in memory matches this task.",
     ]);
   });
 });

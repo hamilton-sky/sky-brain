@@ -1,5 +1,6 @@
 // Opens, migrates and closes the database: PGlite in tests and dev, Postgres in production.
 import { PGlite } from "@electric-sql/pglite";
+import { vector } from "@electric-sql/pglite-pgvector";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres";
 import { migrate as migrateNodePg } from "drizzle-orm/node-postgres/migrator";
@@ -32,9 +33,11 @@ function driverOf(db: Db): Driver {
 
 /** PGlite in a folder on disk, or in memory for `memory://` or no folder. */
 export async function createPgliteDb(dataDir?: string): Promise<Db> {
-  const client = await PGlite.create(
-    dataDir && dataDir !== "memory://" ? { dataDir } : {},
-  );
+  // pgvector, as on Nanogres (entry_vectors, D44); 0013 runs CREATE EXTENSION.
+  const client = await PGlite.create({
+    ...(dataDir && dataDir !== "memory://" ? { dataDir } : {}),
+    extensions: { vector },
+  });
   const db = drizzlePglite({ client, schema });
   drivers.set(db, {
     migrate: () => migratePglite(db, { migrationsFolder }),
