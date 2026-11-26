@@ -652,3 +652,20 @@ across layers, and keyboard, swipe and remembered-part support. Prototype:
 https://claude.ai/artifact/QdWXBDHE9rh9Ry7U91QiTC.
 **Keeps:** the brain view is read-only and uses existing, workspace-filtered routes (hard rule 4);
 brain.js stays the one star brain for the sign-in page, the header and this view.
+
+### D41. Hats, step 1: the tables (D30)
+
+**Date:** 2026-11-26. **Decided by:** shammai (approved the board goal "Add hats as lenses").
+**Decision:** migration 0013 adds `hats` (per brain, slug and name, the person's description and
+colour), `memories.hat_id` (none means shared across hats; About me never takes one) and
+`core_entry_hats` (which hats an About me entry is true in; none means the shared self; a trigger
+refuses tags on any other layer or another brain's entry). Every entry version records
+`capture_hat_id`, the hat of the agent that wrote it, taken from the actor and never from a
+request body. It is provenance only and has no foreign key, because versions are append-only.
+Both foreign keys to `hats` include `workspace_id`, so a hat never reaches another brain; a hat
+is deleted only after its memories go back to shared.
+**Not yet:** binding an app to a hat, filtering reads by it, the wall connector and the
+Consolidator's suggestions (the goal's next tasks). Until the binding exists no actor carries a
+hat, so nothing changes for anyone.
+**Keeps:** hard rules 2, 3 and 4 (only people write hats; agents only carry the hat their binding
+gives them).
