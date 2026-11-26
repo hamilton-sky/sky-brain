@@ -189,11 +189,26 @@ function goalItem(g: Goal): PartItem {
   };
 }
 
+/** Agents holding a task right now (a live lease), with what they work on. */
+type Workers = Map<string, string>;
+
+/** Merges the agents holding tasks into the Board's agents: they are the ones working now. */
+function withWorkers(agents: PartAgent[], workers: Workers): PartAgent[] {
+  const live = [...workers].map(([id, task]) => ({
+    id,
+    label: agentLabel(id),
+    does: `Working on “${task}”`,
+    activeNow: true,
+  }));
+  return [...live, ...agents.filter((a) => !workers.has(a.id))];
+}
+
 function partData(
   part: Part,
   items: PartItem[],
   waiting: number,
   now: number,
+  workers: Workers = new Map(),
 ): PartData {
   return {
     part,
@@ -201,7 +216,7 @@ function partData(
     more: items.length >= LIST_LIMIT,
     waiting,
     items,
-    agents: part === "core" ? [] : agentsIn(items, now),
+    agents: part === "core" ? [] : withWorkers(agentsIn(items, now), workers),
   };
 }
 
@@ -216,6 +231,28 @@ async function boardGoals(): Promise<Goal[]> {
     .slice(0, LIST_LIMIT);
 }
 
+/**
+ * Who holds a task now: goals with running tasks are read one by one (five at most), and a task
+ * whose lease has not run out counts. This is how agents working the Board show up live.
+ */
+async function boardWorkers(goals: Goal[], now: number): Promise<Workers> {
+  const running = goals
+    .filter((g) => (g.counts.in_progress ?? 0) > 0)
+    .slice(0, 5);
+  const details = await Promise.all(
+    running.map((g) => api.goal(g.id).catch(() => null)),
+  );
+  const out: Workers = new Map();
+  for (const d of details) {
+    for (const t of d?.tasks ?? []) {
+      if (t.holder && Date.parse(t.holder.lease_expires_at) > now) {
+        out.set(t.holder.actor, t.title);
+      }
+    }
+  }
+  return out;
+}
+
 /** Everything the brain view shows, from the routes the app already uses. */
 export async function loadBrain(now = Date.now()): Promise<BrainData> {
   const [core, short, long, goals, pending] = await Promise.all([
@@ -226,9 +263,10 @@ export async function loadBrain(now = Date.now()): Promise<BrainData> {
     approvalsApi.pending().catch(() => [] as Approval[]),
   ]);
   const waiting = waitingByPart(pending);
+  const workers = await boardWorkers(goals, now);
   return {
     core: partData("core", core.map(entryItem), waiting.core, now),
-    work: partData("work", goals.map(goalItem), waiting.work, now),
+    work: partData("work", goals.map(goalItem), waiting.work, now, workers),
     short: partData("short", short.map(entryItem), waiting.short, now),
     long: partData("long", long.map(entryItem), waiting.long, now),
   };

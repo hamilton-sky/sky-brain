@@ -29,6 +29,12 @@ describe("routes", () => {
     expect(parseRoute("/brain/board")).toEqual({ page: "board" });
     expect(parseRoute("/brain/")).toEqual({ page: "board" });
   });
+  it("reads a goal opened on the board", () => {
+    const id = "6f1c2b9e-1d2a-4c3b-9e8f-0a1b2c3d4e5f";
+    expect(parseRoute(`/goals/${id}`)).toEqual({ page: "board", goal: id });
+    expect(routePath({ page: "board", goal: id })).toBe(`/goals/${id}`);
+    expect(parseRoute("/goals/not-an-id")).toEqual({ page: "board" });
+  });
   it("sends anything else to the board", () => {
     expect(parseRoute("/docs/not-an-id")).toEqual({ page: "board" });
     expect(parseRoute("/docs/../../api")).toEqual({ page: "board" });

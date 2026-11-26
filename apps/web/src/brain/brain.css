@@ -309,11 +309,78 @@
   overflow: hidden;
 }
 
-/* The header's brain is the way in. Its brand button takes no pointer on wide screens
-   (styles.css), so the brain takes it back. */
-.brain-open {
+/* The sidebar's brand (D41): the banner opens the brain view, the arrow drops the layers under
+   it. Its brand button takes no pointer on wide screens (styles.css), so these take it back. */
+.brand-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  pointer-events: auto;
+}
+.brand-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 6px 2px 2px;
+  border-radius: 10px;
   cursor: pointer;
   pointer-events: auto;
+}
+.brand-open:hover,
+.brand-caret:hover {
+  background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
+}
+.brand-caret {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--pf-muted);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.brand-caret svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+.brand-caret[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+.brand-open:focus-visible,
+.brand-caret:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+}
+/* The library's "Collapse sidebar" tip belongs to the brand button, which no longer collapses
+   anything here: the banner and its arrow do their own thing. */
+body:has(.brand-live:hover) .pf-tooltip,
+body:has(.brand-live :focus-visible) .pf-tooltip {
+  display: none;
+}
+.nav-layers {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 10px 18px;
+  padding-left: 8px;
+  border-left: 1px solid var(--pf-border);
+}
+.nav-layer i[data-icon] {
+  width: 10px;
+  height: 10px;
+  margin: 0 4px;
+  border-radius: 50%;
+  background: var(--part);
+  box-shadow: 0 0 8px var(--part);
 }
 
 /* Phones hide the sidebar's brand in a drawer, so the top bar carries the brain there. */

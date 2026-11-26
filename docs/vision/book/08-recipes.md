@@ -7,6 +7,21 @@ prompt with the same name, where the client supports prompts.
 1. `book`
 2. `context { q: "<the person's request>" }`, or open the layer chapter that fits
 3. Follow the recipe it finds, or read the chapter.
+4. If the request is real work, not a quick answer: `recipe:track-work`.
+
+## track-work: put the work of this session on the Board
+For work that takes more than one answer: a change, a document, research, a plan. Skip it for a
+question you can answer now.
+1. `list_projects`, and pick the project this work belongs to (one repository or one area of the
+   person's life is one project). If none fits, ask the person which to use; do not guess.
+2. `list_goals { project_id }`: if a goal already covers this work, use it and `add_tasks` for what
+   is missing.
+3. Otherwise `propose_goal { project_id, title, body: "what done looks like" }`, then
+   `add_tasks { goal_id, tasks }`, then `request_approval { items: [{ kind: "goal", id }] }`.
+4. Tell the person in one line that the goal waits for their approval, with the link. Keep
+   working on what they asked for: the board records the work, it does not hold it up.
+5. Once the goal is approved: `claim_task`, work, `report_task { outcome: "done", proof,
+   lessons? }` for each task. Lessons are how the next session learns from this one.
 
 ## next-task: do the next ready task
 1. `next_task { project_id }` (stop if `null`)
