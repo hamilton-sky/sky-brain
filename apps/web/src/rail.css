@@ -1,0 +1,69 @@
+/* The folded side panel (SidebarRail.tsx): a narrow rail of icons on wide screens. Phones keep
+   the drawer, so all of this is for wide screens only. */
+.rail-toggle {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-right: 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--pf-muted);
+  cursor: pointer;
+}
+.rail-toggle:hover {
+  color: var(--pf-text);
+  border-color: var(--pf-border);
+}
+.rail-toggle:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+}
+.rail-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rail-tip {
+  position: fixed;
+  left: calc(var(--pf-sidebar-collapsed-width) - 4px);
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+@media (min-width: 781px) {
+  [data-rail="on"] .pf-dashboard-shell {
+    grid-template-columns: var(--pf-sidebar-collapsed-width) minmax(0, 1fr);
+  }
+  [data-rail="on"] .pf-sidebar {
+    overflow-x: hidden;
+  }
+  [data-rail="on"] .nav-label,
+  [data-rail="on"] .pf-brand .wordmark,
+  [data-rail="on"] .brand-caret {
+    display: none;
+  }
+  [data-rail="on"] .pf-sidebar-link,
+  [data-rail="on"] .brand-open {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  [data-rail="on"] .nav-layers {
+    margin: 0 0 10px;
+    padding: 0 0 10px;
+    border-left: 0;
+    border-bottom: 1px solid var(--pf-border);
+  }
+}
+@media (max-width: 780px) {
+  .rail-toggle,
+  .rail-tip {
+    display: none;
+  }
+}
