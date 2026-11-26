@@ -3,12 +3,8 @@
 // (one task ready, one waiting on it) and a draft goal. Built fresh for each trial, in memory.
 import type { Actor } from "@sky-brain/shared/actor";
 import { and, eq } from "drizzle-orm";
-import {
-  entries,
-  entryVersions,
-  memories,
-} from "../../packages/db/src/schema.ts";
-import { createRateLimiter } from "../../packages/kernel/src/guards/ratelimit.ts";
+import { entries, entryVersions, memories } from "@sky-brain/db/schema";
+import { createRateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { boardDispatcher } from "../../apps/server/src/mcp/board-dispatch.ts";
 import {
   createTestDb,
