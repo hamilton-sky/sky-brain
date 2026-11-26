@@ -1,0 +1,260 @@
+/* The goal's task diagram, drawn as a small constellation in the Constellation Night tokens. */
+.pf-dialog.goal-dialog.wide {
+  width: min(980px, calc(100vw - 24px));
+  max-width: min(980px, calc(100vw - 24px));
+}
+.goal-dialog .views {
+  justify-self: start;
+}
+.tg {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.tg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tg-hint {
+  font-size: 12px;
+  color: var(--pf-muted);
+}
+.tg-sky {
+  position: relative;
+  height: min(440px, 58dvh);
+  overflow: hidden;
+  border: 1px solid var(--pf-border);
+  border-radius: var(--pf-radius-md);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background:
+    radial-gradient(circle, var(--star-dim) 1px, transparent 1.4px) 0 0 / 22px
+      22px,
+    radial-gradient(ellipse at 50% 0%, var(--glow), transparent 70%),
+    linear-gradient(180deg, var(--sky-mid), var(--sky-low));
+}
+.tg-sky[data-panning="true"] {
+  cursor: grabbing;
+}
+.tg-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.tg-edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.tg-edge {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  transition:
+    stroke 0.15s,
+    opacity 0.15s;
+}
+.tg-edge[data-done="true"] {
+  stroke: color-mix(in srgb, var(--pf-success) 70%, transparent);
+}
+.tg-edge[data-on="true"] {
+  stroke: var(--signal);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 4px var(--node-halo));
+}
+.tg-edges[data-dim="true"] .tg-edge:not([data-on="true"]) {
+  opacity: 0.25;
+}
+
+/* A task: a glass card with a star (its number) that glows in the task's state colour. */
+.tg-node {
+  --sc: var(--pf-muted);
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px 6px 8px;
+  border: 1px solid var(--pf-border);
+  border-radius: 12px;
+  background: var(--glass);
+  backdrop-filter: blur(6px);
+  color: var(--pf-text);
+  box-shadow: var(--pf-shadow);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    border-color 0.15s,
+    opacity 0.15s,
+    box-shadow 0.15s;
+}
+.tg-node:hover {
+  border-color: color-mix(in srgb, var(--sc) 60%, var(--pf-border));
+}
+.tg-node:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+  outline-offset: 2px;
+}
+.tg-node.done {
+  --sc: var(--pf-success);
+}
+/* Teal, not the accent: in the night theme the accent sits too close to "waiting" grey. */
+.tg-node.in_progress {
+  --sc: var(--l-work);
+}
+.tg-node.failed {
+  --sc: var(--pf-danger);
+}
+.tg-node.blocked {
+  --sc: var(--pf-warning);
+}
+.tg-node[data-picked="true"] {
+  border-color: var(--signal);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--signal) 35%, transparent),
+    0 0 22px var(--node-halo);
+}
+.tg-node[data-dim="true"] {
+  opacity: 0.38;
+}
+.tg-star {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sc);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--sc) 28%, transparent) 0 55%,
+    transparent 72%
+  );
+  border: 1.5px solid var(--sc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sc) 45%, transparent);
+}
+.tg-node.done .tg-star {
+  background: var(--sc);
+  color: var(--pf-accent-contrast);
+}
+.tg-node.in_progress .tg-star {
+  animation: tg-pulse 2.2s ease-in-out infinite;
+}
+@keyframes tg-pulse {
+  50% {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--sc) 75%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-node.in_progress .tg-star {
+    animation: none;
+  }
+}
+.tg-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* Changed after approval: waits for the person to approve again. */
+.tg-flag {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pf-warning);
+  box-shadow: 0 0 0 2px var(--glass-strong);
+}
+
+.tg-tools,
+.tg-legend {
+  position: absolute;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--pf-border);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  font-size: 12px;
+  color: var(--pf-muted);
+}
+.tg-tools {
+  left: 10px;
+  cursor: default;
+}
+.tg-tools span {
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.tg-tools button {
+  all: unset;
+  cursor: pointer;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  color: var(--pf-text);
+}
+.tg-tools button:hover {
+  background: color-mix(in srgb, var(--pf-accent) 14%, transparent);
+}
+.tg-tools button:focus-visible {
+  outline: 2px solid var(--pf-focus, var(--pf-accent));
+}
+.tg-legend {
+  right: 10px;
+  padding: 6px 12px;
+  gap: 6px;
+  pointer-events: none;
+}
+.tg-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pf-muted);
+  margin-left: 4px;
+}
+.tg-legend i.done {
+  background: var(--pf-success);
+}
+.tg-legend i.in_progress {
+  background: var(--l-work);
+}
+.tg-legend i.failed {
+  background: var(--pf-danger);
+}
+@media (max-width: 640px) {
+  .tg-sky {
+    height: 52dvh;
+  }
+  .tg-legend {
+    display: none;
+  }
+}
