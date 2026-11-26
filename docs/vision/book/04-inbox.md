@@ -28,6 +28,8 @@ the person releases it). A person can have several Inboxes (one per hat, later).
 - **capture** · writes · `kind`, `title` (≤200), `body` (≤16 KB), `summary` (≤600); `questions?` (≤3),
   `topic?`, `refs?`, `source?`, `memory_id?` → the new entry, status `proposed`.
 - **search** · read-only · `q`, `layer: "short"` → recent items first.
+- **comment** · writes · `entry_id`, `body`; `quote?` (the passage), `color?` → a comment on any
+  entry you may read, marked as yours. Only the person resolves or deletes comments.
 - **report_task** `lessons` (≤3, with outcome done) also land here.
 
 ## Recipe: keep a decision the person just made

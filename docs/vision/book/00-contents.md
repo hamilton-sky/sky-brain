@@ -35,8 +35,8 @@ how to use it, and its APIs.
 | **Layers** | | | |
 | `about-me` | About me: who the person is | You act for the person | search (core), context |
 | `notebooks` | Notebooks: what lasts | You need a fact or a past decision | list_memories, search, get |
-| `inbox` | Inbox: what is new | You want to save something, or see what came in | capture, search |
-| `board` | Board: what is being done | You plan or do work | list_projects, list_goals, get_goal, propose_goal, add_tasks, attach_document, next_task, claim_task, renew_task, release_task, report_task |
+| `inbox` | Inbox: what is new | You want to save something, or see what came in | capture, search, comment |
+| `board` | Board: what is being done | You plan or do work | list_projects, create_project, rename_project, list_goals, get_goal, propose_goal, add_tasks, attach_document, next_task, claim_task, renew_task, release_task, report_task |
 | **Using the brain** | | | |
 | `across` | Across the brain | You need all layers together | context, search |
 | `approval` | Approval | You need the person to approve something | request_approval, approval_status |
