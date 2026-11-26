@@ -12,7 +12,7 @@ import {
   useLayersOpen,
 } from "./brain/SidebarBrain.tsx";
 
-export type Page = "board" | "approvals" | "agents";
+export type Page = "board" | "approvals" | "agents" | "book";
 
 declare global {
   interface Window {
@@ -40,6 +40,12 @@ const APPROVALS_ICON = (
     <path d="M6.8 10.2 9 12.4l4.2-4.6" />
   </svg>
 );
+const BOOK_ICON = (
+  <svg viewBox="0 0 20 20" aria-hidden="true" data-icon>
+    <path d="M10 5.5C8.5 4.2 6.3 3.6 3.5 3.8v11.4c2.8-.2 5 .4 6.5 1.7 1.5-1.3 3.7-1.9 6.5-1.7V3.8c-2.8-.2-5 .4-6.5 1.7Z" />
+    <path d="M10 5.5v11.4" />
+  </svg>
+);
 const SIGN_OUT_ICON = (
   <svg viewBox="0 0 20 20" aria-hidden="true" className="btn-icon">
     <path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8M12 6.5 15.5 10 12 13.5M15.5 10H8" />
@@ -50,6 +56,7 @@ const PAGES: { id: Page; label: string; icon: ReactNode }[] = [
   { id: "board", label: "Board", icon: BOARD_ICON },
   { id: "approvals", label: "Approvals", icon: APPROVALS_ICON },
   { id: "agents", label: "Agents", icon: AGENTS_ICON },
+  { id: "book", label: "Book", icon: BOOK_ICON },
 ];
 
 /** Signs out, then shows the sign-in page with the brain, never the app's own frame. */

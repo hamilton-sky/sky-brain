@@ -1,0 +1,50 @@
+.book {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.book-chapters {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.book-chapter {
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--pf-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.book-chapter:hover {
+  color: var(--pf-text);
+  background: color-mix(in srgb, var(--pf-border) 40%, transparent);
+}
+.book-chapter[aria-current="page"] {
+  color: var(--pf-text);
+  background: color-mix(in srgb, var(--pf-accent) 18%, transparent);
+  font-weight: 600;
+}
+.book-text {
+  max-width: 820px;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .book {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .book-chapters {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .book-chapter {
+    white-space: nowrap;
+  }
+}

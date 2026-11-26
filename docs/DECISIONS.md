@@ -682,3 +682,15 @@ each session to use the sky-brain connector; the server instructions carry the r
 the same in Claude, Codex or any other client.
 **Keeps:** only goals the person approved run (D20); agents propose, never approve; quick answers
 and small talk stay off the Board; server instructions stay at most 512 characters (BOOK.md 11).
+
+### D46. The person reads the brain book in the app
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** the book (D37) was only for agents, through the MCP `book` tool. Now the sidebar has a
+Book link that opens `/book`: the same chapters, a chapter list beside them, and the contents with
+"Your brain now" filled from the person's own memories and boards, so the person sees exactly what
+their agents are told. `GET /api/v1/book` and `/api/v1/book/:id` serve it to anyone signed in, read
+through the caller's own routes (hard rule 4); run and device tokens cannot reach it. The
+document renderer reads markdown tables and list items that wrap onto an indented line.
+**Keeps:** one source for the text (`docs/vision/book/`, generated into `book-chapters.ts`). Number
+note: D42 and D44 are hats (PRs #49, #51), D45 is agents' everyday actions (PR #53).
