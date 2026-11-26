@@ -242,6 +242,8 @@ export interface WhoamiResult {
     agent_id: string;
     profile: { id: string; slug: string; display_name: string } | null;
   };
+  hat?: { id: string; slug: string; name: string } | null;
+  hats?: { id: string; slug: string; name: string; description: string }[];
 }
 
 /** `initialize`, then `tools/call whoami`; returns its structuredContent. */
@@ -284,6 +286,25 @@ export async function toolNames(server: AuthTestServer, token: string) {
   return (
     rpcResult(res).result as unknown as { tools: { name: string }[] }
   ).tools.map((t) => t.name);
+}
+
+/** Signs each name in through the claude.ai flow; returns their access tokens by name. */
+export async function tokensFor(
+  server: AuthTestServer,
+  names: string[],
+): Promise<Record<string, string>> {
+  const tokens: Record<string, string> = {};
+  for (const name of names) {
+    const { accessToken } = await signInAndGetToken(server, {
+      account: {
+        subjectId: `subject-${name}`,
+        email: `${name}@example.test`,
+        firstName: name,
+      },
+    });
+    tokens[name] = accessToken;
+  }
+  return tokens;
 }
 
 /** `tools/call` as `token`: isError, and the result text parsed as JSON (or the raw text). */

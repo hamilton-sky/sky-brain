@@ -169,10 +169,11 @@ export function entriesRouter({
     res.status(200).json({ comments: await commentsOf(db, entry) });
   });
 
-  router.post("/:id/comments", requireHuman, limit, async (req, res) => {
+  // Agents comment too (D45); resolving and deleting stay with people (hard rule 3).
+  router.post("/:id/comments", limit, async (req, res) => {
     const id = pathId(req);
     const body = parseRequest(CommentCreateRequestSchema, req.body);
-    const comment = await addComment(db, human(actorOf(req)), id, body, now());
+    const comment = await addComment(db, actorOf(req), id, body, now());
     res.status(201).json({ comment });
   });
 

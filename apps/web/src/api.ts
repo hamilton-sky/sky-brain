@@ -1,6 +1,7 @@
 // The board's REST routes as the signed-in browser calls them: the session cookie only, and
 // every write as JSON (the server refuses other bodies from a browser session).
 import type { CommentColor, EntryComment } from "@sky-brain/shared/comments";
+import type { Hat } from "@sky-brain/shared/hats";
 
 export interface Me {
   kind: "human" | "agent";
@@ -96,7 +97,9 @@ export interface ConnectedApp {
   client_id: string;
   name: string | null;
   profile_id: string | null;
+  hat_id: string | null;
 }
+export type { Hat } from "@sky-brain/shared/hats";
 
 export class ApiError extends Error {
   constructor(
@@ -141,6 +144,12 @@ async function request<T>(
   return parsed as T;
 }
 
+export interface BookPage {
+  id: string;
+  markdown: string;
+  chapters: { id: string; title: string }[];
+}
+
 export const api = {
   me: () => request<Me>("GET", "/api/v1/me"),
   projects: () =>
@@ -152,6 +161,9 @@ export const api = {
       workspace_id,
       name,
     }).then((r) => r.project),
+  /** The brain book (D46): the contents (no id) or one chapter, as markdown. */
+  book: (id?: string) =>
+    request<BookPage>("GET", id ? `/api/v1/book/${id}` : "/api/v1/book"),
   renameProject: (projectId: string, name: string) =>
     request<{ project: Project }>(
       "POST",
@@ -233,6 +245,18 @@ export const api = {
     request<null>("DELETE", `/api/v1/agents/profiles/${id}`),
   bindApp: (client_id: string, profile_id: string | null) =>
     request<unknown>("POST", "/api/v1/agents/bind", { client_id, profile_id }),
+  hats: () =>
+    request<{ hats: Hat[] }>("GET", "/api/v1/agents/hats").then((r) => r.hats),
+  createHat: (slug: string, name: string, description: string) =>
+    request<{ hat: Hat }>("POST", "/api/v1/agents/hats", {
+      slug,
+      name,
+      description,
+    }),
+  deleteHat: (id: string) =>
+    request<null>("DELETE", `/api/v1/agents/hats/${id}`),
+  bindHat: (client_id: string, hat_id: string | null) =>
+    request<unknown>("POST", "/api/v1/agents/hats/bind", { client_id, hat_id }),
   signOut: () =>
     fetch("/api/auth/sign-out", {
       method: "POST",

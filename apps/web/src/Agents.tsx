@@ -11,7 +11,8 @@ import {
 } from "panel-frame-ui";
 import { useCallback, useEffect, useState } from "react";
 import { FormFooter, useFormSubmit } from "./FormFooter.tsx";
-import { api, type AgentProfile, type ConnectedApp } from "./api.ts";
+import { HatsCard } from "./Hats.tsx";
+import { api, type AgentProfile, type ConnectedApp, type Hat } from "./api.ts";
 
 const TEMPLATES: { slug: string; name: string; kind: AgentProfile["kind"] }[] =
   [
@@ -21,8 +22,9 @@ const TEMPLATES: { slug: string; name: string; kind: AgentProfile["kind"] }[] =
     { slug: "librarian", name: "Librarian", kind: "steward" },
   ];
 
-/** The Select value for "no role": a profile id is a uuid, so it never collides. */
+/** The Select values for "no role" and "no hat": ids are uuids, so they never collide. */
 const GUEST = "guest";
+const ANY_HAT = "any";
 
 function appLabel(app: ConnectedApp): string {
   if (app.name) return app.name;
@@ -37,12 +39,16 @@ export function Agents() {
   const [data, setData] = useState<{
     profiles: AgentProfile[];
     apps: ConnectedApp[];
+    hats: Hat[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
   const load = useCallback(() => {
-    api.agents().then(setData, (e: Error) => setError(e.message));
+    Promise.all([api.agents(), api.hats()]).then(
+      ([agents, hats]) => setData({ ...agents, hats }),
+      (e: Error) => setError(e.message),
+    );
   }, []);
   useEffect(load, [load]);
 
@@ -122,6 +128,7 @@ export function Agents() {
           </div>
         )}
       </Card>
+      <HatsCard hats={data.hats} onChange={load} />
       <Card>
         <h2>Connected apps</h2>
         {data.apps.length === 0 && (
@@ -131,22 +138,46 @@ export function Agents() {
           </p>
         )}
         {data.apps.map((app) => (
-          <Select
-            key={app.client_id}
-            label={appLabel(app)}
-            value={app.profile_id ?? GUEST}
-            onValueChange={(id) =>
-              void run(api.bindApp(app.client_id, id === GUEST ? null : id))
-            }
-            options={[
-              { value: GUEST, label: "Guest", description: "No role yet" },
-              ...data.profiles.map((p) => ({
-                value: p.id,
-                label: p.display_name,
-                description: p.kind === "steward" ? "Steward" : "Worker",
-              })),
-            ]}
-          />
+          <div key={app.client_id} className="form">
+            <Select
+              label={appLabel(app)}
+              value={app.profile_id ?? GUEST}
+              onValueChange={(id) =>
+                void run(api.bindApp(app.client_id, id === GUEST ? null : id))
+              }
+              options={[
+                { value: GUEST, label: "Guest", description: "No role yet" },
+                ...data.profiles.map((p) => ({
+                  value: p.id,
+                  label: p.display_name,
+                  description: p.kind === "steward" ? "Steward" : "Worker",
+                })),
+              ]}
+            />
+            {data.hats.length > 0 && (
+              <Select
+                label="Hat"
+                value={app.hat_id ?? ANY_HAT}
+                onValueChange={(id) =>
+                  void run(
+                    api.bindHat(app.client_id, id === ANY_HAT ? null : id),
+                  )
+                }
+                options={[
+                  {
+                    value: ANY_HAT,
+                    label: "Picks per chat",
+                    description: "The agent chooses the hat that fits, or asks",
+                  },
+                  ...data.hats.map((h) => ({
+                    value: h.id,
+                    label: `Always ${h.name}`,
+                    description: "Never sees your other hats",
+                  })),
+                ]}
+              />
+            )}
+          </div>
         ))}
       </Card>
     </>

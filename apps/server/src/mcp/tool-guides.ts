@@ -5,7 +5,8 @@ import type { McpServer } from "@modelcontextprotocol/server";
 
 const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
   whoami: {
-    useWhen: "checking the connection or which person and role you act for.",
+    useWhen:
+      "checking the connection or which person and role you act for, or which hats the person has, so you can wear the one that fits the session.",
   },
   list_projects: {
     useWhen:
@@ -62,6 +63,21 @@ const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
       "a task you hold is finished (outcome done, with proof) or cannot be done (outcome failed, with the reason). Claim it first with claim_task.",
     pitfalls:
       "when a task cannot be done, report it failed before adding replacement tasks with add_tasks.",
+  },
+  create_project: {
+    useWhen: "the person asks for a new project (a place for goals and tasks).",
+    pitfalls:
+      "needs workspace_id: take it from whoami (workspaces, role owner or editor). A taken name is refused (409 slug_taken); pick another.",
+  },
+  rename_project: {
+    useWhen: "the person wants a project's name changed.",
+    pitfalls: "needs project_id (list_projects). The slug does not change.",
+  },
+  comment: {
+    useWhen:
+      "you have a note or question on an entry for the person, on a passage (quote) or the whole entry.",
+    pitfalls:
+      "a comment is not an edit and not an approval; to change what the brain holds, use capture. You cannot resolve or delete comments.",
   },
   capture: {
     useWhen:

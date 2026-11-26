@@ -5,10 +5,10 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { MEMORY_CAPS } from "@sky-brain/shared/memory";
 import { IdSchema } from "@sky-brain/shared/scope";
 import { z } from "zod";
-import type { BoardCall } from "./board-dispatch.ts";
+import { hatArg, type CallFor } from "./hat-lens.ts";
 import { READ, toToolResult } from "./board-tools.ts";
 
-export function registerContextTool(server: McpServer, call: BoardCall): void {
+export function registerContextTool(server: McpServer, callFor: CallFor): void {
   server.registerTool(
     "context",
     {
@@ -30,12 +30,14 @@ export function registerContextTool(server: McpServer, call: BoardCall): void {
           .max(MEMORY_CAPS.query)
           .describe("The question or request, in the person's words."),
         workspace_id: IdSchema.optional(),
+        hat: hatArg,
       }),
       annotations: READ,
     },
     async (args) => {
       const params = new URLSearchParams({ q: args.q });
       if (args.workspace_id) params.set("workspace_id", args.workspace_id);
+      const call = await callFor(args.hat);
       return toToolResult(
         await call("GET", `/entries/context?${params.toString()}`),
       );

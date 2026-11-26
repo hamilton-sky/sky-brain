@@ -32,6 +32,9 @@ never run at once.
 ## Its APIs (generated)
 
 - **list_projects** · read-only · `workspace_id?` → projects with ids.
+- **create_project** · writes · `workspace_id` (from `whoami`), `name` → a new project. Only where
+  the person is an owner or editor; a taken name is 409.
+- **rename_project** · writes · `project_id`, `name` → the project, renamed; its slug stays.
 - **list_goals** · read-only · `project_id` → goals, newest first, with status and task counts.
 - **get_goal** · read-only · `goal_id` → one goal with all its tasks and dependencies.
 - **propose_goal** · writes · `project_id`, `title`, `body`; `executor?` (single, loop, team),
