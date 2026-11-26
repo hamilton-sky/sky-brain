@@ -6,6 +6,16 @@ describe("routes", () => {
     const id = "0b9a6f3e-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
     expect(parseRoute("/")).toEqual({ page: "board" });
     expect(parseRoute("/agents")).toEqual({ page: "agents" });
+    expect(parseRoute("/book")).toEqual({ page: "book" });
+    expect(parseRoute("/book/board")).toEqual({
+      page: "book",
+      chapter: "board",
+    });
+    expect(parseRoute("/book/Bad_Id")).toEqual({ page: "board" });
+    expect(routePath({ page: "book", chapter: "recipes" })).toBe(
+      "/book/recipes",
+    );
+    expect(routePath({ page: "book" })).toBe("/book");
     expect(parseRoute(`/docs/${id}`)).toEqual({ page: "doc", entryId: id });
     expect(routePath({ page: "doc", entryId: id })).toBe(`/docs/${id}`);
     expect(parseRoute("/approvals")).toEqual({ page: "approvals" });

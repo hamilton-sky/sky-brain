@@ -201,7 +201,10 @@ Every MCP tool's description ends with "Use when" and, where there is one, "Pitf
 (`apps/server/src/mcp/tool-guides.ts`), and `initialize` returns server instructions of at most 512
 characters, built-in text only (`serverInstructions` in `book-tool.ts`). The chapters are served
 from `book-chapters.ts`, generated from `docs/vision/book/` by `pnpm book:gen`; a test fails when
-it is stale.
+it is stale. The person reads the same book on the web app's Book page (`/book`,
+`/book/<chapter>`, a sidebar link, D46), through `GET /api/v1/book` and `GET /api/v1/book/:id`
+(signed in; "Your brain now" is filled through the caller's own routes, so it shows only their
+workspaces). The page's markdown renderer reads tables too.
 
 People only: `POST /api/v1/memories` (a new Inbox or Notebook), `POST /api/v1/entries/:id/versions`,
 `/approve` and `/reject`. Run tokens have no verb for these routes, so a device cannot reach them

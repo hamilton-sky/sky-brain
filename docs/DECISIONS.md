@@ -733,3 +733,15 @@ of an entry; make a memory; rules; About me; sharing; devices and push; agent pr
 bindings; approval requests.
 **Keeps:** hard rule 3 (agents never approve, reject, release or delete, nor write rules or the
 workspace scope); D26 (a role grants no extra rights). Number note: D42 and D44 are hats (PRs #49, #51), D43 is #52.
+
+### D46. The person reads the brain book in the app
+
+**Date:** 2026-11-26. **Decided by:** shammai.
+**Decision:** the book (D37) was only for agents, through the MCP `book` tool. Now the sidebar has a
+Book link that opens `/book`: the same chapters, a chapter list beside them, and the contents with
+"Your brain now" filled from the person's own memories and boards, so the person sees exactly what
+their agents are told. `GET /api/v1/book` and `/api/v1/book/:id` serve it to anyone signed in, read
+through the caller's own routes (hard rule 4); run and device tokens cannot reach it. The
+document renderer reads markdown tables and list items that wrap onto an indented line.
+**Keeps:** one source for the text (`docs/vision/book/`, generated into `book-chapters.ts`). Number
+note: D42 and D44 are hats (PRs #49, #51), D45 is agents' everyday actions (PR #53).
