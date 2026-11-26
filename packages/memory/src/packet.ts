@@ -18,6 +18,7 @@ import {
   searchEntries,
   type EntryRow,
 } from "./entries-service.ts";
+import { entryInHat } from "./hat-reach.ts";
 
 const FENCE_OPEN = "<sky-brain-context>";
 const FENCE_CLOSE = "</sky-brain-context>";
@@ -97,6 +98,7 @@ async function approved(
         where === "core"
           ? and(eq(memories.layer, "core"), eq(members.role, "owner"))
           : and(eq(entries.topic, "rule"), ne(memories.layer, "core")),
+        entryInHat(actor),
       ),
     )
     .orderBy(desc(entries.seq))

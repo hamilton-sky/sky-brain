@@ -228,6 +228,19 @@ People only, under `/api/v1/agents`: `GET /` (profiles and connected apps), `POS
 it) and `POST /bind` (`client_id`, `profile_id` or null). A person sees and binds only their own
 profiles and only apps they allowed on the consent page.
 
+**Hats (D30, D42, D44).** A person can also name the hats of the brain they own (Parent,
+Engineer...) and bind a connected app to one (`hat_bindings`, keyed like `agent_bindings`). A
+bound app's actor carries that `hat`, the hat is recorded on every entry version it writes
+(`capture_hat_id`), and `whoami` returns `hat` (null when unbound) and `hats`: only the bound
+hat, or every hat of the person's own brains so the agent can pick the one that fits the
+session, or ask. A hat never grants a right. People only, under `/api/v1/agents/hats`: `GET /`,
+`POST /` (`slug`, `name`, `description`, `color`), `DELETE /:id` (409 `hat_in_use` while a memory
+belongs to it; its bindings and tags go with it) and `POST /bind` (`client_id`, `hat_id` or null).
+Under a hat (bound, or named per call with the `hat` argument on `search`, `get`,
+`list_memories`, `context` and `capture`), an agent reads only shared memories and the hat's own,
+and only About me entries that are untagged or tagged with that hat. A bound app naming
+another hat gets 403 `hat_bound`; an unknown hat 404 `no_such_hat`.
+
 The REST API under `/api/v1` mirrors these. It adds routes only people can call: approve,
 reject, release, answer, invite, export and delete.
 
