@@ -309,7 +309,7 @@ session's writes must send `application/json` (415 `json_required` otherwise), s
 form cannot approve anything. The web page at `/` is built for fast review. "Today" is a digest
 of up to ten goals waiting for the person (drafts and held goals, longest-waiting first) with a
 one-line summary of the last day; "All goals" is a card board with four columns (Needs you,
-Running, Waiting to start, Done); hovering a card shows its summary and opening one shows its
+Waiting to start, Running, Done, in the order a goal moves); hovering a card shows its summary and opening one shows its
 tasks in a dialog, as a numbered list or as a diagram of nodes (each dependency a line; layout
 down, across or compact; pan, zoom and drag in the browser only, nothing saved). Picking a node
 lights its direct dependencies and opens the same task card the list shows. Approve and reject (reject

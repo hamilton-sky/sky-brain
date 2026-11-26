@@ -233,7 +233,11 @@ export async function captureInTx(
       updatedAt: now,
     })
     .returning();
-  await tx.insert(entryVersions).values(versionOf(row!, now));
+  await tx.insert(entryVersions).values({
+    ...versionOf(row!, now),
+    // Encoding context (D30): the hat of the binding that wrote it, provenance only.
+    captureHatId: actor.kind === "agent" ? (actor.hat?.id ?? null) : null,
+  });
   const who = auditActor(actor);
   await writeAudit(tx, {
     workspaceId: memory.workspaceId,
