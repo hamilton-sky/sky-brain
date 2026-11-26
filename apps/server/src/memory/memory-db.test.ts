@@ -1,11 +1,14 @@
-// The memory core's database guards (migrations 0007 and 0008), below the API: they hold even
+// The memory core's database guards (migrations 0007, 0008 and 0013), below the API: they hold even
 // for code that skips the routes.
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { onSignIn } from "../auth/on-sign-in.ts";
+import { captureEntry } from "@sky-brain/memory/entries-service";
 import {
+  coreEntryHats,
   entries,
   entryVersions,
+  hats,
   members,
   memories,
 } from "@sky-brain/db/schema";
@@ -158,5 +161,143 @@ describe("entries", () => {
       .from(entryVersions)
       .where(eq(entryVersions.entryId, e.id));
     expect(left).toHaveLength(0);
+  });
+});
+
+const memoryOf = async (workspaceId: string, layer: "core" | "long") => {
+  const [m] = await db
+    .select()
+    .from(memories)
+    .where(
+      and(eq(memories.workspaceId, workspaceId), eq(memories.layer, layer)),
+    );
+  return m!;
+};
+
+describe("hats (D30, migration 0013)", () => {
+  let parent: string;
+  let otherHat: string;
+  beforeAll(async () => {
+    [{ id: parent }] = (await db
+      .insert(hats)
+      .values({ workspaceId: ws, slug: "parent", name: "Parent" })
+      .returning({ id: hats.id })) as [{ id: string }];
+    [{ id: otherHat }] = (await db
+      .insert(hats)
+      .values({ workspaceId: other, slug: "work", name: "Work" })
+      .returning({ id: hats.id })) as [{ id: string }];
+  });
+
+  it("refuses a bad slug and a second hat with the same slug", async () => {
+    await expect(
+      db.insert(hats).values({ workspaceId: ws, slug: "No Caps", name: "x" }),
+    ).rejects.toMatchObject(failure(/hats_slug_format/));
+    await expect(
+      db.insert(hats).values({ workspaceId: ws, slug: "parent", name: "x" }),
+    ).rejects.toMatchObject(failure(/hats_ws_slug_unique/));
+  });
+
+  it("puts a Notebook under a hat of its own brain", async () => {
+    const notebook = await memoryOf(ws, "long");
+    await db
+      .update(memories)
+      .set({ hatId: parent })
+      .where(eq(memories.id, notebook.id));
+    expect((await memoryOf(ws, "long")).hatId).toBe(parent);
+    await db
+      .update(memories)
+      .set({ hatId: null })
+      .where(eq(memories.id, notebook.id));
+  });
+
+  it("refuses another brain's hat on a memory", async () => {
+    const notebook = await memoryOf(ws, "long");
+    await expect(
+      db
+        .update(memories)
+        .set({ hatId: otherHat })
+        .where(eq(memories.id, notebook.id)),
+    ).rejects.toMatchObject(failure(/memories_hat_in_ws_fk/));
+  });
+
+  it("refuses a hat on About me itself", async () => {
+    const core = await memoryOf(ws, "core");
+    await expect(
+      db
+        .update(memories)
+        .set({ hatId: parent })
+        .where(eq(memories.id, core.id)),
+    ).rejects.toMatchObject(failure(/memories_core_no_hat/));
+  });
+
+  it("tags an About me entry, and only an About me entry of the same brain", async () => {
+    const core = await seedEntry(db, {
+      workspaceId: ws,
+      layer: "core",
+      title: "Two kids",
+      body: "Two kids.",
+    });
+    await db
+      .insert(coreEntryHats)
+      .values({ entryId: core.id, hatId: parent, workspaceId: ws });
+    const tags = await db
+      .select()
+      .from(coreEntryHats)
+      .where(eq(coreEntryHats.entryId, core.id));
+    expect(tags.map((t) => t.hatId)).toEqual([parent]);
+
+    const inbox = await seedEntry(db, {
+      workspaceId: ws,
+      title: "Inbox note",
+      body: "n",
+    });
+    await expect(
+      db
+        .insert(coreEntryHats)
+        .values({ entryId: inbox.id, hatId: parent, workspaceId: ws }),
+    ).rejects.toMatchObject(failure(/not an About me entry/));
+
+    const theirs = await seedEntry(db, {
+      workspaceId: other,
+      layer: "core",
+      title: "x",
+      body: "x",
+    });
+    await expect(
+      db
+        .insert(coreEntryHats)
+        .values({ entryId: theirs.id, hatId: parent, workspaceId: ws }),
+    ).rejects.toMatchObject(failure(/not an About me entry/));
+  });
+
+  it("records the writer's hat on a capture, and none without one", async () => {
+    const hat = { id: parent, slug: "parent", name: "Parent" };
+    const body = {
+      kind: "fact",
+      title: "School pickup at 4",
+      body: "Mondays.",
+      summary: "School pickup is at 4 on Mondays.",
+    } as const;
+    const withHat = await captureEntry(
+      db,
+      { kind: "agent", agent_id: "mcp/test", on_behalf_of: "u", hat },
+      body,
+      new Date(),
+    );
+    const without = await captureEntry(
+      db,
+      { kind: "agent", agent_id: "mcp/test", on_behalf_of: "u" },
+      body,
+      new Date(),
+    );
+    const hatOf = async (entryId: string) =>
+      (
+        await db
+          .select({ h: entryVersions.captureHatId })
+          .from(entryVersions)
+          .where(eq(entryVersions.entryId, entryId))
+      )[0]!.h;
+    expect(await hatOf(withHat.id)).toBe(parent);
+    expect(await hatOf(without.id)).toBeNull();
   });
 });

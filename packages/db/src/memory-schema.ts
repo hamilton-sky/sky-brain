@@ -32,6 +32,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { at, createdAt, createdBy, id, textArray } from "./columns.ts";
+import { hats } from "./hats-schema.ts";
 import { workspaces } from "./schema.ts";
 
 export const memoryLayerEnum = pgEnum("memory_layer", MEMORY_LAYERS);
@@ -73,6 +74,8 @@ export const memories = pgTable(
     layer: memoryLayerEnum("layer").notNull(),
     name: text("name").notNull(),
     isDefault: boolean("is_default").notNull().default(false),
+    /** The hat this memory belongs to (D30); none means shared across every hat. */
+    hatId: uuid("hat_id"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -87,6 +90,19 @@ export const memories = pgTable(
       "memories_core_is_default",
       sql`${t.layer} <> 'core' or ${t.isDefault}`,
     ),
+    // About me is the shared self: its entries carry hats (core_entry_hats), the memory never.
+    check(
+      "memories_core_no_hat",
+      sql`${t.layer} <> 'core' or ${t.hatId} is null`,
+    ),
+    // The hat is in the memory's own brain. No cascade: a hat is deleted only after its
+    // memories are moved back to shared.
+    foreignKey({
+      name: "memories_hat_in_ws_fk",
+      columns: [t.hatId, t.workspaceId],
+      foreignColumns: [hats.id, hats.workspaceId],
+    }),
+    index("memories_hat_idx").on(t.hatId),
   ],
 );
 
@@ -166,6 +182,12 @@ export const entryVersions = pgTable(
     authorKind: text("author_kind").$type<AuthorKind>().notNull(),
     author: text("author").notNull(),
     quarantinedBecause: text("quarantined_because"),
+    /**
+     * The hat of the binding that wrote this version (D30): provenance for ranking and the
+     * byline, never a permission. No foreign key: versions are append-only (0008), so a deleted
+     * hat must not cascade into them.
+     */
+    captureHatId: uuid("capture_hat_id"),
     createdAt: createdAt(),
   },
   (t) => [
