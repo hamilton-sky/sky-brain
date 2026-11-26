@@ -20,6 +20,11 @@ export const ProjectCreateRequestSchema = z.strictObject({
 });
 export type ProjectCreateRequest = z.infer<typeof ProjectCreateRequestSchema>;
 
+/** `POST /api/v1/projects/:id/rename` (people only): a new name; the slug stays as it is. */
+export const ProjectRenameRequestSchema = z.strictObject({
+  name: z.string().trim().min(1).max(PROJECT_CAPS.name),
+});
+
 export interface Project {
   id: string;
   workspace_id: string;

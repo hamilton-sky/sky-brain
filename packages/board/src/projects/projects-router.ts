@@ -1,8 +1,9 @@
 // `/api/v1/projects`: list the projects of the caller's workspaces, and (people only) create
-// one. Check order: actor (app); humans only (create); the board-write rate limit; request
+// or rename one. A rename keeps the slug, which links and devices may use. Check order: actor (app); humans only (create); the board-write rate limit; request
 // shape; workspace membership (404); role (403); a taken slug (409).
 import {
   ProjectCreateRequestSchema,
+  ProjectRenameRequestSchema,
   ProjectsListQuerySchema,
   slugify,
   type Project,
@@ -18,6 +19,7 @@ import { members, projects } from "@sky-brain/db/schema";
 import type { RateLimiter } from "@sky-brain/kernel/guards/ratelimit";
 import { HttpError } from "@sky-brain/kernel/http/http-error";
 import { validate } from "@sky-brain/kernel/http/validate";
+import { IdSchema } from "@sky-brain/shared/scope";
 import { resolveScope } from "@sky-brain/kernel/scope/resolve-scope";
 import { boardWriteLimit } from "@sky-brain/kernel/http/request-checks";
 
@@ -112,6 +114,49 @@ export function projectsRouter(options: {
         return created;
       });
       res.status(201).json({ project: toWireProject(row) });
+    },
+  );
+
+  router.post(
+    "/:id/rename",
+    requireHuman,
+    boardWriteLimit(options.limiter),
+    async (req, res) => {
+      const id = IdSchema.safeParse(req.params.id);
+      const body = validate(ProjectRenameRequestSchema, req.body);
+      const actor = actorOf(req);
+      const notFound = () =>
+        new HttpError(404, "not_found", "No such project.");
+      if (!id.success) throw notFound();
+      const [found] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, id.data));
+      if (!found) throw notFound();
+      // Membership is checked on the project's own workspace: another workspace is a 404.
+      const scope = await resolveScope(db, actor, {
+        workspace_id: found.workspaceId,
+      });
+      if (scope.role !== "owner" && scope.role !== "editor") {
+        throw new HttpError(403, "role_cannot_write", "A viewer cannot write.");
+      }
+      const row = await db.transaction(async (tx) => {
+        const [renamed] = await tx
+          .update(projects)
+          .set({ name: body.name })
+          .where(eq(projects.id, found.id))
+          .returning();
+        const who = auditActor(actor);
+        await writeAudit(tx, {
+          workspaceId: found.workspaceId,
+          actor: who.actor,
+          action: "project.rename",
+          targetId: found.id,
+          details: { ...who.details, from: found.name, to: body.name },
+        });
+        return renamed!;
+      });
+      res.status(200).json({ project: toWireProject(row) });
     },
   );
 

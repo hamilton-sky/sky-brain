@@ -18,6 +18,7 @@ import { api, ApiError, type Me, type Project } from "./api.ts";
 import { Agents } from "./Agents.tsx";
 import { ApprovalLink, Approvals } from "./Approvals.tsx";
 import { Notify } from "./Notify.tsx";
+import { RenameProject } from "./RenameProject.tsx";
 import { AppShell, type Page } from "./AppShell.tsx";
 import { Board } from "./board/Board.tsx";
 import { DocPage } from "./docs/DocPage.tsx";
@@ -191,6 +192,7 @@ function Projects({ me, goal }: { me: Me; goal?: string }) {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [selected, setSelected] = useState<string | null>(remembered());
   const [adding, setAdding] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -234,6 +236,13 @@ function Projects({ me, goal }: { me: Me; goal?: string }) {
             options={projects.map((p) => ({ value: p.id, label: p.name }))}
           />
         )}
+        {current &&
+          !renaming &&
+          writable.some((w) => w.id === current.workspace_id) && (
+            <Button variant="secondary" onClick={() => setRenaming(true)}>
+              Rename
+            </Button>
+          )}
         {writable.length > 0 && !adding && (
           <Button variant="secondary" onClick={() => setAdding(true)}>
             New project
@@ -250,6 +259,15 @@ function Projects({ me, goal }: { me: Me; goal?: string }) {
               remember(p.id);
               load();
             }
+          }}
+        />
+      )}
+      {renaming && current && (
+        <RenameProject
+          project={current}
+          onDone={(p) => {
+            setRenaming(false);
+            if (p) load();
           }}
         />
       )}
