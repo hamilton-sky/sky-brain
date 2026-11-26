@@ -7,10 +7,11 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # A real Postgres for `test:pg` (the claim race; PGlite runs one transaction at a time).
+    # A real Postgres for `test:pg` (the claim race; PGlite runs one transaction at a time),
+    # with pgvector 0.8.1 as on Nanogres: migration 0014 needs the extension (D47).
     services:
       postgres:
-        image: postgres:18
+        image: pgvector/pgvector:0.8.1-pg18
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
