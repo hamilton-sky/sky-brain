@@ -698,3 +698,17 @@ the session's context and tasks, or ask the person when it cannot tell. Picking 
 it can only narrow what the agent sees, so it is safe to leave to the model; the binding is the
 wall. Passing the picked hat on calls, and narrowing reads by it, is the next step.
 **Keeps:** hard rules 2 and 3 (people make and bind hats; agents only read them).
+
+### D44. Hats, step 3: reads narrow to the active hat, and an agent wears one per call
+
+**Date:** 2026-11-26. **Decided by:** shammai (the board goal "Add hats as lenses", and D43).
+**Decision:** under a hat, `search`, `get`, `list_memories` and the context packet return only
+memories that are shared or belong to that hat, and only About me entries with no hat tags or
+tagged with that hat (`memory/hat-reach.ts`, one SQL term in each read). The hat comes from the
+app's binding (the wall) or, for an unbound app, from a `hat` argument the agent passes on
+`search`, `get`, `list_memories`, `context` and `capture` (the lens). The lens is resolved on the
+server against the hats of the person's own brains (unknown: 404 `no_such_hat`); a bound app that
+names another hat gets 403 `hat_bound`. The book's start chapter tells the agent to pick the hat
+that fits the person's request, ask when it cannot tell, and leave it out when there are none.
+People see everything, as before.
+**Keeps:** a hat only narrows (D30); hard rules 2 and 4.

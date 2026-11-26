@@ -1,19 +1,32 @@
 // An agent profile reaches /mcp (D25 part 1): the role comes from the person's binding on the
 // server, shows in whoami, and is the author of what the agent writes. Unbound, it is the Guest.
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { entries, entryVersions, members } from "@sky-brain/db/schema";
+import {
+  coreEntryHats,
+  entries,
+  entryVersions,
+  hats,
+  members,
+  memories,
+} from "@sky-brain/db/schema";
 import {
   startAuthTestServer,
   type AuthTestServer,
 } from "../testing/auth-harness.ts";
-import { closeTestDb, createTestDb, type Db } from "../testing/harness.ts";
+import {
+  closeTestDb,
+  createTestDb,
+  seedEntry,
+  type Db,
+} from "../testing/harness.ts";
 import {
   CIMD_DOCUMENTS,
   CLAUDE_AI_CLIENT,
   callWhoami,
   decodeJwt,
   mcpPost,
+  rpcResult,
   signInAndGetToken,
 } from "../mcp/test/flow.ts";
 import { bindHat, createHat } from "./hats.ts";
@@ -129,5 +142,136 @@ describe("hats over MCP (D42)", () => {
       .innerJoin(entries, eq(entries.id, entryVersions.entryId))
       .where(eq(entries.title, "Written at work"));
     expect(row!.hat).toBe(me.hat!.id);
+  });
+});
+
+/** One tool call: its structured result, or the error text when the tool refused. */
+async function tool(name: string, args: Record<string, unknown>) {
+  const res = await mcpPost(server, token, "tools/call", {
+    name,
+    arguments: args,
+  });
+  const { result } = rpcResult(res);
+  return result.isError
+    ? { error: result.content?.[0]?.text ?? "" }
+    : (result.structuredContent as Record<string, unknown>);
+}
+
+const titles = (r: Record<string, unknown>) =>
+  ((r.entries ?? []) as { title: string }[]).map((e) => e.title).sort();
+
+describe("reads under a hat (D44)", () => {
+  let homeEntry: string;
+  beforeAll(async () => {
+    const [m] = await db
+      .select({ ws: members.workspaceId })
+      .from(members)
+      .where(eq(members.userId, sub));
+    const ws = m!.ws;
+    const byslug = async (slug: string) =>
+      (
+        await db
+          .select({ id: hats.id })
+          .from(hats)
+          .where(and(eq(hats.workspaceId, ws), eq(hats.slug, slug)))
+      )[0]!.id;
+    const [homeBook] = await db
+      .insert(memories)
+      .values({
+        workspaceId: ws,
+        layer: "long",
+        name: "Home notes",
+        hatId: await byslug("home"),
+      })
+      .returning({ id: memories.id });
+    const [workBook] = await db
+      .insert(memories)
+      .values({
+        workspaceId: ws,
+        layer: "long",
+        name: "Work notes",
+        hatId: await byslug("work"),
+      })
+      .returning({ id: memories.id });
+    homeEntry = (
+      await seedEntry(db, {
+        workspaceId: ws,
+        memoryId: homeBook!.id,
+        layer: "long",
+        title: "Zebra at home",
+        body: "zebra home",
+      })
+    ).id;
+    await seedEntry(db, {
+      workspaceId: ws,
+      memoryId: workBook!.id,
+      layer: "long",
+      title: "Zebra at work",
+      body: "zebra work",
+    });
+    await seedEntry(db, {
+      workspaceId: ws,
+      layer: "long",
+      title: "Zebra shared",
+      body: "zebra everywhere",
+    });
+    const kids = await seedEntry(db, {
+      workspaceId: ws,
+      layer: "core",
+      title: "Zebra kids",
+      body: "zebra two kids",
+    });
+    await db.insert(coreEntryHats).values({
+      entryId: kids.id,
+      hatId: await byslug("home"),
+      workspaceId: ws,
+    });
+  });
+
+  it("an app bound to Work sees shared and Work only, and cannot wear another hat", async () => {
+    expect(titles(await tool("search", { q: "zebra" }))).toEqual([
+      "Zebra at work",
+      "Zebra shared",
+    ]);
+    expect(await tool("get", { entry_id: homeEntry })).toMatchObject({
+      error: expect.stringContaining("not_found"),
+    });
+    const listed = (await tool("list_memories", {})).memories as {
+      name: string;
+    }[];
+    expect(listed.map((x) => x.name)).toContain("Work notes");
+    expect(listed.map((x) => x.name)).not.toContain("Home notes");
+    const packet = (await tool("context", { q: "zebra" })).context as {
+      text: string;
+    };
+    expect(packet.text).not.toContain("Zebra kids");
+    expect(packet.text).not.toContain("Zebra at home");
+    expect(await tool("search", { q: "zebra", hat: "home" })).toMatchObject({
+      error: expect.stringContaining("hat_bound"),
+    });
+  });
+
+  it("an unbound app sees everything, or wears the hat it picks for the call", async () => {
+    const [m] = await db
+      .select({ ws: members.workspaceId })
+      .from(members)
+      .where(eq(members.userId, sub));
+    expect(await bindHat(db, sub, m!.ws, CLAUDE_AI_CLIENT, null)).toBe(
+      "unbound",
+    );
+    expect(titles(await tool("search", { q: "zebra", layer: "long" }))).toEqual(
+      ["Zebra at home", "Zebra at work", "Zebra shared"],
+    );
+    expect(titles(await tool("search", { q: "zebra", hat: "home" }))).toEqual([
+      "Zebra at home",
+      "Zebra kids",
+      "Zebra shared",
+    ]);
+    const packet = (await tool("context", { q: "zebra", hat: "work" }))
+      .context as { text: string };
+    expect(packet.text).not.toContain("Zebra at home");
+    expect(await tool("search", { q: "zebra", hat: "nope" })).toMatchObject({
+      error: expect.stringContaining("no_such_hat"),
+    });
   });
 });

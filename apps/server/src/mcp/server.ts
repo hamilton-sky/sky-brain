@@ -19,6 +19,7 @@ import { boardDispatcher } from "./board-dispatch.ts";
 import { registerBoardTools } from "./board-tools.ts";
 import { registerBookTool, serverInstructions } from "./book-tool.ts";
 import { registerContextTool } from "./context-tool.ts";
+import { hatLens } from "./hat-lens.ts";
 import { registerMemoryTools } from "./memory-tools.ts";
 import { addGuidesOnRegister } from "./tool-guides.ts";
 import { registerWhoami } from "./whoami.ts";
@@ -61,8 +62,9 @@ export function mcpServerFactory(db: Db, options: McpServerOptions = {}) {
     if (parts.book) registerBookTool(server, call, actor);
     registerWhoami(server, db, actor);
     registerBoardTools(server, call);
-    registerMemoryTools(server, call);
-    if (parts.context) registerContextTool(server, call);
+    const callFor = hatLens(db, actor, (a) => board.forActor(a));
+    registerMemoryTools(server, callFor);
+    if (parts.context) registerContextTool(server, callFor);
     registerApprovalTools(
       server,
       call,
