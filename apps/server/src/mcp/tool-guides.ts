@@ -5,7 +5,8 @@ import type { McpServer } from "@modelcontextprotocol/server";
 
 const TOOL_GUIDES: Record<string, { useWhen: string; pitfalls?: string }> = {
   whoami: {
-    useWhen: "checking the connection or which person and role you act for.",
+    useWhen:
+      "checking the connection or which person and role you act for, or which hats the person has, so you can wear the one that fits the session.",
   },
   list_projects: {
     useWhen:

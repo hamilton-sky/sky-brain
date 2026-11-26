@@ -242,6 +242,8 @@ export interface WhoamiResult {
     agent_id: string;
     profile: { id: string; slug: string; display_name: string } | null;
   };
+  hat?: { id: string; slug: string; name: string } | null;
+  hats?: { id: string; slug: string; name: string; description: string }[];
 }
 
 /** `initialize`, then `tools/call whoami`; returns its structuredContent. */

@@ -44,4 +44,6 @@ export interface ConnectedApp {
   client_id: string;
   name: string | null;
   profile_id: string | null;
+  /** The hat the app always works under (D42), or null for none. */
+  hat_id: string | null;
 }

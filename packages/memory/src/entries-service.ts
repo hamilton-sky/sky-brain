@@ -47,6 +47,7 @@ import {
   workspaceRoles,
   type MemoryRow,
 } from "./memories.ts";
+import { coreEntryInHat, entryInHat } from "./hat-reach.ts";
 
 export type EntryRow = typeof entries.$inferSelect;
 export type VersionRow = typeof entryVersions.$inferSelect;
@@ -295,7 +296,10 @@ export async function findEntry(
   } catch {
     throw new HttpError(404, "not_found", "No such entry.");
   }
-  if (actor.kind === "agent" && !AGENT_READABLE.includes(row.trust)) {
+  if (
+    (actor.kind === "agent" && !AGENT_READABLE.includes(row.trust)) ||
+    !(await coreEntryInHat(db, actor, row))
+  ) {
     throw new HttpError(404, "not_found", "No such entry.");
   }
   return { entry: row, ...found };
@@ -510,6 +514,7 @@ export async function searchEntries(
         query.layer ? eq(entries.layer, query.layer) : undefined,
         query.kind ? eq(entries.kind, query.kind) : undefined,
         trustFilter,
+        entryInHat(actor),
       ),
     )
     .orderBy(...(tsquery ? [desc(rank)] : []), desc(entries.seq))

@@ -9,12 +9,15 @@ import { IdSchema } from "@sky-brain/shared/scope";
 import { z } from "zod";
 import type { BoardCall } from "./board-dispatch.ts";
 import { toToolResult, WRITE } from "./board-tools.ts";
+import { hatArg, type CallFor } from "./hat-lens.ts";
 
 const name = ProjectRenameRequestSchema.shape.name;
 
+/** Projects are not hat-scoped (`call`); a comment reaches an entry through the hat lens (D44). */
 export function registerEverydayTools(
   server: McpServer,
   call: BoardCall,
+  callFor: CallFor,
 ): void {
   server.registerTool(
     "create_project",
@@ -53,10 +56,15 @@ export function registerEverydayTools(
       inputSchema: z.object({
         entry_id: IdSchema,
         ...CommentCreateRequestSchema.shape,
+        hat: hatArg,
       }),
       annotations: WRITE,
     },
-    async ({ entry_id, ...body }) =>
-      toToolResult(await call("POST", `/entries/${entry_id}/comments`, body)),
+    async ({ entry_id, hat, ...body }) =>
+      toToolResult(
+        await (
+          await callFor(hat)
+        )("POST", `/entries/${entry_id}/comments`, body),
+      ),
   );
 }
