@@ -116,9 +116,11 @@ async function request<T>(
   const res = await fetch(path, {
     method,
     credentials: "same-origin",
+    // Every write sends a JSON body, DELETE too: the server refuses a cookie write that is not
+    // JSON (json_required), and an empty body has no content type at all.
     headers:
-      method === "POST" ? { "content-type": "application/json" } : undefined,
-    body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
+      method === "GET" ? undefined : { "content-type": "application/json" },
+    body: method === "GET" ? undefined : JSON.stringify(body ?? {}),
   });
   const text = await res.text();
   let parsed: unknown;
