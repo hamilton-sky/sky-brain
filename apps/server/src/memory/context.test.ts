@@ -75,6 +75,8 @@ describe("search by layer", () => {
     const all = await server.as(alice).get("/api/v1/entries?q=recipe");
     expect(all.status).toBe(200);
     expect(all.body.entries.length).toBeGreaterThanOrEqual(2);
+    // No embedder in this server: the answer says search ran on words, and why (D47).
+    expect(all.body.match).toEqual({ mode: "words", reason: "embeddings_off" });
     const long = await server
       .as(alice)
       .get("/api/v1/entries?q=recipe&layer=long");
