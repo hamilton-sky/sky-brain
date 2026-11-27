@@ -39,7 +39,11 @@ import {
   setTrust,
 } from "./entries-service.ts";
 import { searchEntries } from "./search.ts";
-import { queryVector, refreshLater, type Semantic } from "./embed/semantic.ts";
+import {
+  queryEmbedding,
+  refreshLater,
+  type Semantic,
+} from "./embed/semantic.ts";
 import {
   addComment,
   commentsOf,
@@ -139,7 +143,7 @@ export function entriesRouter({
   router.get("/", async (req, res) => {
     const query = validate(SearchQuerySchema, req.query);
     const actor = actorOf(req);
-    const vector = await queryVector(semantic, query.q);
+    const { vector, match } = await queryEmbedding(semantic, query.q);
     const hits = await searchEntries(db, actor, query, now(), {
       ...(vector ? { queryVector: vector } : {}),
     });
@@ -153,6 +157,7 @@ export function entriesRouter({
         ...entryWire(h.entry, false),
         rank: h.rank,
       })),
+      match,
     });
     if (refreshIn) refreshLater(semantic, db, refreshIn);
   });
@@ -163,15 +168,10 @@ export function entriesRouter({
     const query = validate(ContextQuerySchema, req.query);
     const actor = actorOf(req);
     const workspaceId = query.workspace_id ?? (await ownWorkspace(db, actor));
+    const { vector, match } = await queryEmbedding(semantic, query.q);
     res.status(200).json({
-      context: await packetFor(
-        db,
-        actor,
-        workspaceId,
-        query.q,
-        now(),
-        await queryVector(semantic, query.q),
-      ),
+      context: await packetFor(db, actor, workspaceId, query.q, now(), vector),
+      match,
     });
     refreshLater(semantic, db, workspaceId);
   });

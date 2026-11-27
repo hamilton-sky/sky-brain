@@ -192,7 +192,7 @@ The memory tools are built (step 1). The `context` packet on `claim_task` and le
 | MCP tool | REST | Does |
 |---|---|---|
 | `capture` | `POST /api/v1/entries` | save into an Inbox (or a named memory, for people) with kind, title, body, summary, questions, refs |
-| `search` | `GET /api/v1/entries?q=&layer=` | hybrid search (D47): words (any may match) and, when embeddings are on, the entry vectors nearest to `q`, fused by RRF; returns summaries, not bodies; `layer` (core, long, short) narrows it to one layer |
+| `search` | `GET /api/v1/entries?q=&layer=` | hybrid search (D47): words (any may match) and, when embeddings are on, the entry vectors nearest to `q`, fused by RRF; returns summaries, not bodies, and `match` (`hybrid`, or `words` with the reason: `embeddings_off` or the provider's error); `layer` (core, long, short) narrows it to one layer |
 | `context` | `GET /api/v1/entries/context?q=` | the fenced context packet for a free question, across every layer: About me, approved rules, relevant entries, what is not known |
 | `get` | `GET /api/v1/entries/:id` | one entry with its body, every version and the person's comments |
 | `list_memories` | `GET /api/v1/memories` | About me, Notebooks, Inboxes |

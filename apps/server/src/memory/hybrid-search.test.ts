@@ -92,6 +92,7 @@ describe("hybrid search", () => {
     const res = await server.as(alice).get(`/api/v1/entries?q=${q}`);
     expect(res.status).toBe(200);
     expect(titles(res)[0]).toBe("Recipe site database is Postgres");
+    expect(res.body.match).toEqual({ mode: "hybrid" });
   });
 
   it("never returns another brain's entries through vectors (rule 4)", async () => {
@@ -142,6 +143,11 @@ describe("hybrid search", () => {
       const res = await server.as(alice).get("/api/v1/entries?q=Vercel");
       expect(res.status).toBe(200);
       expect(titles(res)).toEqual(["Hosting is on Vercel"]);
+      // Says why, by the provider's status at most: never the key or the text.
+      expect(res.body.match).toEqual({
+        mode: "words",
+        reason: "provider_error: provider down",
+      });
       const miss = await server
         .as(alice)
         .get(`/api/v1/entries?q=${encodeURIComponent(MEANING_ONLY)}`);
