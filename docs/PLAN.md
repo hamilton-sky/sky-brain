@@ -390,8 +390,9 @@ Better Auth runs inside the server.
   an OAuth 2.1 authorization server. claude.ai registers with a Client ID Metadata Document
   (`cimd()` plugin), uses PKCE, and returns to `https://claude.ai/api/mcp/auth_callback`. The
   login page is the same Perminister sign-in. Access tokens are JWTs whose audience is
-  `https://<host>/mcp`, checked against the server's own keys. Dynamic client registration
-  stays off unless a client we need cannot use CIMD (checked in ticket T0). The scopes
+  `https://<host>/mcp`, checked against the server's own keys. Dynamic client registration is
+  on for MCP clients that cannot use CIMD (D49); registration only creates the client record,
+  and tokens still need sign-in, access and consent. The scopes
   `brain:read` and `brain:write` are advertised but not required on `/mcp` until write tools land.
 - **Headless agents**: a person logs a machine in once, with the OAuth device flow:
   `POST /api/device/code`, the person approves the user code (`POST /api/v1/devices/approve`),

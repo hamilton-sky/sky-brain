@@ -46,22 +46,31 @@ describe("discovery", () => {
     expect(res.body.client_id_metadata_document_supported).toBe(true);
   });
 
-  it("discovery: dynamic client registration is off", async () => {
+  it("discovery: dynamic client registration is on for MCP clients", async () => {
     const meta = await server
       .browser()
       .request("/.well-known/oauth-authorization-server/api/auth");
-    expect(meta.body).not.toHaveProperty("registration_endpoint");
+    expect(meta.body.registration_endpoint).toBe(
+      `${server.url}/api/auth/oauth2/register`,
+    );
     const res = await server.browser().request("/api/auth/oauth2/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        client_name: "Rogue",
-        redirect_uris: ["https://rogue.example/cb"],
+        client_name: "Muse",
+        redirect_uris: ["https://agent.meta.ai/api/hatch/oauth/callback"],
         token_endpoint_auth_method: "none",
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"],
+        scope: "openid profile email offline_access brain:read brain:write",
       }),
     });
-    expect(res.status).toBe(404);
-    expect(res.body?.client_id).toBeUndefined();
+    expect(res.status).toBe(201);
+    expect(typeof res.body.client_id).toBe("string");
+    expect(res.body.client_id.length).toBeGreaterThan(0);
+    expect(res.body.token_endpoint_auth_method).toBe("none");
+    expect(res.body.scope).toContain("brain:read");
+    expect(res.body.scope).toContain("brain:write");
   });
 
   it("discovery: auth routes are not shadowed by the /api 404 or the web catch-all", async () => {

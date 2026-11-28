@@ -110,6 +110,14 @@ export function createAuth(options: CreateAuthOptions) {
         consentPage: "/consent",
         resource: `${publicUrl}/mcp`,
         scopes: MCP_SCOPES,
+        // Normal product flow (D49): MCP clients may register themselves before the person
+        // signs in, so end users are never asked for a client_id. Registration only creates
+        // the client record; tokens still need Perminister sign-in, sky-brain access and
+        // consent, and public clients still need PKCE.
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        clientRegistrationDefaultScopes: MCP_SCOPES,
+        clientRegistrationDefaultApplicationType: "infer",
       }),
       cimd({
         fetchClientMetadataResource: options.fetchClientMetadataResource,

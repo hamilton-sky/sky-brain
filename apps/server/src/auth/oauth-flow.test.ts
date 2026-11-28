@@ -194,6 +194,34 @@ describe("oauth", () => {
     expect(claims.azp).toBe(CLAUDE_AI_CLIENT);
   });
 
+  it("oauth: a dynamically registered client completes authorize to token with PKCE", async () => {
+    const redirectUri = "https://agent.meta.ai/api/hatch/oauth/callback";
+    const registered = await server
+      .browser()
+      .request("/api/auth/oauth2/register", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          client_name: "Muse",
+          redirect_uris: [redirectUri],
+          token_endpoint_auth_method: "none",
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          scope: SCOPE,
+        }),
+      });
+    expect(registered.status).toBe(201);
+    const clientId = registered.body.client_id as string;
+    expect(typeof clientId).toBe("string");
+
+    const c = await getCode({ clientId, redirectUri });
+    const res = await codeGrant(c, clientId, c.verifier);
+    expect(res.status).toBe(200);
+    expect(typeof res.body.access_token).toBe("string");
+    const claims = decodeJwt(res.body.access_token as string);
+    expect(claims.azp).toBe(clientId);
+  });
+
   it("oauth: a loopback redirect on any port is accepted", async () => {
     for (const redirectUri of [
       "http://localhost:53682/callback",

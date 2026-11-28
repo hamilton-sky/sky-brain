@@ -81,8 +81,15 @@ Cloud sessions: add `sky-brain.vercel.app` to the environment's allowed domains 
 
 ### Codex CLI
 
-Try the same URL, `https://sky-brain.vercel.app/mcp`. Write down whether it needs Dynamic
-Client Registration (DCR). DCR is off; turning it on is a separate decision.
+Try the same URL, `https://sky-brain.vercel.app/mcp`. Sky-brain supports both CIMD and Dynamic
+Client Registration (DCR), so the client can register itself and the person only signs in and
+approves consent.
+
+### Muse
+
+Add sky-brain as a custom connector with URL `https://sky-brain.vercel.app/mcp`. Muse registers
+itself through DCR; do not paste a client ID by hand. Sign in with Perminister, approve consent,
+then ask Muse to call `whoami`.
 
 ## Local development
 
@@ -131,6 +138,8 @@ Without all three settings the server still starts, but there is no Perminister 
   `/.well-known` paths returned the web page); a production redeploy from the new branch fixed it.
   The connector also asks for a Name (`sky-brain`).
 - Codex CLI and DCR: not yet tested
+- Muse DCR: not yet tested in production; D49 turns DCR on so Muse does not ask the person
+  for a client ID.
 - The untested lines above are owned by shammai (they need his accounts and devices); record each
   result here and the final T0 outcome as a new decision in `docs/DECISIONS.md` (D19).
 - Deploy checks, 2026-11-11, run by shammai from his own machine after commit 439db5f of
