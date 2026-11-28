@@ -49,12 +49,6 @@ function sendPage(
 export function mountAuth(app: express.Express, auth: Auth): void {
   const handler = toNodeHandler(auth);
 
-  // DCR stays off (spec.md): the oauth provider answers 403 here, the route must not exist.
-  app.all("/api/auth/oauth2/register", (_req, res) => {
-    res
-      .status(404)
-      .json({ error: { code: "not_found", message: "No such API route." } });
-  });
   // A callback with no state is a forged one too (spec.md Edge cases): Better Auth would answer
   // `state_not_found`, the spec asks for its error page with `state_mismatch` and no session.
   app.get("/api/auth/callback/perminister", (req, res, next) => {

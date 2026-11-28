@@ -793,3 +793,18 @@ the star brain (opens the brain view), the layers' coloured dots and the page ic
 its name in a tooltip on hover or keyboard focus. The choice is remembered per browser. The
 library's collapse is no longer reachable. Phones keep the drawer.
 **Keeps:** D41 (the brand banner and the layers under it).
+
+### D49. MCP clients register themselves; people only sign in and approve
+
+**Date:** 2026-11-28. **Decided by:** shammai.
+**Decision:** sky-brain keeps CIMD and turns Dynamic Client Registration (DCR) on for MCP
+clients. A client that cannot present a CIMD document, such as Muse's generic connector setup,
+registers itself at `/api/auth/oauth2/register` and receives a `client_id` from sky-brain. The
+person is not asked to paste a client ID; they sign in with Perminister and approve consent.
+Registration only creates the client record. Tokens still need a verified Perminister account
+with sky-brain access, consent, the registered redirect URI and PKCE.
+**Why:** the connection flow should work like other products: click Connect, sign in, approve.
+D18/D19 kept DCR off while claude.ai's CIMD path was the tested route; Muse is the client that
+cannot use that route in its generic setup, so DCR is now needed.
+**Keeps:** CIMD for clients that publish a metadata document; D17/D18's Perminister sign-in and
+Better Auth OAuth server; hats still bind server-side by person and client, never by client input.
